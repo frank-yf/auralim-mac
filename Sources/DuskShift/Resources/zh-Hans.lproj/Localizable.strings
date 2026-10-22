@@ -116,3 +116,10 @@
 "licenses.open" = "许可与数据来源";
 
 "appearance.mode" = "外观模式";
+"appearance.systemAuto" = "系统自动";
+"appearance.systemManaged" = "系统管理";
+"appearance.appAuto" = "应用自动";
+"appearance.appManual" = "应用手动";
+"appearance.current" = "%@ · 当前%@";
+"appearance.solarStatus" = "应用自动 · 按日出日落切换 · 当前%@";
+"appearance.auto.help" = "按当地日出日落自动切换";

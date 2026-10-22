@@ -116,3 +116,10 @@
 "licenses.open" = "授權與資料來源";
 
 "appearance.mode" = "外觀模式";
+"appearance.systemAuto" = "系統自動";
+"appearance.systemManaged" = "系統管理";
+"appearance.appAuto" = "應用自動";
+"appearance.appManual" = "應用手動";
+"appearance.current" = "%@ · 目前%@";
+"appearance.solarStatus" = "應用自動 · 按日出日落切換 · 目前%@";
+"appearance.auto.help" = "按當地日出日落自動切換";

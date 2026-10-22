@@ -116,3 +116,10 @@
 "licenses.open" = "Licenses & data sources";
 
 "appearance.mode" = "Appearance";
+"appearance.systemAuto" = "System Auto";
+"appearance.systemManaged" = "System managed";
+"appearance.appAuto" = "App Auto";
+"appearance.appManual" = "App manual";
+"appearance.current" = "%@ · Currently %@";
+"appearance.solarStatus" = "App Auto · Sunrise / sunset · Currently %@";
+"appearance.auto.help" = "Switch automatically at local sunrise and sunset";

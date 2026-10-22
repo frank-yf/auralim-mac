@@ -27,6 +27,7 @@ struct AppearanceModeTests {
     }
 
     private func withModel(_ values: [String: Any] = [:], clock: (() -> Date)? = nil,
+                           system: SystemAppearanceSettings = .init(mode: .dark, appearance: .dark),
                            _ body: (AppModel, ModeAppearanceSpy, UserDefaults, NotificationCenter) async -> Void) async {
         let suite = "DuskShift.Mode.\(UUID().uuidString)"
         let store = UserDefaults(suiteName: suite)!
@@ -35,7 +36,7 @@ struct AppearanceModeTests {
         let spy = ModeAppearanceSpy(), workspace = NotificationCenter()
         let model = AppModel(defaults: store, controller: spy, clock: clock ?? { day }, enableTimers: false,
             workspaceNotifications: workspace, systemNotifications: NotificationCenter(),
-            loginItemController: FakeLoginItem(), locationController: FakeLocation(), systemAppearance: { .dark })
+            loginItemController: FakeLoginItem(), locationController: FakeLocation(), systemSettings: { system })
         defer { model.shutdown(); store.removePersistentDomain(forName: suite) }
         await body(model, spy, store, workspace)
     }
@@ -82,29 +83,97 @@ struct AppearanceModeTests {
         }
     }
 
-    @Test func manualChoiceRestoresAndLegacyAutoTakesPriority() async {
-        await withModel(["manualAppearance": "dark"]) { model, spy, store, _ in
-            #expect(!model.enabled && model.appearanceMode == .dark)
-            #expect(spy.requests == [.dark])
+    @Test func eachLaunchReadsSystemInsteadOfRestoringOldManualChoice() async {
+        await withModel(["manualAppearance": "dark"], system: .init(mode: .light, appearance: .light)) { model, spy, store, _ in
+            #expect(model.appearanceMode == .light)
+            #expect(model.manualAppearance == nil)
+            #expect(spy.requests.isEmpty)
             let restoredSpy = ModeAppearanceSpy()
             let restored = AppModel(defaults: store, controller: restoredSpy, clock: { day }, enableTimers: false,
-                loginItemController: FakeLoginItem(), locationController: FakeLocation())
+                loginItemController: FakeLoginItem(), locationController: FakeLocation(),
+                systemSettings: { .init(mode: .automatic, appearance: .dark) })
             defer { restored.shutdown() }
-            #expect(restored.appearanceMode == .dark)
-            #expect(restoredSpy.requests == [.dark])
+            #expect(restored.appearanceMode == nil)
+            #expect(restored.settingsStatus == "System Auto · Currently Dark")
+            #expect(restoredSpy.requests.isEmpty)
             store.set(true, forKey: "enabled")
             let autoSpy = ModeAppearanceSpy()
             let automatic = AppModel(defaults: store, controller: autoSpy, clock: { day }, enableTimers: false,
-                loginItemController: FakeLoginItem(), locationController: FakeLocation())
+                loginItemController: FakeLoginItem(), locationController: FakeLocation(),
+                systemSettings: { .init(mode: .automatic, appearance: .dark) })
             defer { automatic.shutdown() }
             #expect(automatic.appearanceMode == .automatic)
+            #expect(automatic.settingsStatus == "App Auto · Sunrise / sunset · Currently Light")
             #expect(autoSpy.requests == [.light])
         }
     }
 
+    @Test func systemAutomaticAndUnknownNeverHighlightAnAppMode() async {
+        for mode in [SystemAppearanceSettings.Mode.automatic, .unknown] {
+            for appearance in [Appearance.light, .dark] {
+                await withModel(system: .init(mode: mode, appearance: appearance)) { model, spy, _, _ in
+                    let presentation = SettingsPresentation(model: model)
+                    #expect(model.appearanceMode == nil)
+                    #expect(presentation.appearance.value.mode == nil)
+                    #expect(model.settingsStatus.contains(mode == .automatic ? "System Auto" : "System managed"))
+                    #expect(model.settingsStatus.contains(appearance == .light ? "Light" : "Dark"))
+                    #expect(spy.requests.isEmpty && model.scheduledCheck == nil)
+                    model.selectAppearanceMode(nil)
+                    #expect(spy.requests.isEmpty)
+                    model.selectAppearanceMode(.automatic)
+                    await flush()
+                    #expect(model.appearanceMode == .automatic)
+                    #expect(presentation.appearance.value.mode == .automatic)
+                    #expect(model.appearanceModeTitle == "App Auto")
+                    #expect(model.scheduledCheck != nil)
+                }
+            }
+        }
+    }
+
+    @Test func systemFixedModesHighlightButDoNotApplyUntilExplicitlySelected() async {
+        for appearance in [Appearance.light, .dark] {
+            await withModel(system: .init(mode: appearance == .light ? .light : .dark, appearance: appearance)) { model, spy, _, _ in
+                #expect(model.appearanceMode == (appearance == .light ? .light : .dark))
+                #expect(model.appearanceModeTitle == "System managed")
+                #expect(spy.requests.isEmpty)
+                model.selectAppearanceMode(model.appearanceMode)
+                #expect(spy.requests == [appearance])
+                #expect(model.appearanceModeTitle == "App manual")
+            }
+        }
+    }
+
+    @Test func systemManagedChangesRefreshBothPresentationsWithoutApplying() async {
+        let suite = "DuskShift.SystemRefresh.\(UUID().uuidString)"
+        let store = UserDefaults(suiteName: suite)!
+        store.set("en", forKey: "language")
+        var system = SystemAppearanceSettings(mode: .automatic, appearance: .light)
+        let spy = ModeAppearanceSpy(), notifications = NotificationCenter()
+        let model = AppModel(defaults: store, controller: spy, enableTimers: false,
+            workspaceNotifications: notifications, systemNotifications: NotificationCenter(),
+            loginItemController: FakeLoginItem(), locationController: FakeLocation(), systemSettings: { system })
+        defer { model.shutdown(); store.removePersistentDomain(forName: suite) }
+        let first = SettingsPresentation(model: model), second = SettingsPresentation(model: model)
+        #expect(model.appearanceMode == nil)
+        system = .init(mode: .automatic, appearance: .dark)
+        notifications.post(name: NSWorkspace.didWakeNotification, object: nil)
+        await Task.yield()
+        await flush()
+        #expect(first.appearance.value.mode == nil && second.appearance.value.mode == nil)
+        #expect(first.appearance.value.status == "System Auto · Currently Dark")
+        system = .init(mode: .light, appearance: .light)
+        model.reconcile()
+        await flush()
+        #expect(first.appearance.value.mode == .light && second.appearance.value.mode == .light)
+        #expect(first.appearance.value.status == "System managed · Currently Light")
+        #expect(spy.requests.isEmpty && model.scheduledCheck == nil)
+    }
+
     @Test func wakeAndScheduleEditsPreserveManualChoiceWithoutSolarTimer() async {
         var now = day
-        await withModel(["manualAppearance": "light"], clock: { now }) { model, spy, _, workspace in
+        await withModel(clock: { now }) { model, spy, _, workspace in
+            model.selectAppearanceMode(.light)
             now = night
             workspace.post(name: NSWorkspace.didWakeNotification, object: nil)
             await Task.yield()

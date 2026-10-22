@@ -19,7 +19,7 @@ struct SettingsLocale: Equatable {
 }
 
 struct AppearanceSettings: Equatable {
-    let mode: AppearanceMode
+    let mode: AppearanceMode?
     let status: String
     let error: String?
 }

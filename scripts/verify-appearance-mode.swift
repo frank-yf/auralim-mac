@@ -75,24 +75,27 @@ func verify() throws {
     }
     func selected(_ window: AXUIElement, _ id: String) throws -> Int {
         let buttons = try options(window, id)
-        guard let index = buttons.firstIndex(where: { (read($0, kAXValueAttribute) as? NSNumber)?.boolValue == true }) else {
-            throw VerificationFailure(message: "No selected mode")
-        }
-        return index
+        return buttons.firstIndex(where: { (read($0, kAXValueAttribute) as? NSNumber)?.boolValue == true }) ?? -1
     }
     func confirmed() -> Bool {
         descendants(settings).contains {
             guard let value = read($0, kAXValueAttribute) as? String else { return false }
-            return ["已确认系统为", "已確認系統為", "System appearance confirmed:"].contains { value.contains($0) }
+            return ["应用自动 ·", "应用手动 ·", "應用自動 ·", "應用手動 ·", "App Auto ·", "App manual ·"].contains { value.contains($0) }
         }
     }
     let original = try selected(settings, "settings-appearance-mode")
     try require(try selected(menu(), "menu-appearance-mode") == original, "Initial menu/settings mismatch")
-    print("Both actual panels expose Light / Auto / Dark; initial selected index:", original)
+    let statusTexts = descendants(settings).compactMap { read($0, kAXValueAttribute) as? String }
+    let modeStatus = statusTexts.first { text in
+        ["系统自动 ·", "系统管理 ·", "应用自动 ·", "应用手动 ·", "系統自動 ·", "系統管理 ·", "應用自動 ·", "應用手動 ·", "System Auto ·", "System managed ·", "App Auto ·", "App manual ·"].contains { text.contains($0) }
+    }
+    try require(modeStatus != nil, "No explicit system/app ownership status")
+    print("Both actual panels expose Light / Auto / Dark; initial selected index:", original, "(-1 = system-managed empty selection)")
+    print("Verified ownership status:", modeStatus!)
     guard CommandLine.arguments.contains("--apply") else { return }
-    let savedManual = UserDefaults(suiteName: "app.duskshift.mac")?.string(forKey: "manualAppearance")
-    // Do not turn a legacy paused preference into an explicit manual preference.
-    try require(original == 1 || savedManual != nil, "Legacy paused preference: use read-only verification")
+    // A stored manual value may be stale after startup. Only mutate when the
+    // displayed status confirms an explicit app-owned mode we can restore.
+    try require(original >= 0 && confirmed(), "System-managed state: use read-only verification")
     var restored = false
     func chooseSettings(_ index: Int) throws {
         _ = AXUIElementPerformAction(settings, kAXRaiseAction as CFString)

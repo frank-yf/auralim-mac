@@ -16,9 +16,23 @@ final class AppModel: ObservableObject {
         }
     }
     @Published private(set) var manualAppearance: Appearance?
-    @Published private var fallbackAppearance: Appearance
-    var appearanceMode: AppearanceMode {
-        enabled ? .automatic : (manualAppearance ?? fallbackAppearance) == .dark ? .dark : .light
+    @Published private var systemSettings: SystemAppearanceSettings
+    var appearanceMode: AppearanceMode? {
+        if enabled { return .automatic }
+        if let manualAppearance { return manualAppearance == .dark ? .dark : .light }
+        switch systemSettings.mode {
+        case .light: return .light
+        case .dark: return .dark
+        case .automatic, .unknown: return nil
+        }
+    }
+    var appearanceModeTitle: String {
+        if enabled { return t("appearance.appAuto") }
+        if manualAppearance != nil { return t("appearance.appManual") }
+        return t(systemSettings.mode == .automatic ? "appearance.systemAuto" : "appearance.systemManaged")
+    }
+    private var managedAppearanceStatus: String {
+        t("appearance.current", appearanceModeTitle, t(systemSettings.appearance == .dark ? "dark" : "light"))
     }
     @Published var locationMode: LocationMode {
         didSet {
@@ -52,6 +66,11 @@ final class AppModel: ObservableObject {
             default: break
             }
         }
+        if !enabled && manualAppearance == nil { return managedAppearanceStatus }
+        if case .confirmed(let appearance) = statusState {
+            return enabled ? t("appearance.solarStatus", t(appearance == .dark ? "dark" : "light"))
+                : t("appearance.current", appearanceModeTitle, t(appearance == .dark ? "dark" : "light"))
+        }
         return status
     }
     var errorMessage: String? {
@@ -74,7 +93,7 @@ final class AppModel: ObservableObject {
     private let locationController: LocationProviding
     private let clock: () -> Date
     private let preferredLanguages: () -> [String]
-    private let systemAppearance: @MainActor () -> Appearance
+    private let readSystemSettings: @MainActor () -> SystemAppearanceSettings
     private let enableTimers: Bool
     private(set) var scheduledCheck: Date?
     private var timer: Timer?
@@ -92,22 +111,22 @@ final class AppModel: ObservableObject {
          preferredLanguages: @escaping () -> [String] = { Locale.preferredLanguages },
          loginItemController: LoginItemControlling? = nil,
          locationController: LocationProviding? = nil,
-         systemAppearance: @escaping @MainActor () -> Appearance = {
-             NSApplication.shared.effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua ? .dark : .light
-         }) {
+         systemSettings: @escaping @MainActor () -> SystemAppearanceSettings = { .current() }) {
         self.defaults = defaults; self.controller = controller; self.clock = clock; self.enableTimers = enableTimers
         self.loginItemController = loginItemController ?? LoginItemController()
         self.locationController = locationController ?? LocationController()
         self.preferredLanguages = preferredLanguages
-        self.systemAppearance = systemAppearance
-        fallbackAppearance = systemAppearance()
+        self.readSystemSettings = systemSettings
+        self.systemSettings = systemSettings()
         language = AppLanguage(rawValue: defaults.string(forKey: "language") ?? "system") ?? .system
         cityID = defaults.string(forKey: "city") ?? City.all[0].id
         offset = SolarOffset.clamp(defaults.integer(forKey: "offset"))
         sunriseOffset = SolarOffset.clamp(defaults.integer(forKey: "sunriseOffset"))
         let automatic = defaults.bool(forKey: "enabled")
         enabled = automatic
-        manualAppearance = automatic ? nil : defaults.string(forKey: "manualAppearance").flatMap(Appearance.init(rawValue:))
+        // Solar Auto remains an explicit app preference. Otherwise each launch
+        // starts from macOS, rather than reapplying a stale saved manual theme.
+        manualAppearance = nil
         locationMode = LocationMode(rawValue: defaults.string(forKey: "locationMode") ?? "manual") ?? .manual
         observe(NSWorkspace.didWakeNotification, center: workspaceNotifications, refreshLocation: true)
         observe(NSWorkspace.sessionDidBecomeActiveNotification, center: workspaceNotifications, refreshLocation: true)
@@ -205,7 +224,8 @@ final class AppModel: ObservableObject {
         reconcile()
     }
 
-    func selectAppearanceMode(_ mode: AppearanceMode) {
+    func selectAppearanceMode(_ selection: AppearanceMode?) {
+        guard let mode = selection else { return }
         guard mode != appearanceMode || (!enabled && manualAppearance == nil) else { return }
         statusState = .disabled
         if mode == .automatic {
@@ -224,11 +244,11 @@ final class AppModel: ObservableObject {
         timer?.invalidate(); timer = nil; scheduledCheck = nil
         let state = ScheduleEngine().evaluate(now: clock(), city: city, sunriseOffset: sunriseOffset, sunsetOffset: offset)
         schedule = state
-        // Legacy paused installs keep the current system theme until the user
-        // explicitly chooses a manual mode; opening the app must not change it.
+        // Until an explicit app selection, refresh the system-managed display
+        // when panels open or the Mac wakes, without applying any appearance.
         guard let target = enabled ? state.appearance : manualAppearance else {
-            let actual = systemAppearance()
-            if fallbackAppearance != actual { fallbackAppearance = actual }
+            let actual = readSystemSettings()
+            if systemSettings != actual { systemSettings = actual }
             statusState = .paused
             return
         }

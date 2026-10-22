@@ -27,8 +27,8 @@ test-ui-layout:
 	DUSK_SHIFT_VISUAL_TESTS=1 DUSK_SHIFT_VISUAL_OUTPUT="$(CURDIR)/artifacts/ui-0.1.13" bash scripts/test.sh --filter UIAppearanceTests
 
 test-appearance-mode:
-	$(MAKE) test FILTER='AppearanceModeTests|AppModelTests|SettingsPresentationTests/offsetOnlyPublishesEditedSectionAndTimeTextDuringAndAfterVerification|MenuLayoutTests'
+	$(MAKE) test FILTER='AppearanceModeTests|SystemAppearanceSettingsTests|SettingsPresentationTests/offsetOnlyPublishesEditedSectionAndTimeTextDuringAndAfterVerification|MenuLayoutTests'
 
 test-ui-mode:
-	@mkdir -p artifacts/appearance-mode-0.1.14
-	DUSK_SHIFT_MODE_UI_TESTS=1 DUSK_SHIFT_MODE_UI_OUTPUT="$(CURDIR)/artifacts/appearance-mode-0.1.14" bash scripts/test.sh --filter AppearanceModeInteractionTests
+	@mkdir -p artifacts/appearance-mode-0.1.15
+	DUSK_SHIFT_MODE_UI_TESTS=1 DUSK_SHIFT_MODE_UI_OUTPUT="$(CURDIR)/artifacts/appearance-mode-0.1.15" bash scripts/test.sh --filter AppearanceModeInteractionTests
