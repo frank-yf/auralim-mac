@@ -26,18 +26,40 @@ struct GradientSliderTests {
         return color.redComponent * 0.2126 + color.greenComponent * 0.7152 + color.blueComponent * 0.0722
     }
 
-    @Test func renderedSunriseAndSunsetHaveOppositeBrightnessDirections() throws {
-        let sunrise = try render(sunrise: true, position: 0.5)
-        let sunset = try render(sunrise: false, position: 0.5)
-        #expect(try brightness(sunrise, x: 175) > brightness(sunrise, x: 25) + 0.1)
-        #expect(try brightness(sunset, x: 25) > brightness(sunset, x: 175) + 0.1)
+    private func color(_ bitmap: NSBitmapImageRep, x: Int) throws -> NSColor {
+        try #require(bitmap.colorAt(x: x, y: 12)?.usingColorSpace(.sRGB))
     }
 
-    @Test func selectedRangeChangesAsTheThumbMoves() throws {
-        let neutral = try render(sunrise: true, position: 0.5)
-        let left = try render(sunrise: true, position: 0.15)
-        let right = try render(sunrise: true, position: 0.85)
-        #expect(try abs(brightness(left, x: 50) - brightness(neutral, x: 50)) > 0.1)
-        #expect(try abs(brightness(right, x: 150) - brightness(neutral, x: 150)) > 0.05)
+    private func difference(_ lhs: NSColor, _ rhs: NSColor) -> CGFloat {
+        abs(lhs.redComponent - rhs.redComponent) + abs(lhs.greenComponent - rhs.greenComponent) + abs(lhs.blueComponent - rhs.blueComponent)
+    }
+
+    @Test func defaultTrackIsOneUniformGrayCapsule() throws {
+        let baseline = try color(render(sunrise: true, position: 0.5), x: 25)
+        for sunrise in [true, false] {
+            let neutral = try render(sunrise: sunrise, position: 0.5)
+            for x in [25, 50, 99, 100, 101, 150, 175] {
+                #expect(try difference(color(neutral, x: x), baseline) < 0.01)
+            }
+        }
+    }
+
+    @Test func colorOnlyAppearsBetweenCenterAndThumbInAllFourDirections() throws {
+        for sunrise in [true, false] {
+            let neutral = try render(sunrise: sunrise, position: 0.5)
+            for position in [0.15, 0.85] {
+                let selected = try render(sunrise: sunrise, position: position)
+                let inside = position < 0.5 ? 50 : 150
+                let towardLight = sunrise ? position > 0.5 : position < 0.5
+                let change = try brightness(selected, x: inside) - brightness(neutral, x: inside)
+                #expect(towardLight ? change > 0.05 : change < -0.01)
+                // Both beyond the thumb and on the unselected half stay gray.
+                for x in position < 0.5 ? [25, 150, 175] : [25, 50, 175] {
+                    #expect(try difference(color(selected, x: x), color(neutral, x: x)) < 0.01)
+                }
+                // No center marker or two-piece seam: the fill blends into gray.
+                #expect(try difference(color(selected, x: 99), color(selected, x: 101)) < 0.03)
+            }
+        }
     }
 }

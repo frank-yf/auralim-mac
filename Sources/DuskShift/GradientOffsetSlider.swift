@@ -86,12 +86,16 @@ final class AppearanceSlider: NSSlider {
 
 final class AppearanceSliderCell: NSSliderCell {
     var sunrise = true
+    static let trackColor = NSColor(srgbRed: 0.29, green: 0.30, blue: 0.33, alpha: 1)
     static let night = NSColor(srgbRed: 0.18, green: 0.24, blue: 0.38, alpha: 1)
-    static let dawn = NSColor(srgbRed: 0.61, green: 0.65, blue: 0.79, alpha: 1)
     static let day = NSColor(srgbRed: 1, green: 0.87, blue: 0.61, alpha: 1)
 
     private var fraction: CGFloat { CGFloat(min(1, max(0, doubleValue))) }
-    private var colors: [NSColor] { sunrise ? [Self.night, Self.dawn, Self.day] : [Self.day, Self.dawn, Self.night] }
+    private var selectionColor: NSColor {
+        let towardLight = sunrise ? fraction > 0.5 : fraction < 0.5
+        let endpoint = towardLight ? Self.day : Self.night
+        return Self.trackColor.blended(withFraction: abs(fraction - 0.5) * 2, of: endpoint) ?? endpoint
+    }
 
     private func track(in rect: NSRect) -> NSRect {
         NSRect(x: rect.minX, y: rect.midY - 6, width: rect.width, height: 12)
@@ -102,20 +106,28 @@ final class AppearanceSliderCell: NSSliderCell {
         let outline = NSBezierPath(roundedRect: bar, xRadius: 6, yRadius: 6)
         NSGraphicsContext.saveGraphicsState()
         outline.addClip()
-        let gradient = NSGradient(colors: colors)!
-        NSGraphicsContext.current?.cgContext.setAlpha(isEnabled ? 0.72 : 0.2)
-        gradient.draw(in: bar, angle: 0)
-        NSGraphicsContext.current?.cgContext.setAlpha(isEnabled ? 1 : 0.35)
+        let context = NSGraphicsContext.current?.cgContext
+        context?.setAlpha(isEnabled ? 1 : 0.35)
+        context?.beginTransparencyLayer(auxiliaryInfo: nil)
+        Self.trackColor.setFill()
+        outline.fill()
         let center = bar.midX
         let position = bar.minX + bar.width * fraction
-        NSBezierPath(rect: NSRect(x: min(center, position), y: bar.minY,
-                                 width: abs(position - center), height: bar.height)).addClip()
-        gradient.draw(in: bar, angle: 0)
+        // One capsule, one selected interval. The gradient begins with the same
+        // gray as the track, avoiding a visible join at the neutral position.
+        if abs(position - center) > 0.01 {
+            let selected = NSRect(x: min(center, position), y: bar.minY,
+                                  width: abs(position - center), height: bar.height)
+            NSGraphicsContext.saveGraphicsState()
+            NSBezierPath(rect: selected).addClip()
+            NSGradient(starting: Self.trackColor, ending: selectionColor)?
+                .draw(in: selected, angle: position < center ? 180 : 0)
+            NSGraphicsContext.restoreGraphicsState()
+        }
+        context?.endTransparencyLayer()
         NSGraphicsContext.restoreGraphicsState()
         NSColor.labelColor.withAlphaComponent(0.09).setStroke()
         outline.lineWidth = 0.5; outline.stroke()
-        NSColor.labelColor.withAlphaComponent(0.35).setFill()
-        NSBezierPath(roundedRect: NSRect(x: bar.midX - 0.5, y: bar.midY - 3, width: 1, height: 6), xRadius: 0.5, yRadius: 0.5).fill()
     }
 
     override func drawKnob(_ knobRect: NSRect) {
@@ -130,8 +142,7 @@ final class AppearanceSliderCell: NSSliderCell {
         NSColor.white.withAlphaComponent(isEnabled ? 1 : 0.5).setFill()
         path.fill()
         NSGraphicsContext.restoreGraphicsState()
-        let color = NSGradient(colors: colors)!.interpolatedColor(atLocation: fraction)
-        color.withAlphaComponent(isEnabled ? 1 : 0.35).setFill()
+        selectionColor.withAlphaComponent(isEnabled ? 1 : 0.35).setFill()
         NSBezierPath(ovalIn: circle.insetBy(dx: 3, dy: 3)).fill()
     }
 }
