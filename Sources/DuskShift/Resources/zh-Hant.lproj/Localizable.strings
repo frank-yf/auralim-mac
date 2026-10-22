@@ -61,7 +61,7 @@
 "help.offset.title" = "日出與日落偏移";
 "help.offset.body" = "日出和日落分別支援前後 120 分鐘，精確到 1 分鐘。滑桿中點為準時；日出左側延後轉亮、右側提前轉亮，日落左側延後轉暗、右側提前轉暗。輸入框負數提前、正數延後。有效輸入立即預覽，放開滑桿、按下 Return 或離開輸入框後生效；歸零可恢復準時切換。";
 "help.city.title" = "城市、時區與離線使用";
-"help.city.body" = "所有時間依所選城市的時區顯示，包含當地日期，並處理日光節約時間。日出日落在本機計算，無需網路或定位權限。旅行時請手動更換城市。本版本僅支援內建城市。";
+"help.city.body" = "所有時間按目前生效位置的當地日期和時區顯示，包含日光節約時間。日出日落和時區查詢在本機完成；手動模式完全離線，無需定位權限。自動模式使用 macOS 定位服務，失敗時回復已儲存的手動城市。";
 "help.sleep.title" = "切換與睡眠恢復";
 "help.sleep.body" = "日出轉為淺色，日落轉為深色。啟動和從睡眠中喚醒時會檢查並恢復目前應有外觀。暫停或結束後保留最後的系統外觀；應用程式結束期間不會切換，請保持執行。";
 "help.polar.title" = "特殊日期與計算精度";
@@ -94,3 +94,21 @@
 "login.settings" = "打開登入項目設定…";
 "help.login.title" = "登入時啟動";
 "help.login.body" = "在「自動切換」頁啟用「登入時啟動」，即可在登入 macOS 後啟動 Dusk Shift，恢復已儲存的城市、偏移和自動切換開關。若提示等待批准，請打開登入項目設定並允許 Dusk Shift。等待批准時開關保持開啟，狀態文字說明是否生效。關閉此開關會停止以後的登入啟動，目前的應用程式繼續執行。";
+
+"location.mode" = "位置模式";
+"location.manual" = "手動城市";
+"location.automatic" = "自動定位";
+"location.current" = "目前位置";
+"location.fallbackCity" = "備用手動城市";
+"location.refresh" = "更新位置";
+"location.locating" = "正在定位… 取得新位置前繼續使用目前計畫。";
+"location.using" = "目前座標：%@";
+"location.manual.hint" = "使用已儲存的手動城市。";
+"location.fallback" = "%@ 已使用手動城市：%@。";
+"location.error.denied" = "定位權限遭拒，請在系統設定 → 隱私權與安全性 → 定位服務中允許 Dusk Shift。";
+"location.error.servicesDisabled" = "系統定位服務已關閉。";
+"location.error.unavailable" = "暫時無法取得位置。";
+"location.error.timeout" = "定位請求逾時。";
+"location.error.timeZoneUnavailable" = "找不到唯一有效的當地時區。";
+"help.location.title" = "自動定位與旅行";
+"help.location.body" = "選擇「自動定位」後使用 macOS 定位服務取得位置。時區透過內建離線邊界資料查詢，不依賴系統目前時區；日出日落繼續在本機計算。介面顯示座標，不做線上地址查詢。系統顯著位置變化、網路變化、喚醒、工作階段恢復和返回應用程式時可更新位置；不支援位置變化監測的裝置依靠這些事件或「更新位置」按鈕重新整理。請求失敗或權限遭拒時使用已儲存的備用手動城市；切回手動城市會停止定位監測。座標僅保留在記憶體，Dusk Shift 不儲存或上傳座標。macOS 定位服務可能需要 Wi-Fi 或網路，無法保證離線時取得位置。時區邊界來自 timezone-boundary-builder，經 ZoneDetect 轉換（2024a），以 ODbL 1.0 授權。邊界附近或資料更新前可改用手動城市。";

@@ -9,6 +9,7 @@ mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
 cp "$bin_dir/DuskShift" "$app/Contents/MacOS/DuskShift"
 cp Resources/Info.plist "$app/Contents/Info.plist"
 cp -R "$bin_dir/DuskShift_DuskShift.bundle" "$app/Contents/Resources/"
+cp -R "$bin_dir/DuskShift_DuskShiftCore.bundle" "$app/Contents/Resources/"
 for language in en zh-Hans zh-Hant; do
     mkdir -p "$app/Contents/Resources/$language.lproj"
     cp "Resources/$language.lproj/InfoPlist.strings" "$app/Contents/Resources/$language.lproj/"

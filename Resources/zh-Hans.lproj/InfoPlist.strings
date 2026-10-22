@@ -1,1 +1,4 @@
 "NSAppleEventsUsageDescription" = "Dusk Shift 需要控制 System Events，根据本地计算的日出日落时间切换系统浅色与深色外观。";
+
+"NSLocationUsageDescription" = "Dusk Shift 使用当前位置和本地时区边界数据，计算旅行所在地的日出日落；定位失败时使用保留的手动城市。";
+"NSLocationWhenInUseUsageDescription" = "Dusk Shift 使用当前位置和本地时区边界数据，计算旅行所在地的日出日落；定位失败时使用保留的手动城市。";

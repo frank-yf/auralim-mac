@@ -6,12 +6,14 @@
     <key>CFBundleName</key><string>Dusk Shift</string>
     <key>CFBundleDisplayName</key><string>Dusk Shift</string>
     <key>CFBundlePackageType</key><string>APPL</string>
-    <key>CFBundleShortVersionString</key><string>0.1.6</string>
-    <key>CFBundleVersion</key><string>7</string>
+    <key>CFBundleShortVersionString</key><string>0.1.7</string>
+    <key>CFBundleVersion</key><string>8</string>
     <key>CFBundleDevelopmentRegion</key><string>en</string>
     <key>CFBundleLocalizations</key><array><string>en</string><string>zh-Hans</string><string>zh-Hant</string></array>
     <key>LSMinimumSystemVersion</key><string>13.0</string>
     <key>LSUIElement</key><true/>
     <key>NSHighResolutionCapable</key><true/>
+    <key>NSLocationUsageDescription</key><string>Dusk Shift 使用当前位置和本地时区边界数据，计算旅行所在地的日出日落；定位失败时使用保留的手动城市。</string>
+    <key>NSLocationWhenInUseUsageDescription</key><string>Dusk Shift 使用当前位置和本地时区边界数据，计算旅行所在地的日出日落；定位失败时使用保留的手动城市。</string>
     <key>NSAppleEventsUsageDescription</key><string>Dusk Shift 需要控制 System Events，根据本地计算的日出日落时间切换系统浅色与深色外观。</string>
 </dict></plist>

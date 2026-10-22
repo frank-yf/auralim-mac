@@ -1,0 +1,20 @@
+Dusk Shift offline time-zone boundary data
+
+ZoneDetect C library (BSD-3-Clause):
+https://github.com/BertoldVdb/ZoneDetect
+Pinned revision: 81ede727f8771eda507150a95237cc8c518666d6
+Unmodified zonedetect.c / zonedetect.h; license: ZoneDetect-LICENSE.txt.
+
+Unmodified timezone21.bin (~20 m quantization):
+https://github.com/patrick-zippenfenig/SwiftTimeZoneLookup/blob/7227bdc00daf0b833a8215c05d4aca05b7c0a484/Sources/SwiftTimeZoneLookup/Resources/timezone21.bin
+Upstream identifies its bundled boundary database as version 2024a (2024-03-14).
+
+Contains information from timezone-boundary-builder, made available under
+Open Database License (ODbL) 1.0. See TimezoneData-LICENSE.txt.
+Source database: https://github.com/evansiroky/timezone-boundary-builder
+Contains data from Natural Earth, placed in the public domain.
+
+No database modifications are made by Dusk Shift. The original database and
+full notices are shipped together in DuskShift_DuskShiftCore.bundle.
+Boundary data is not updated at runtime. Time-zone offsets and daylight-saving
+rules are provided by macOS Foundation's IANA time-zone database.

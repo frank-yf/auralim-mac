@@ -35,11 +35,22 @@ struct SettingsContent: View {
                 }
                 Toggle(model.t("auto.system"), isOn: $model.enabled).disabled(model.isApplying)
                 VStack(alignment: .leading, spacing: 6) {
-                    Picker(model.t("city.picker"), selection: $model.cityID) {
+                    Picker(model.t("location.mode"), selection: $model.locationMode) {
+                        Text(model.t("location.manual")).tag(LocationMode.manual)
+                        Text(model.t("location.automatic")).tag(LocationMode.automatic)
+                    }.pickerStyle(.segmented).accessibilityIdentifier("location-mode")
+                    Picker(model.t(model.locationMode == .automatic ? "location.fallbackCity" : "city.picker"), selection: $model.cityID) {
                         ForEach(City.all) { Text(model.cityName($0)).tag($0.id) }
                     }.disabled(model.isApplying)
                     Text(model.t("city.timeZone", model.city.timeZone.identifier))
                         .font(.caption).foregroundStyle(.secondary)
+                    if model.locationMode == .automatic {
+                        Text(model.locationStatus).font(.caption)
+                            .foregroundStyle(model.locationFailure == nil ? Color.secondary : .orange)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .accessibilityIdentifier("location-status")
+                        Button(model.t("location.refresh")) { model.refreshLocation() }.disabled(model.isLocating)
+                    }
                 }
                 OffsetControl(title: model.t("sunrise"), leftLabel: model.t("sunrise.left"), rightLabel: model.t("sunrise.right"),
                               minutes: $model.sunriseOffset, localizer: model.localizer, identifier: "sunrise").disabled(model.isApplying)
@@ -106,6 +117,7 @@ struct SettingsContent: View {
                 help(model.t("help.start.title"), model.t("help.start.body"))
                 help(model.t("help.offset.title"), model.t("help.offset.body"))
                 help(model.t("help.city.title"), model.t("help.city.body"))
+                help(model.t("help.location.title"), model.t("help.location.body"))
                 help(model.t("help.sleep.title"), model.t("help.sleep.body"))
                 help(model.t("help.login.title"), model.t("help.login.body"))
                 help(model.t("help.polar.title"), model.t("help.polar.body"))

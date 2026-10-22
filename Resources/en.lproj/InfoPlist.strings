@@ -1,1 +1,4 @@
 "NSAppleEventsUsageDescription" = "Dusk Shift needs to control System Events to switch system appearance at locally calculated sunrise and sunset times.";
+
+"NSLocationUsageDescription" = "Dusk Shift uses your location and bundled offline time-zone boundaries to calculate local sunrise and sunset while traveling. If location is unavailable, it uses your saved manual city.";
+"NSLocationWhenInUseUsageDescription" = "Dusk Shift uses your location and bundled offline time-zone boundaries to calculate local sunrise and sunset while traveling. If location is unavailable, it uses your saved manual city.";

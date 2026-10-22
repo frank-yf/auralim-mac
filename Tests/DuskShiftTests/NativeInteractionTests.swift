@@ -29,7 +29,8 @@ struct NativeInteractionTests {
         let previousCursor = CGEvent(source: nil)?.location
         defer { if let point = previousCursor { CGWarpMouseCursorPosition(point) } }
         let appearance = NativeAppearanceSpy()
-        let model = AppModel(defaults: defaults, controller: appearance, enableTimers: false)
+        let location = FakeLocation()
+        let model = AppModel(defaults: defaults, controller: appearance, enableTimers: false, locationController: location)
         defer { model.shutdown() }
         let presenter = SettingsWindowController()
         presenter.show(model: model)
@@ -218,6 +219,34 @@ struct NativeInteractionTests {
         model.language = .simplifiedChinese
         settle()
         #expect(window.title == "Dusk Shift 设置")
+        let mode = try #require(descendants(host).compactMap { $0 as? NSSegmentedControl }.first)
+        mode.selectedSegment = 1
+        #expect(mode.sendAction(mode.action, to: mode.target))
+        settle()
+        #expect(model.locationMode == .automatic)
+        #expect(location.starts == 1)
+        location.onEvent?(.resolved(City(id: "current-location", name: "", latitude: 40.7128,
+                                       longitude: -74.0060, timeZoneID: "America/New_York")))
+        settle()
+        #expect(model.cityName() == "当前位置")
+        #expect(model.city.timeZoneID == "America/New_York")
+        #expect(model.sunriseOffset == storedOffset)
+        let locationCapture = Process()
+        locationCapture.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
+        locationCapture.arguments = ["-x", "-l", String(window.windowNumber),
+                                     URL(fileURLWithPath: output).deletingLastPathComponent().appendingPathComponent("settings-location.png").path]
+        try locationCapture.run(); locationCapture.waitUntilExit()
+        #expect(locationCapture.terminationStatus == 0)
+        location.onEvent?(.failed(.denied))
+        settle()
+        #expect(model.city == model.manualCity)
+        #expect(model.locationStatus.contains("上海"))
+        mode.selectedSegment = 0
+        #expect(mode.sendAction(mode.action, to: mode.target))
+        settle()
+        #expect(model.locationMode == .manual)
+        #expect(location.stops == 1)
         print("Verified settings window reuse and shared model; four drag directions, input, blur, reset, and displayed switch times")
+        print("Verified native location mode selection, New York time zone, failure fallback, and stopping location in manual mode")
     }
 }

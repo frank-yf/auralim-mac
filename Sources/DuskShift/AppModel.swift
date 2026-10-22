@@ -9,6 +9,19 @@ final class AppModel: ObservableObject {
     @Published var sunriseOffset: Int { didSet { defaults.set(sunriseOffset, forKey: "sunriseOffset"); configurationChanged() } }
     @Published var offset: Int { didSet { defaults.set(offset, forKey: "offset"); configurationChanged() } }
     @Published var enabled: Bool { didSet { defaults.set(enabled, forKey: "enabled"); configurationChanged() } }
+    @Published var locationMode: LocationMode {
+        didSet {
+            guard locationMode != oldValue else { return }
+            defaults.set(locationMode.rawValue, forKey: "locationMode")
+            locatedCity = nil; locationFailure = nil; isLocating = false
+            configurationChanged()
+            if locationMode == .automatic { locationController.start() }
+            else { locationController.stop() }
+        }
+    }
+    @Published private(set) var locatedCity: City?
+    @Published private(set) var isLocating = false
+    @Published private(set) var locationFailure: LocationFailure?
     @Published private(set) var schedule: Schedule?
     private enum Status { case disabled, paused, confirmed(Appearance), attention }
     @Published private var statusState: Status = .disabled
@@ -38,6 +51,7 @@ final class AppModel: ObservableObject {
     private let defaults: UserDefaults
     private let controller: AppearanceApplying
     private let loginItemController: LoginItemControlling
+    private let locationController: LocationProviding
     private let clock: () -> Date
     private let preferredLanguages: () -> [String]
     private let enableTimers: Bool
@@ -47,26 +61,30 @@ final class AppModel: ObservableObject {
     private var generation = 0
     private var failures = 0
     private var permissionBlocked = false
-    var city: City { City.all.first(where: { $0.id == cityID }) ?? City.all[0] }
+    var manualCity: City { City.all.first(where: { $0.id == cityID }) ?? City.all[0] }
+    var city: City { locationMode == .automatic ? locatedCity ?? manualCity : manualCity }
 
     init(defaults: UserDefaults = .standard, controller: AppearanceApplying = AppearanceController(),
          clock: @escaping () -> Date = Date.init, enableTimers: Bool = true,
          workspaceNotifications: NotificationCenter = NSWorkspace.shared.notificationCenter,
          systemNotifications: NotificationCenter = .default,
          preferredLanguages: @escaping () -> [String] = { Locale.preferredLanguages },
-         loginItemController: LoginItemControlling? = nil) {
+         loginItemController: LoginItemControlling? = nil,
+         locationController: LocationProviding? = nil) {
         self.defaults = defaults; self.controller = controller; self.clock = clock; self.enableTimers = enableTimers
         self.loginItemController = loginItemController ?? LoginItemController()
+        self.locationController = locationController ?? LocationController()
         self.preferredLanguages = preferredLanguages
         language = AppLanguage(rawValue: defaults.string(forKey: "language") ?? "system") ?? .system
         cityID = defaults.string(forKey: "city") ?? City.all[0].id
         offset = SolarOffset.clamp(defaults.integer(forKey: "offset"))
         sunriseOffset = SolarOffset.clamp(defaults.integer(forKey: "sunriseOffset"))
         enabled = defaults.bool(forKey: "enabled")
-        observe(NSWorkspace.didWakeNotification, center: workspaceNotifications)
-        observe(NSWorkspace.sessionDidBecomeActiveNotification, center: workspaceNotifications)
+        locationMode = LocationMode(rawValue: defaults.string(forKey: "locationMode") ?? "manual") ?? .manual
+        observe(NSWorkspace.didWakeNotification, center: workspaceNotifications, refreshLocation: true)
+        observe(NSWorkspace.sessionDidBecomeActiveNotification, center: workspaceNotifications, refreshLocation: true)
         observe(.NSSystemClockDidChange, center: systemNotifications)
-        observe(.NSSystemTimeZoneDidChange, center: systemNotifications)
+        observe(.NSSystemTimeZoneDidChange, center: systemNotifications, refreshLocation: true)
         let localeObserver = systemNotifications.addObserver(forName: NSLocale.currentLocaleDidChangeNotification,
                                                              object: nil, queue: .main) { [weak self] _ in
             Task { @MainActor in
@@ -77,11 +95,46 @@ final class AppModel: ObservableObject {
         observers.append((systemNotifications, localeObserver))
         let activationObserver = systemNotifications.addObserver(forName: NSApplication.didBecomeActiveNotification,
                                                                  object: nil, queue: .main) { [weak self] _ in
-            Task { @MainActor in self?.refreshLoginItemStatus() }
+            Task { @MainActor in self?.refreshLoginItemStatus(); self?.refreshLocation() }
         }
         observers.append((systemNotifications, activationObserver))
         refreshLoginItemStatus()
+        self.locationController.onEvent = { [weak self] event in self?.receiveLocation(event) }
         reconcile()
+        if locationMode == .automatic { self.locationController.start() }
+    }
+
+    func refreshLocation() {
+        guard locationMode == .automatic else { return }
+        locationController.refresh()
+    }
+
+    private func receiveLocation(_ event: LocationEvent) {
+        guard locationMode == .automatic else { return }
+        let previous = city
+        switch event {
+        case .locating: isLocating = true; locationFailure = nil
+        case .resolved(let city):
+            locatedCity = city; isLocating = false; locationFailure = nil
+        case .failed(let error):
+            locatedCity = nil; isLocating = false; locationFailure = error
+        }
+        guard previous != city else { return }
+        // Location events are automatic; they must not repeatedly request a
+        // previously denied Automation permission.
+        generation += 1; failures = 0
+        reconcile()
+    }
+
+    var locationStatus: String {
+        if let locationFailure { return t("location.fallback", t(locationFailure.localizationKey), cityName(manualCity)) }
+        if isLocating { return t("location.locating") }
+        if let locatedCity {
+            let coordinates = String(format: "%.3f, %.3f", locale: localizer.locale,
+                                     locatedCity.latitude, locatedCity.longitude)
+            return t("location.using", coordinates)
+        }
+        return t("location.manual.hint")
     }
 
     func refreshLoginItemStatus() {
@@ -102,9 +155,12 @@ final class AppModel: ObservableObject {
 
     func openLoginItemSettings() { loginItemController.openSystemSettings() }
 
-    private func observe(_ name: Notification.Name, center: NotificationCenter) {
+    private func observe(_ name: Notification.Name, center: NotificationCenter, refreshLocation: Bool = false) {
         let token = center.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
-            Task { @MainActor in self?.reconcile() }
+            Task { @MainActor in
+                self?.reconcile()
+                if refreshLocation { self?.refreshLocation() }
+            }
         }
         observers.append((center, token))
     }
@@ -167,6 +223,8 @@ final class AppModel: ObservableObject {
     }
 
     func shutdown() {
+        locationController.onEvent = nil
+        locationController.stop()
         timer?.invalidate(); timer = nil; scheduledCheck = nil
         for (center, observer) in observers { center.removeObserver(observer) }
         observers.removeAll()
@@ -179,7 +237,10 @@ final class AppModel: ObservableObject {
     func t(_ key: String, _ arguments: CVarArg...) -> String {
         localizer.text(key, arguments: arguments)
     }
-    func cityName(_ city: City? = nil) -> String { localizer.cityName(city ?? self.city) }
+    func cityName(_ city: City? = nil) -> String {
+        let selected = city ?? self.city
+        return selected.id == "current-location" ? t("location.current") : localizer.cityName(selected)
+    }
 
     func time(_ date: Date?) -> String {
         guard let date else { return t("none") }

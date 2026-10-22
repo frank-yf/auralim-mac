@@ -7,7 +7,8 @@ let package = Package(
     platforms: [.macOS(.v13)],
     products: [.executable(name: "DuskShift", targets: ["DuskShift"])],
     targets: [
-        .target(name: "DuskShiftCore"),
+        .target(name: "CZoneDetect"),
+        .target(name: "DuskShiftCore", dependencies: ["CZoneDetect"], resources: [.process("Resources")]),
         .executableTarget(name: "DuskShift", dependencies: ["DuskShiftCore"], resources: [.process("Resources")]),
         .testTarget(name: "DuskShiftCoreTests", dependencies: ["DuskShiftCore"]),
         .testTarget(name: "DuskShiftTests", dependencies: ["DuskShift"])
