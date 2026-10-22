@@ -4,7 +4,11 @@ cd "$(dirname "$0")/.."
 export CLANG_MODULE_CACHE_PATH="$PWD/.build/clang-cache"
 swift build -c release --disable-sandbox --cache-path "$PWD/.build/cache"
 bin_dir=$(swift build -c release --show-bin-path --cache-path "$PWD/.build/cache")
-app="$PWD/dist/Dusk Shift.app"
+app="$PWD/dist/DuskShift.app"
+# Preserve the existing bundle directory when adopting the new canonical name.
+if [ ! -e "$app" ] && [ -d "$PWD/dist/Dusk Shift.app" ]; then
+    mv "$PWD/dist/Dusk Shift.app" "$app"
+fi
 mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
 cp "$bin_dir/DuskShift" "$app/Contents/MacOS/DuskShift"
 cp Resources/Info.plist "$app/Contents/Info.plist"

@@ -18,7 +18,7 @@ struct SettingsContent: View {
             HStack(spacing: 12) {
                 DuskMark(size: 40)
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Dusk Shift").font(.system(size: 23, weight: .semibold, design: .rounded))
+                    Text(model.t("app.name")).accessibilityIdentifier("settings-app-name").font(.system(size: 23, weight: .semibold, design: .rounded))
                     Text(model.t("slogan")).font(.callout).foregroundStyle(.secondary)
                 }
                 Spacer()
@@ -152,7 +152,7 @@ struct SettingsContent: View {
             }
             HStack {
                 if let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String {
-                    Text("Dusk Shift \(version)").font(.caption2).foregroundStyle(.tertiary)
+                    Text("\(model.t("app.name")) \(version)").accessibilityIdentifier("app-version").font(.caption2).foregroundStyle(.tertiary)
                 }
                 Spacer()
                 Button(model.t("licenses.open")) { openNotices() }

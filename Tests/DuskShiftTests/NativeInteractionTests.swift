@@ -249,18 +249,18 @@ struct NativeInteractionTests {
         let appearanceRequests = appearance.requests
         model.language = .english
         settle()
-        #expect(window.title == "Dusk Shift Settings")
+        #expect(window.title == "DuskShift Settings")
         #expect(fields[0].stringValue == "-15")
         #expect(model.sunriseOffset == storedOffset)
         #expect(appearance.requests == appearanceRequests)
         model.language = .traditionalChinese
         settle()
-        #expect(window.title == "Dusk Shift 設定")
+        #expect(window.title == "日暮設定")
         #expect(model.t("tab.help") == "使用說明")
         #expect(appearance.requests == appearanceRequests)
         model.language = .simplifiedChinese
         settle()
-        #expect(window.title == "Dusk Shift 设置")
+        #expect(window.title == "日暮设置")
         window.makeFirstResponder(fields[0])
         settle()
         let editorBeforeOffset = window.firstResponder

@@ -1,4 +1,6 @@
-"NSAppleEventsUsageDescription" = "Dusk Shift 需要控制 System Events，根據本機計算的日出日落時間切換系統淺色與深色外觀。";
+"CFBundleName" = "日暮";
+"CFBundleDisplayName" = "日暮";
+"NSAppleEventsUsageDescription" = "日暮 需要控制 System Events，根據本機計算的日出日落時間切換系統淺色與深色外觀。";
 
-"NSLocationUsageDescription" = "Dusk Shift 使用目前位置和本機時區邊界資料，計算旅行所在地的日出日落；定位失敗時使用保留的手動城市。";
-"NSLocationWhenInUseUsageDescription" = "Dusk Shift 使用目前位置和本機時區邊界資料，計算旅行所在地的日出日落；定位失敗時使用保留的手動城市。";
+"NSLocationUsageDescription" = "日暮 使用目前位置和本機時區邊界資料，計算旅行所在地的日出日落；定位失敗時使用保留的手動城市。";
+"NSLocationWhenInUseUsageDescription" = "日暮 使用目前位置和本機時區邊界資料，計算旅行所在地的日出日落；定位失敗時使用保留的手動城市。";

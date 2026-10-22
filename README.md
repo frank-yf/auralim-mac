@@ -1,4 +1,4 @@
-# Dusk Shift
+# 日暮 · DuskShift
 
 随日升日落，自在切换明暗。
 
@@ -139,7 +139,7 @@ CLANG_MODULE_CACHE_PATH="$PWD/.build/clang-cache" swift scripts/verify-login-ite
 
 使用 `CLLocationManager.requestLocation()` 请求一次公里级定位；设备支持时订阅系统显著位置变化。网络变化、唤醒、用户会话恢复、系统时区变化和应用重新激活也会请求定位。网络事件最多每分钟触发一次请求，正在请求时合并，超时是单次定时器；没有后台定时轮询，也不调用持续定位 `startUpdatingLocation()`。不支持显著位置变化的设备依靠其他事件或手动刷新。真实通知频率由系统决定，不承诺移动后瞬时更新。
 
-天文计算和坐标到时区的查询全部离线，时区不依赖 Mac 当前系统时区。macOS 定位服务自身可能需要 Wi-Fi 或网络，断网取得位置的能力取决于系统；获取失败后仍可用手动城市完全离线运行。Dusk Shift 不上传坐标，未实现网络地址查询或云端存储。
+天文计算和坐标到时区的查询全部离线，时区不依赖 Mac 当前系统时区。macOS 定位服务自身可能需要 Wi-Fi 或网络，断网取得位置的能力取决于系统；获取失败后仍可用手动城市完全离线运行。日暮不上传坐标，未实现网络地址查询或云端存储。
 
 时区查询采用随源码打包的 ZoneDetect C 解析器（BSD-3-Clause）及约 4.7 MB 的 `timezone21.bin`，通过内存映射读取，不需要构建时下载依赖。坐标量化约 20 米；定位样本允许最大 20 km 的不确定范围，不能保证位于边界附近时的时区精度。超过 5 分钟、超过 20 km 误差、非法坐标或明显未来的定位样本会丢弃。内置时区边界数据版本为 2024a，不自动更新；时区偏移和夏令时规则由 macOS Foundation 提供。
 
@@ -227,3 +227,10 @@ CLANG_MODULE_CACHE_PATH="$PWD/.build/clang-cache" swift scripts/verify-login-ite
 浮层仍不抢焦点、不拦截点击；无变化、失败或过期请求不播放，连续切换替换旧效果。系统开启「减少动态效果」时不显示半屏动画。动画结束后移除内容和窗口、注销两次一次性定时器，不持续轮询。本节替代 0.1.16 的中央小卡片与默认播放行为。
 
 本次定向验证仍使用 `make test-transitions` 和 `make test-ui-transitions`，图像位于 `artifacts/appearance-transition-0.1.17/`。实际应用验证脚本的 `--apply --animations` 会临时操作动画设置并恢复原值；若应用正显示固定的系统管理状态，可显式增加 `--adopt-current` 采用当前外观完成验证，验证后需重启应用恢复启动时的系统管理展示。系统自动且无选中项时仍仅支持只读检查。
+
+
+## 日暮 / DuskShift（0.2）
+
+简体和繁体中文显示「日暮」，英文及其他语言回退显示「DuskShift」。托盘标题、设置标题 / 窗口名、版本文字和用途说明使用相同命名；应用内切换语言时同步更新。macOS 应用显示名由本地化 InfoPlist.strings 提供，跟随系统的应用语言设置。
+
+版本为 0.2（build 19），构建产物改为 `dist/DuskShift.app`。首次构建会将原有 `dist/Dusk Shift.app` 目录移动为新名称，保留同一 bundle identifier、可执行文件名和偏好域。历史验证记录中的旧包名保留。

@@ -3,17 +3,17 @@
 <plist version="1.0"><dict>
     <key>CFBundleExecutable</key><string>DuskShift</string>
     <key>CFBundleIdentifier</key><string>app.duskshift.mac</string>
-    <key>CFBundleName</key><string>Dusk Shift</string>
-    <key>CFBundleDisplayName</key><string>Dusk Shift</string>
+    <key>CFBundleName</key><string>DuskShift</string>
+    <key>CFBundleDisplayName</key><string>DuskShift</string>
     <key>CFBundlePackageType</key><string>APPL</string>
-    <key>CFBundleShortVersionString</key><string>0.1.17</string>
-    <key>CFBundleVersion</key><string>18</string>
+    <key>CFBundleShortVersionString</key><string>0.2</string>
+    <key>CFBundleVersion</key><string>19</string>
     <key>CFBundleDevelopmentRegion</key><string>en</string>
     <key>CFBundleLocalizations</key><array><string>en</string><string>zh-Hans</string><string>zh-Hant</string></array>
     <key>LSMinimumSystemVersion</key><string>13.0</string>
     <key>LSUIElement</key><true/>
     <key>NSHighResolutionCapable</key><true/>
-    <key>NSLocationUsageDescription</key><string>Dusk Shift 使用当前位置和本地时区边界数据，计算旅行所在地的日出日落；定位失败时使用保留的手动城市。</string>
-    <key>NSLocationWhenInUseUsageDescription</key><string>Dusk Shift 使用当前位置和本地时区边界数据，计算旅行所在地的日出日落；定位失败时使用保留的手动城市。</string>
-    <key>NSAppleEventsUsageDescription</key><string>Dusk Shift 需要控制 System Events，根据本地计算的日出日落时间切换系统浅色与深色外观。</string>
+    <key>NSLocationUsageDescription</key><string>DuskShift uses your location and bundled offline time-zone boundaries to calculate local sunrise and sunset while traveling. If location is unavailable, it uses your saved manual city.</string>
+    <key>NSLocationWhenInUseUsageDescription</key><string>DuskShift uses your location and bundled offline time-zone boundaries to calculate local sunrise and sunset while traveling. If location is unavailable, it uses your saved manual city.</string>
+    <key>NSAppleEventsUsageDescription</key><string>DuskShift needs to control System Events to switch system appearance at locally calculated sunrise and sunset times.</string>
 </dict></plist>

@@ -1,5 +1,15 @@
 # 首版验证记录
 
+## 0.2 中文名称「日暮」、其他语言 DuskShift（2026-10-22）
+
+- 简体 / 繁体中文统一「日暮」，英文与不支持语言的回退为「DuskShift」。托盘名称、设置抬头 / 窗口标题、版本行及权限 / 帮助文案同步替换；新增 app.name 本地化键。macOS 包的 CFBundleName 和 CFBundleDisplayName 同时提供三语值，默认 plist / development region 使用英文回退。
+- 版本 0.2，build 19。输出改为 `dist/DuskShift.app`；构建迁移原有包目录，bundle identifier、可执行文件名及偏好域保持。实际构建后 dist 中只有新的应用包。
+- `make test FILTER=LocalizationTests`：3 项通过（0.025 秒），包含三语名称、不支持语言的英文回退、文案目录与占位符完整性。未运行其他功能套件；已有原生交互测试只更新窗口标题预期并完成编译。
+- `swift scripts/verify-languages.swift --brand-only`：实际打包应用的英文 / 繁体 / 简体名称交互全部通过，校验托盘抬头、设置抬头、窗口标题、带名称的 0.2 版本行，保存 6 张截图。校验包中三语 CFBundleName / CFBundleDisplayName、默认名、版本和 build；系统运行进程显示名为「日暮」。命令行文件显示名为 DuskShift，未将文件系统名与应用内语言即时同步混为一谈。验证后恢复原来的「跟随系统」，未操作深浅模式、动画、登录启动、定位或偏移控件。
+- Release 构建、严格签名验证、Info.plist / 三套 InfoPlist.strings / 三套 Localizable.strings 语法及构建脚本 bash 语法检查通过。0.2 已启动，未执行全量回归，未重新申请权限验证系统授权弹窗文字。
+
+证据：[本地化测试](artifacts/branding-0.2-tests.log)、[实际三语名称与版本](artifacts/branding-0.2-actual.log)、[中文设置](artifacts/branding-0.2/settings-zh-Hans.png)、[英文托盘](artifacts/branding-0.2/menu-en.png)、[构建](artifacts/build-0.2.log)。
+
 ## 0.1.17 居中半屏日月轮转、动画默认关闭（2026-10-22）
 
 - 最终效果为显示器中央半屏面积（宽 80%、高 62.5%），四边透明渐隐，不使用上 / 下半屏或中央小卡片。太阳、月亮沿椭圆弧线交替左升右落，日出 / 日落的昼夜色温与光晕随进度变化，约 3.2 秒。日月轨迹与月相为视觉示意，未新增月出月落计算。

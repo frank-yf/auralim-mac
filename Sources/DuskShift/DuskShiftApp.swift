@@ -8,7 +8,7 @@ struct DuskShiftApp: App {
     @StateObject private var settings = SettingsWindowController()
 
     var body: some Scene {
-        MenuBarExtra("Dusk Shift", systemImage: model.enabled ? "sun.max.circle.fill" : model.appearanceMode == nil ? "circle.lefthalf.filled" : model.appearanceMode == .dark ? "moon.circle" : "sun.max.circle") {
+        MenuBarExtra(model.t("app.name"), systemImage: model.enabled ? "sun.max.circle.fill" : model.appearanceMode == nil ? "circle.lefthalf.filled" : model.appearanceMode == .dark ? "moon.circle" : "sun.max.circle") {
             MenuContent(model: model, openSettings: { settings.show(model: model) })
         }
         .menuBarExtraStyle(.window)
@@ -26,7 +26,7 @@ struct MenuContent: View {
             HStack(spacing: 8) {
                 DuskMark(size: 30)
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("Dusk Shift").font(.system(size: 14, weight: .semibold)).lineLimit(1)
+                    Text(model.t("app.name")).accessibilityIdentifier("menu-app-name").font(.system(size: 14, weight: .semibold)).lineLimit(1)
                     Text(model.appearanceModeTitle)
                         .font(.caption).foregroundStyle(.secondary).lineLimit(1).minimumScaleFactor(0.8)
                 }.frame(maxWidth: .infinity, alignment: .leading)

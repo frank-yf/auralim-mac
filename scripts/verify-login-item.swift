@@ -20,10 +20,10 @@ func describe(_ element: AXUIElement, depth: Int = 0) {
 }
 guard AXIsProcessTrusted() else { fatalError("Menu-bar verification requires Accessibility permission") }
 guard let running = NSRunningApplication.runningApplications(withBundleIdentifier: "app.duskshift.mac").first else {
-    fatalError("Dusk Shift is not running")
+    fatalError("DuskShift is not running")
 }
 let app = AXUIElementCreateApplication(running.processIdentifier)
-print("Dusk Shift pid:", running.processIdentifier)
+print("DuskShift pid:", running.processIdentifier)
 let verify = CommandLine.arguments.contains("--verify")
 let settingsMode = CommandLine.arguments.contains("--settings")
 func appWindows() -> [AXUIElement] {
@@ -31,7 +31,7 @@ func appWindows() -> [AXUIElement] {
 }
 func pressStatusItem() {
     guard let extra = read(app, kAXExtrasMenuBarAttribute as CFString),
-          let item = children(extra as! AXUIElement).first else { fatalError("No Dusk Shift status item") }
+          let item = children(extra as! AXUIElement).first else { fatalError("No DuskShift status item") }
     precondition(AXUIElementPerformAction(item, kAXPressAction as CFString) == .success)
     Thread.sleep(forTimeInterval: 0.5)
 }
@@ -63,7 +63,7 @@ func openSettings() -> AXUIElement {
         fatalError("No settings entry in menu panel")
     }
     press(button)
-    guard let settings = appWindows().first(where: { ["Dusk Shift 设置", "Dusk Shift 設定", "Dusk Shift Settings"].contains(label($0)) }) else {
+    guard let settings = appWindows().first(where: { ["日暮设置", "日暮設定", "DuskShift Settings"].contains(label($0)) }) else {
         fatalError("Settings window did not open")
     }
     precondition(panelWindows().isEmpty, "Menu panel should dismiss when opening settings")

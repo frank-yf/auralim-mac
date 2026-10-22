@@ -19,18 +19,19 @@ func describe(_ element: AXUIElement, depth: Int = 0) {
 }
 guard AXIsProcessTrusted() else { fatalError("Menu-bar verification requires Accessibility permission") }
 guard let running = NSRunningApplication.runningApplications(withBundleIdentifier: "app.duskshift.mac").first else {
-    fatalError("Dusk Shift is not running")
+    fatalError("DuskShift is not running")
 }
 let app = AXUIElementCreateApplication(running.processIdentifier)
-print("Dusk Shift pid:", running.processIdentifier)
+print("DuskShift pid:", running.processIdentifier)
 let verify = CommandLine.arguments.contains("--verify")
 let settingsMode = CommandLine.arguments.contains("--settings")
+let brandOnly = CommandLine.arguments.contains("--brand-only")
 func appWindows() -> [AXUIElement] {
     read(app, kAXWindowsAttribute as CFString) as? [AXUIElement] ?? []
 }
 func pressStatusItem() {
     guard let extra = read(app, kAXExtrasMenuBarAttribute as CFString),
-          let item = children(extra as! AXUIElement).first else { fatalError("No Dusk Shift status item") }
+          let item = children(extra as! AXUIElement).first else { fatalError("No DuskShift status item") }
     precondition(AXUIElementPerformAction(item, kAXPressAction as CFString) == .success)
     Thread.sleep(forTimeInterval: 0.5)
 }
@@ -62,7 +63,7 @@ func openSettings() -> AXUIElement {
         fatalError("No settings entry in menu panel")
     }
     press(button)
-    guard let settings = appWindows().first(where: { ["Dusk Shift 设置", "Dusk Shift 設定", "Dusk Shift Settings"].contains(label($0)) }) else {
+    guard let settings = appWindows().first(where: { ["日暮设置", "日暮設定", "DuskShift Settings"].contains(label($0)) }) else {
         fatalError("Settings window did not open")
     }
     precondition(panelWindows().isEmpty, "Menu panel should dismiss when opening settings")
@@ -109,6 +110,20 @@ func screenshot(_ path: String, width: Double) throws {
     try require(capture.terminationStatus == 0, "Screenshot failed")
 }
 do {
+    if brandOnly {
+        guard let url = running.bundleURL, let bundle = Bundle(url: url) else { throw VerificationError(message: "No running app bundle") }
+        try require(url.lastPathComponent == "DuskShift.app", "Unexpected app package name")
+        try require(bundle.infoDictionary?["CFBundleShortVersionString"] as? String == "0.2", "Wrong app version")
+        try require(bundle.infoDictionary?["CFBundleVersion"] as? String == "19", "Wrong build number")
+        try require(bundle.infoDictionary?["CFBundleName"] as? String == "DuskShift", "Wrong fallback name")
+        for (language, expected) in [("en", "DuskShift"), ("zh-Hans", "日暮"), ("zh-Hant", "日暮")] {
+            let file = url.appendingPathComponent("Contents/Resources/\(language).lproj/InfoPlist.strings")
+            let values = try PropertyListSerialization.propertyList(from: Data(contentsOf: file), format: nil) as? [String: String]
+            try require(values?["CFBundleName"] == expected && values?["CFBundleDisplayName"] == expected, "Wrong localized bundle name: \(language)")
+            print("Verified packaged names:", language, expected)
+        }
+        print("System process name:", running.localizedName ?? "", "; file display name:", FileManager.default.displayName(atPath: url.path))
+    }
     let original = read(try languagePicker(), kAXValueAttribute as CFString) as? String ?? ""
     print("Original language choice:", original)
     defer {
@@ -118,12 +133,30 @@ do {
         catch { print("Could not restore language:", error) }
     }
     for (option, expectedTitle, nextLabel) in [
-        ("English", "Dusk Shift Settings", "Schedule preview"),
-        ("繁體中文", "Dusk Shift 設定", "計畫預覽"),
-        ("简体中文", "Dusk Shift 设置", "计划预览")
+        ("English", "DuskShift Settings", "Schedule preview"),
+        ("繁體中文", "日暮設定", "計畫預覽"),
+        ("简体中文", "日暮设置", "计划预览")
     ] {
         try choose(option)
         try require(label(settings) == expectedTitle, "Window title did not update: \(label(settings))")
+        if brandOnly {
+            let name = option == "English" ? "DuskShift" : "日暮"
+            func identifiedText(_ window: AXUIElement, _ id: String) -> String? {
+                descendants(window).first { read($0, kAXIdentifierAttribute as CFString) as? String == id }.map(label)
+            }
+            try require(identifiedText(settings, "settings-app-name") == name, "Settings app name did not update")
+            try require(identifiedText(settings, "app-version") == name + " 0.2", "Settings version did not update")
+            let filename = option == "English" ? "en" : option == "繁體中文" ? "zh-Hant" : "zh-Hans"
+            try FileManager.default.createDirectory(atPath: "artifacts/branding-0.2", withIntermediateDirectories: true)
+            try screenshot("artifacts/branding-0.2/settings-\(filename).png", width: 600)
+            pressStatusItem()
+            guard let panel = panelWindows().first else { throw VerificationError(message: "No compact menu") }
+            try require(identifiedText(panel, "menu-app-name") == name, "Menu app name did not update")
+            try screenshot("artifacts/branding-0.2/menu-\(filename).png", width: 320)
+            pressStatusItem()
+            print("Verified app name and 0.2 version:", option, name, expectedTitle)
+            continue
+        }
         let generalElements = descendants(settings)
         let values = generalElements.map(label).joined(separator: " ")
         let expectedSwitch = option == "English" ? "Switch to light" : option == "繁體中文" ? "日出轉亮" : "日出转亮"

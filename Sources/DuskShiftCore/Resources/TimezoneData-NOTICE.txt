@@ -1,4 +1,4 @@
-Dusk Shift offline time-zone boundary data
+DuskShift offline time-zone boundary data
 
 ZoneDetect C library (BSD-3-Clause):
 https://github.com/BertoldVdb/ZoneDetect
@@ -14,7 +14,7 @@ Open Database License (ODbL) 1.0. See TimezoneData-LICENSE.txt.
 Source database: https://github.com/evansiroky/timezone-boundary-builder
 Contains data from Natural Earth, placed in the public domain.
 
-No database modifications are made by Dusk Shift. The original database and
+No database modifications are made by DuskShift. The original database and
 full notices are shipped together in DuskShift_DuskShiftCore.bundle.
 Boundary data is not updated at runtime. Time-zone offsets and daylight-saving
 rules are provided by macOS Foundation's IANA time-zone database.

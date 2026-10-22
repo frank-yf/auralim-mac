@@ -1,4 +1,5 @@
-"settings.title" = "Dusk Shift Settings";
+"app.name" = "DuskShift";
+"settings.title" = "DuskShift Settings";
 "language" = "Language";
 "language.system" = "Follow System";
 "language.hint" = "Language changes apply immediately and are saved on this Mac.";
@@ -52,22 +53,22 @@
 "status.confirmed" = "System appearance confirmed: %@";
 "status.attention" = "Appearance switching needs attention";
 "none" = "None";
-"error.permission" = "Automation permission is required. In System Settings → Privacy & Security → Automation, allow Dusk Shift to control System Events, then retry.";
+"error.permission" = "Automation permission is required. In System Settings → Privacy & Security → Automation, allow DuskShift to control System Events, then retry.";
 "error.script" = "Appearance switch failed (%d): %@";
 "error.verification" = "System appearance did not match the requested mode. Please retry.";
 "error.unknown" = "Unknown error";
 "help.start.title" = "Getting started";
-"help.start.body" = "In macOS System Settings → Appearance, select Light or Dark to turn off the system’s automatic appearance schedule. Choose a city and offsets, then enable automatic switching. On first use, allow Dusk Shift to control System Events.";
+"help.start.body" = "In macOS System Settings → Appearance, select Light or Dark to turn off the system’s automatic appearance schedule. Choose a city and offsets, then enable automatic switching. On first use, allow DuskShift to control System Events.";
 "help.offset.title" = "Sunrise and sunset offsets";
 "help.offset.body" = "Adjust sunrise and sunset independently by up to 120 minutes in either direction, in 1-minute steps. The slider center means on time. At sunrise, left delays light mode and right brings it forward. At sunset, left delays dark mode and right brings it forward. Negative input means earlier; positive means later. Valid input previews immediately and applies when you release the slider, press Return, or leave the field. Reset restores a zero offset.";
 "help.city.title" = "Cities, time zones, and offline use";
 "help.city.body" = "Times use the active location’s time zone and local date, including daylight saving changes. Sunrise, sunset, and time-zone lookup are calculated on this Mac. Manual mode works offline without location permission. Automatic mode uses macOS Location Services and falls back to the saved manual city if it fails.";
 "help.sleep.title" = "Switching and wake recovery";
-"help.sleep.body" = "Sunrise switches to Light and sunset switches to Dark. On launch and wake, Dusk Shift checks and restores the scheduled appearance. Pausing or quitting keeps the last appearance. Keep the app running for scheduled switches.";
+"help.sleep.body" = "Sunrise switches to Light and sunset switches to Dark. On launch and wake, DuskShift checks and restores the scheduled appearance. Pausing or quitting keeps the last appearance. Keep the app running for scheduled switches.";
 "help.polar.title" = "Special dates and accuracy";
 "help.polar.body" = "Polar day defaults to Light and polar night to Dark. Offsets that cross adjacent switch boundaries are limited or skipped, with a notice in settings. Calculations use standard astronomical conditions; terrain, elevation, and weather can affect what you observe.";
 "help.privacy.title" = "Permissions and privacy";
-"help.privacy.body" = "If switching fails, allow Dusk Shift to control System Events in System Settings → Privacy & Security → Automation, then retry on the Automatic switching tab. Your city, offsets, language, and enabled state are stored locally and are not uploaded.";
+"help.privacy.body" = "If switching fails, allow DuskShift to control System Events in System Settings → Privacy & Security → Automation, then retry on the Automatic switching tab. Your city, offsets, language, and enabled state are stored locally and are not uploaded.";
 "city.Asia/Shanghai" = "Shanghai";
 "city.beijing" = "Beijing";
 "city.shenzhen" = "Shenzhen";
@@ -93,7 +94,7 @@
 "login.error" = "Could not change launch at login: %@";
 "login.settings" = "Open Login Items Settings…";
 "help.login.title" = "Launch at login";
-"help.login.body" = "Enable Launch at login on the Automatic switching tab to start Dusk Shift when you log in to macOS. It restores your saved city, offsets, and automatic switching setting. If approval is required, open Login Items Settings and allow Dusk Shift. The switch remains on while approval is pending; the status indicates whether it is active. Turning it off prevents future launches at login and keeps the current app running.";
+"help.login.body" = "Enable Launch at login on the Automatic switching tab to start DuskShift when you log in to macOS. It restores your saved city, offsets, and automatic switching setting. If approval is required, open Login Items Settings and allow DuskShift. The switch remains on while approval is pending; the status indicates whether it is active. Turning it off prevents future launches at login and keeps the current app running.";
 
 "location.mode" = "Location mode";
 "location.manual" = "Manual city";
@@ -105,13 +106,13 @@
 "location.using" = "Using current coordinates: %@";
 "location.manual.hint" = "Using the saved manual city.";
 "location.fallback" = "%@ Using manual city: %@.";
-"location.error.denied" = "Location permission was denied. Allow Dusk Shift in System Settings → Privacy & Security → Location Services.";
+"location.error.denied" = "Location permission was denied. Allow DuskShift in System Settings → Privacy & Security → Location Services.";
 "location.error.servicesDisabled" = "Location Services are disabled.";
 "location.error.unavailable" = "Location is temporarily unavailable.";
 "location.error.timeout" = "Location request timed out.";
 "location.error.timeZoneUnavailable" = "No unambiguous local time zone was found.";
 "help.location.title" = "Automatic location and travel";
-"help.location.body" = "Choose Automatic location to use macOS Location Services. Time zones are resolved from bundled offline boundaries, independently of the system time zone; sunrise and sunset still use local calculations. Current location is shown as coordinates, without online address lookup. Significant location changes, network changes, wake, session restore, and returning to the app can update the location; if location-change monitoring is unavailable, updates rely on those events or Update location. A failed or denied request uses the saved fallback city. Manual city stops location monitoring. Coordinates are held in memory and are not saved or uploaded by Dusk Shift. macOS Location Services may need Wi-Fi or a network; the app cannot guarantee a fix offline. Time-zone boundaries contain information from timezone-boundary-builder, converted by ZoneDetect (2024a), available under ODbL 1.0. Near borders or after boundary changes, use a manual city if needed.";
+"help.location.body" = "Choose Automatic location to use macOS Location Services. Time zones are resolved from bundled offline boundaries, independently of the system time zone; sunrise and sunset still use local calculations. Current location is shown as coordinates, without online address lookup. Significant location changes, network changes, wake, session restore, and returning to the app can update the location; if location-change monitoring is unavailable, updates rely on those events or Update location. A failed or denied request uses the saved fallback city. Manual city stops location monitoring. Coordinates are held in memory and are not saved or uploaded by DuskShift. macOS Location Services may need Wi-Fi or a network; the app cannot guarantee a fix offline. Time-zone boundaries contain information from timezone-boundary-builder, converted by ZoneDetect (2024a), available under ODbL 1.0. Near borders or after boundary changes, use a manual city if needed.";
 
 "licenses.open" = "Licenses & data sources";
 

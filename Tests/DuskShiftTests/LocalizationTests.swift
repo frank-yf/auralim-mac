@@ -51,8 +51,12 @@ struct LocalizationTests {
         #expect(en.text("offset.earlier", 37) == "37 min earlier")
         #expect(hans.text("offset.earlier", 37) == "提前 37 分钟")
         #expect(hant.text("offset.later", 42) == "延後 42 分鐘")
-        #expect(en.text("settings.title") == "Dusk Shift Settings")
-        #expect(hant.text("settings.title") == "Dusk Shift 設定")
+        #expect(en.text("app.name") == "DuskShift")
+        #expect(hans.text("app.name") == "日暮")
+        #expect(hant.text("app.name") == "日暮")
+        #expect(Localizer(language: .system, preferredLanguages: ["fr-FR"]).text("app.name") == "DuskShift")
+        #expect(en.text("settings.title") == "DuskShift Settings")
+        #expect(hant.text("settings.title") == "日暮設定")
         #expect(en.text("missing.key") == "missing.key")
         for city in City.all {
             for localizer in [en, hans, hant] { #expect(localizer.cityName(city) != "city." + city.id) }
