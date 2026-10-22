@@ -63,7 +63,7 @@
 "help.city.title" = "Cities, time zones, and offline use";
 "help.city.body" = "Times use the selected city’s time zone and local date, including daylight saving changes. Sunrise and sunset are calculated on this Mac, with no network or location permission needed. Change the city manually when traveling. This version supports the built-in city list.";
 "help.sleep.title" = "Switching and wake recovery";
-"help.sleep.body" = "Sunrise switches to Light and sunset switches to Dark. On launch and wake, Dusk Shift checks and restores the scheduled appearance. Pausing or quitting keeps the last appearance. Keep the app running for scheduled switches; this version does not yet support launch at login.";
+"help.sleep.body" = "Sunrise switches to Light and sunset switches to Dark. On launch and wake, Dusk Shift checks and restores the scheduled appearance. Pausing or quitting keeps the last appearance. Keep the app running for scheduled switches.";
 "help.polar.title" = "Special dates and accuracy";
 "help.polar.body" = "Polar day defaults to Light and polar night to Dark. Offsets that cross adjacent switch boundaries are limited or skipped, with a notice in settings. Calculations use standard astronomical conditions; terrain, elevation, and weather can affect what you observe.";
 "help.privacy.title" = "Permissions and privacy";
@@ -82,3 +82,15 @@
 "city.Australia/Sydney" = "Sydney";
 "city.Pacific/Auckland" = "Auckland";
 "city.Europe/Oslo" = "Tromsø";
+
+"login.title" = "Launch at login";
+"login.hint" = "Start the menu bar app when you log in to macOS. Automatic appearance switching keeps its own setting.";
+"login.disabled" = "Launch at login is off";
+"login.enabled" = "Launch at login is enabled";
+"login.approval" = "Registered; awaiting approval in System Settings. Launch at login is not active.";
+"login.notFound" = "macOS currently cannot find a registered login item.";
+"login.unknown" = "Unable to determine login item status";
+"login.error" = "Could not change launch at login: %@";
+"login.settings" = "Open Login Items Settings…";
+"help.login.title" = "Launch at login";
+"help.login.body" = "Enable Launch at login on the Automatic switching tab to start Dusk Shift when you log in to macOS. It restores your saved city, offsets, and automatic switching setting. If approval is required, open Login Items Settings and allow Dusk Shift. The switch remains on while approval is pending; the status indicates whether it is active. Turning it off prevents future launches at login and keeps the current app running.";

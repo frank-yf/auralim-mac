@@ -8,6 +8,7 @@ final class SettingsWindowController: ObservableObject {
     private var languageSubscription: AnyCancellable?
 
     func show(model: AppModel) {
+        model.refreshLoginItemStatus()
         model.reconcile()
         if let window {
             NSApplication.shared.activate(ignoringOtherApps: true)

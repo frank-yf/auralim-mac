@@ -2,7 +2,7 @@
 
 随日升日落，自在切换明暗。
 
-Swift + SwiftUI 原生 macOS 菜单栏应用，支持 macOS 13 及以上。提供手动城市、离线日出日落、日出/日落独立 ±120 分钟偏移、系统外观切换和唤醒恢复。无需第三方库、网络 API 或持续定位。
+Swift + SwiftUI 原生 macOS 菜单栏应用，支持 macOS 13 及以上。提供手动城市、离线日出日落、日出/日落独立 ±120 分钟偏移、系统外观切换、唤醒恢复和登录时启动。无需第三方库、网络 API 或持续定位。
 
 ## 构建与运行
 
@@ -16,7 +16,7 @@ open "dist/Dusk Shift.app"
 
 请运行打包后的 `.app`，以便 macOS 正确识别自动化权限用途说明。仅在菜单栏显示太阳图标，没有 Dock 图标。默认暂停自动切换。点击菜单栏「设置…」，在「自动切换」页选择城市、设置偏移，再启用自动切换并允许控制 System Events。「使用说明」页包含完整使用方法、时区与离线行为、休眠恢复、权限及特殊日期说明。
 
-请在 macOS 系统设置 → 外观中选择「浅色」或「深色」，关闭系统「自动」外观，避免两个调度器相互覆盖。暂停或退出应用会停止后续调度，保留最后的系统外观。应用退出后不能继续执行计划；本版本尚未提供登录启动。
+请在 macOS 系统设置 → 外观中选择「浅色」或「深色」，关闭系统「自动」外观，避免两个调度器相互覆盖。暂停或退出应用会停止后续调度，保留最后的系统外观。应用退出后不能继续执行计划；可在设置中打开「登录时启动」，在下次登录 macOS 后自动运行。
 
 构建脚本默认使用本地 ad-hoc 签名，只适合本机测试。重新构建可能需要重新授予自动化权限。正式分发需设置 `DUSK_SHIFT_SIGN_IDENTITY` 为 Developer ID 签名身份并另行公证。脚本生成当前主机架构的程序。
 
@@ -59,7 +59,7 @@ open "dist/Dusk Shift.app"
 5. 断开网络后重复城市选择与切换；暂停、退出、重启确认行为符合上述说明。
 6. 使用 Release 构建测量菜单关闭时 CPU、内存和唤醒次数；本项目不将未经测量的资源预算当作实测结果。
 
-本版本不包含自动定位、自动更新、登录启动、正式签名公证及 Mac App Store 发布。
+本版本不包含自动定位、自动更新、正式签名公证及 Mac App Store 发布。
 
 ## 原生交互验证
 
@@ -105,3 +105,17 @@ CLANG_MODULE_CACHE_PATH="$PWD/.build/clang-cache" swift scripts/verify-languages
 CLANG_MODULE_CACHE_PATH="$PWD/.build/clang-cache" swift scripts/verify-menu-bar.swift --verify --capture /private/tmp/dusk-shift-compact.png
 CLANG_MODULE_CACHE_PATH="$PWD/.build/clang-cache" swift scripts/verify-menu-bar.swift --settings --capture /private/tmp/dusk-shift-settings.png
 ```
+
+## 登录时启动（0.1.6）
+
+设置 → 自动切换，向下滚动即可找到「登录时启动」开关。使用 macOS 13+ 的 `SMAppService.mainApp` 注册主应用，不需要额外后台助手、LaunchAgent 文件或轮询。它在用户登录后启动菜单栏应用，保留原有城市、偏移、语言和自动切换开关；关闭此项不会退出当前应用。
+
+状态直接来自系统，不另存自启动布尔值。需要系统批准时显示明确提示，提供「打开登录项设置…」入口；待批准状态下开关保持打开，可关闭以取消注册。打开设置或返回应用时重新读取系统状态。操作失败会显示错误并回读实际状态，不把失败显示为成功。
+
+普通测试使用替身验证注册/取消、等待批准、错误回读、语言更新及系统设置返回后的刷新，且不改变外观调度。真实注册与取消可在已授权辅助功能的会话中运行以下脚本（临时切换一次，结束恢复原开关）：
+
+```sh
+CLANG_MODULE_CACHE_PATH="$PWD/.build/clang-cache" swift scripts/verify-login-item.swift --capture /private/tmp/dusk-shift-login.png
+```
+
+实际注销并重新登录后，应确认菜单栏图标自动出现，并恢复之前的自动切换开关。自动化注册测试不代表这个登录流程已经验收。

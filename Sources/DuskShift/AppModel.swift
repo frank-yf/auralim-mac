@@ -31,9 +31,13 @@ final class AppModel: ObservableObject {
         }
     }
     @Published private(set) var isApplying = false
+    @Published private(set) var loginItemStatus: LoginItemStatus = .notRegistered
+    @Published private var loginItemFailure: String?
+    var loginItemError: String? { loginItemFailure.map { t("login.error", $0) } }
 
     private let defaults: UserDefaults
     private let controller: AppearanceApplying
+    private let loginItemController: LoginItemControlling
     private let clock: () -> Date
     private let preferredLanguages: () -> [String]
     private let enableTimers: Bool
@@ -49,8 +53,10 @@ final class AppModel: ObservableObject {
          clock: @escaping () -> Date = Date.init, enableTimers: Bool = true,
          workspaceNotifications: NotificationCenter = NSWorkspace.shared.notificationCenter,
          systemNotifications: NotificationCenter = .default,
-         preferredLanguages: @escaping () -> [String] = { Locale.preferredLanguages }) {
+         preferredLanguages: @escaping () -> [String] = { Locale.preferredLanguages },
+         loginItemController: LoginItemControlling? = nil) {
         self.defaults = defaults; self.controller = controller; self.clock = clock; self.enableTimers = enableTimers
+        self.loginItemController = loginItemController ?? LoginItemController()
         self.preferredLanguages = preferredLanguages
         language = AppLanguage(rawValue: defaults.string(forKey: "language") ?? "system") ?? .system
         cityID = defaults.string(forKey: "city") ?? City.all[0].id
@@ -69,8 +75,32 @@ final class AppModel: ObservableObject {
             }
         }
         observers.append((systemNotifications, localeObserver))
+        let activationObserver = systemNotifications.addObserver(forName: NSApplication.didBecomeActiveNotification,
+                                                                 object: nil, queue: .main) { [weak self] _ in
+            Task { @MainActor in self?.refreshLoginItemStatus() }
+        }
+        observers.append((systemNotifications, activationObserver))
+        refreshLoginItemStatus()
         reconcile()
     }
+
+    func refreshLoginItemStatus() {
+        let actual = loginItemController.status
+        if actual != loginItemStatus { loginItemFailure = nil }
+        loginItemStatus = actual
+    }
+
+    func setLaunchAtLogin(_ enabled: Bool) {
+        refreshLoginItemStatus()
+        guard enabled != loginItemStatus.isRegistered else { return }
+        loginItemFailure = nil
+        do { try loginItemController.setEnabled(enabled) }
+        catch { loginItemFailure = (error as NSError).localizedDescription }
+        // Read the system state even on error: registration may be awaiting approval.
+        loginItemStatus = loginItemController.status
+    }
+
+    func openLoginItemSettings() { loginItemController.openSystemSettings() }
 
     private func observe(_ name: Notification.Name, center: NotificationCenter) {
         let token = center.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in

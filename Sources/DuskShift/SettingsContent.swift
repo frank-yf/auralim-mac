@@ -19,7 +19,7 @@ struct SettingsContent: View {
         }
         .frame(width: SettingsPanelLayout.width, height: height)
         .environment(\.locale, model.localizer.locale)
-        .onAppear { model.reconcile() }
+        .onAppear { model.refreshLoginItemStatus(); model.reconcile() }
     }
 
     private var general: some View {
@@ -76,6 +76,24 @@ struct SettingsContent: View {
                         Button(model.t("check.now")) { model.retry() }.disabled(model.isApplying)
                     }
                 }
+                Divider()
+                VStack(alignment: .leading, spacing: 6) {
+                    Toggle(model.t("login.title"), isOn: Binding(
+                        get: { model.loginItemStatus.isRegistered },
+                        set: { model.setLaunchAtLogin($0) }
+                    )).accessibilityIdentifier("launch-at-login")
+                    Text(model.t("login.hint")).font(.caption).foregroundStyle(.secondary)
+                    Text(model.t(model.loginItemStatus.localizationKey))
+                        .font(.caption).foregroundStyle(.secondary)
+                        .accessibilityIdentifier("login-item-status")
+                    if let error = model.loginItemError {
+                        Text(error).font(.caption).foregroundStyle(.red)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    if model.loginItemStatus == .requiresApproval || model.loginItemError != nil {
+                        Button(model.t("login.settings")) { model.openLoginItemSettings() }
+                    }
+                }
             }
             .padding(18)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -89,6 +107,7 @@ struct SettingsContent: View {
                 help(model.t("help.offset.title"), model.t("help.offset.body"))
                 help(model.t("help.city.title"), model.t("help.city.body"))
                 help(model.t("help.sleep.title"), model.t("help.sleep.body"))
+                help(model.t("help.login.title"), model.t("help.login.body"))
                 help(model.t("help.polar.title"), model.t("help.polar.body"))
                 help(model.t("help.privacy.title"), model.t("help.privacy.body"))
             }
