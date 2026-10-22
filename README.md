@@ -81,6 +81,8 @@ Quit the running app before building. `make build` creates and signs `dist/Aural
 
 After changing the icon artwork in `Resources/Icons/Auralim.png`, run `make icon` to regenerate `Resources/Auralim.icns` using macOS `sips` and `iconutil`. The PNG source and ICNS resource are both tracked in Git; `make build` copies the ICNS into the app bundle.
 
+Run `make clean` to remove generated `.app` bundles under `dist/` and `artifacts/`, including release staging and extracted verification copies. Source files, DMG / ZIP packages, build caches, and other verification files are preserved.
+
 Builds use ad-hoc signing by default. To specify a Developer ID identity:
 
 ```sh

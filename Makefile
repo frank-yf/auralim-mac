@@ -1,8 +1,8 @@
 .DEFAULT_GOAL := help
-.PHONY: help build icon run test test-sliders test-ui test-ui-layout test-appearance-mode test-ui-mode test-transitions test-ui-transitions
+.PHONY: help build icon run clean test test-sliders test-ui test-ui-layout test-appearance-mode test-ui-mode test-transitions test-ui-transitions
 
 help:
-	@printf '%s\n' 'make build                     构建并签名 dist/Auralim.app（请先退出运行中的旧版）' 'make icon                      从 Resources/Icons/Auralim.png 重新生成应用图标' 'make run                       打开已构建的应用' 'make test FILTER=SuiteOrTest    只运行指定套件或测试；必须提供 FILTER' 'make test-sliders              只验证滑块渐变渲染（深浅模式）' 'make test-ui                   只验证滑块与输入框交互并截图（需要辅助功能及屏幕录制权限）' 'make test-ui-layout            只验证菜单栏和设置的深浅外观、语言与滚动布局并截图' 'make test-appearance-mode      只验证外观模式、请求协调及相关布局' 'make test-ui-mode              只验证托盘与设置三段切换及同步' 'make test-transitions          只验证切换动画触发、实际外观结果与请求协调' 'make test-ui-transitions       只验证居中半屏日月过渡、动画开关及释放'
+	@printf '%s\n' 'make build                     构建并签名 dist/Auralim.app（请先退出运行中的旧版）' 'make icon                      从 Resources/Icons/Auralim.png 重新生成应用图标' 'make run                       打开已构建的应用' 'make clean                     删除 dist/、artifacts/ 内的 .app 副本，保留安装包和其他文件' 'make test FILTER=SuiteOrTest    只运行指定套件或测试；必须提供 FILTER' 'make test-sliders              只验证滑块渐变渲染（深浅模式）' 'make test-ui                   只验证滑块与输入框交互并截图（需要辅助功能及屏幕录制权限）' 'make test-ui-layout            只验证菜单栏和设置的深浅外观、语言与滚动布局并截图' 'make test-appearance-mode      只验证外观模式、请求协调及相关布局' 'make test-ui-mode              只验证托盘与设置三段切换及同步' 'make test-transitions          只验证切换动画触发、实际外观结果与请求协调' 'make test-ui-transitions       只验证居中半屏日月过渡、动画开关及释放'
 
 build:
 	bash scripts/build-app.sh
@@ -13,6 +13,13 @@ icon:
 run:
 	@test -d "dist/Auralim.app" || { printf '%s\n' '请先执行 make build'; exit 1; }
 	open "dist/Auralim.app"
+
+clean:
+	@set -e; for directory in dist artifacts; do \
+		if [ -d "$$directory" ] && [ ! -L "$$directory" ]; then \
+			find "$$directory" \( -type d -o -type l \) -name '*.app' -prune -print -exec rm -rf {} +; \
+		fi; \
+	done
 
 test:
 	@test -n "$(strip $(FILTER))" || { printf '%s\n' '必须指定测试范围，例如 make test FILTER=GradientSliderTests'; exit 1; }

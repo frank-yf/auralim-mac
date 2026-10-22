@@ -81,6 +81,8 @@ make run
 
 修改图标原稿 `Resources/Icons/Auralim.png` 后，运行 `make icon`，通过 macOS 自带的 `sips` 和 `iconutil` 重新生成 `Resources/Auralim.icns`。PNG 原稿与 ICNS 资源均纳入 Git；`make build` 将 ICNS 复制到应用包。
 
+运行 `make clean` 可删除 `dist/`、`artifacts/` 内生成的 `.app` 副本，包括发布暂存和验证解压副本；保留源码、DMG / ZIP 安装包、构建缓存与其他验证文件。
+
 默认使用 ad-hoc 签名。指定 Developer ID 身份可使用：
 
 ```sh
