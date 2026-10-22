@@ -1,73 +1,73 @@
-[简体中文](README.md) | [English](README.en.md)
+[English](README.md) | [简体中文](README.zh-CN.md)
 
-# 晨昏 · Auralim
+# Auralim · 晨昏
 
-**日升而明，日落而暗**
+**Between light and dark.**
 
-*Between light and dark.*
+*日升而明，日落而暗*
 
-晨昏是一款 Swift + SwiftUI 原生 macOS 菜单栏应用，根据当地日出、日落切换系统浅色与深色外观。日出日落和时区查询均在本地完成，不依赖在线 API 或 macOS 自动外观计划。
+Auralim is a native macOS menu bar app built with Swift and SwiftUI. It switches between light and dark appearance at local sunrise and sunset. Sunrise, sunset, and time-zone lookup are calculated on your Mac, without online APIs or macOS's automatic appearance schedule.
 
-## 产品说明
+## Product overview
 
-### 功能
+### Features
 
-- **日出日落自动切换**：独立计算太阳事件，支持日出转亮、日落转暗。
-- **独立时间偏移**：日出、日落分别支持 ±120 分钟，滑块与分钟输入框同步，显示偏移后的切换时间。
-- **三种外观模式**：托盘和设置同步提供「浅色｜自动｜深色」，明确区分系统自动与应用自动。
-- **旅行适配**：自动定位后按当前位置和当地时区计算；也可选择内置城市，定位失败时使用备用手动城市。
-- **唤醒恢复**：启动、唤醒、会话恢复和系统时间变化时重新检查外观与计划。
-- **菜单栏常驻**：没有 Dock 图标或 WebView，按事件与单次定时器调度，无后台持续轮询。
-- **常用设置**：登录时启动、简体中文 / 繁体中文 / 英文切换，以及默认关闭的日月过渡动画。
+- **Automatic sunrise and sunset switching**: independently calculates solar events to switch to light at sunrise and dark at sunset.
+- **Separate time offsets**: adjust sunrise and sunset independently by ±120 minutes, using synchronized sliders and minute inputs. Settings show the adjusted switch times.
+- **Three appearance modes**: Light, Auto, and Dark stay synchronized between the menu bar panel and settings. System Auto and App Auto are clearly distinguished.
+- **Travel support**: automatic location uses your current coordinates and local time zone. You can also choose a built-in city; failed location requests fall back to your saved manual city.
+- **Wake recovery**: checks appearance and the schedule on launch, wake, session restore, and system time changes.
+- **Menu bar app**: no Dock icon or WebView. Scheduling uses events and one-shot timers, with no continuous background polling.
+- **Preferences**: launch at login, Simplified Chinese / Traditional Chinese / English, and an optional sun-and-moon transition animation that is off by default.
 
-### 下载与安装
+### Download and install
 
-系统要求：**macOS 13 或更高版本**。发布包包含 Intel 与 Apple 芯片架构。
+Requires **macOS 13 or later**. Release packages include both Intel and Apple silicon architectures.
 
-1. 从 [GitHub Releases](https://github.com/frank-yf/auralim-mac/releases) 下载 DMG 安装包，或使用 ZIP 解压包。
-2. 将 `Auralim.app` 拖入「应用程序」，然后打开。应用入口位于菜单栏。
-3. 点击菜单栏图标，再打开「设置…」。
+1. Download the DMG installer or ZIP archive from [GitHub Releases](https://github.com/frank-yf/auralim-mac/releases).
+2. Drag `Auralim.app` into Applications, then open it. The app appears in the menu bar.
+3. Click the menu bar icon, then choose **Settings…**.
 
-v0.2.1 使用 ad-hoc 签名，未经 Apple 公证。首次打开可能被系统拦截；确认下载来源后，可按 [Apple 官方说明](https://support.apple.com/zh-cn/102445) 处理。下载校验文件随 Release 提供。
+v0.2.1 is ad-hoc signed and has not been notarized by Apple. macOS may block the first launch. After confirming the download source, follow [Apple's official instructions](https://support.apple.com/en-us/102445). Checksum files are included with the release.
 
-### 使用
+### Usage
 
-在设置中选择「手动城市」或「自动定位」，再从托盘或设置中选择外观模式：
+Choose Manual city or Automatic location in settings, then select an appearance mode in the menu bar panel or settings:
 
-| 模式 | 行为 |
+| Mode | Behavior |
 | --- | --- |
-| 浅色 | 立即切换为浅色，暂停应用自动计划 |
-| 自动 | 按当地日出、日落及偏移切换外观 |
-| 深色 | 立即切换为深色，暂停应用自动计划 |
+| Light | Switches to light immediately and pauses the app's automatic schedule |
+| Auto | Switches at local sunrise and sunset, including your offsets |
+| Dark | Switches to dark immediately and pauses the app's automatic schedule |
 
-未启用应用自动计划时，每次启动读取系统设置：系统固定浅色 / 深色对应高亮；系统自动时不高亮三段中的任意一项，并显示「系统自动」。用户启用应用的「自动」后，界面会明确显示「应用自动」。
+When the app's automatic schedule is disabled, Auralim reads the system settings on every launch. A fixed system Light or Dark setting highlights the corresponding segment. With System Auto, none of the three segments is highlighted, and the app displays **System Auto**. Enabling the app's Auto mode explicitly displays **App Auto**.
 
-使用应用自动计划时，建议关闭 macOS 系统设置中的自动外观，避免两套计划相互覆盖。首次实际切换外观需允许应用控制 System Events；自动定位需要位置权限。
+When using the app's automatic schedule, turn off automatic appearance in macOS System Settings to avoid conflicting schedules. The first appearance change requires permission to control System Events. Automatic location requires location permission.
 
-#### 日出与日落偏移
+#### Sunrise and sunset offsets
 
-两条滑块以中点为零，向两侧调整切换时刻：
+Both sliders use the center as zero. Move either way to adjust the switch time:
 
-| 事件 | 向左滑动 | 向右滑动 |
+| Event | Slide left | Slide right |
 | --- | --- | --- |
-| 日出 | 延后转亮，延长深色时段 | 提前转亮，提前进入浅色 |
-| 日落 | 延后转暗，延长浅色时段 | 提前转暗，提前进入深色 |
+| Sunrise | Delay switching to light; stay dark longer | Switch to light earlier |
+| Sunset | Delay switching to dark; stay light longer | Switch to dark earlier |
 
-输入框中，负数表示提前，正数表示延后，范围均为 −120～+120 分钟。松开滑块、输入后按回车或离开输入框时提交；「归零」恢复准时切换。设置显示偏移后的「日出转亮」「日落转暗」时间，日期与时间均按当前生效位置的时区显示。
+In the input fields, negative numbers mean earlier and positive numbers mean later, from −120 to +120 minutes. Changes apply when you release the slider, press Return, or leave the input field. Reset returns the offset to zero. Settings show the adjusted “Switch to light” and “Switch to dark” times, using the active location's time zone and local date.
 
-自动计划在极昼保持浅色、极夜保持深色；偏移越过相邻昼夜边界时会裁剪或跳过对应时段，并在界面提示。计算不包含地形遮挡、海拔和实时天气修正。
+The automatic schedule keeps light appearance during polar day and dark appearance during polar night. Offsets that cross adjacent day or night boundaries are limited or skipped, with a notice in the interface. Calculations do not account for terrain obstruction, elevation, or real-time weather.
 
-#### 离线、隐私与退出
+#### Offline use, privacy, and quitting
 
-手动城市模式可完全离线使用。自动定位使用 macOS 定位服务，可能需要 Wi-Fi 或网络；无法取得有效位置或时区时，应用回退到已保存的手动城市。应用不上传坐标，城市、偏移和语言等设置保存在本机。
+Manual city mode works entirely offline. Automatic location uses macOS Location Services, which may require Wi-Fi or a network connection. If a valid location or time zone cannot be determined, Auralim falls back to your saved manual city. Auralim does not upload coordinates. Settings such as your city, offsets, and language are stored locally.
 
-关闭设置窗口后应用继续运行；从菜单栏选择「退出」会停止后续调度，并保留当前系统外观。「登录时启动」可在设置中开启。日月过渡动画默认关闭，开启后也会遵循系统「减少动态效果」设置。
+Closing settings keeps the app running. Choose Quit from the menu bar panel to stop future scheduling while keeping the current system appearance. Launch at login can be enabled in settings. The sun-and-moon animation is off by default and respects the system's Reduce Motion setting when enabled.
 
-## 开发指南
+## Development guide
 
-### 环境与构建
+### Requirements and build
 
-需要 macOS、Swift 6 工具链及 macOS SDK，可使用 Xcode 或 Command Line Tools。应用部署目标为 macOS 13，测试使用 Swift Testing。
+You need macOS, a Swift 6 toolchain, and the macOS SDK, provided by Xcode or Command Line Tools. The app targets macOS 13 and uses Swift Testing for tests.
 
 ```sh
 git clone https://github.com/frank-yf/auralim-mac.git
@@ -77,57 +77,57 @@ make build
 make run
 ```
 
-构建前请退出运行中的应用。`make build` 生成并签名 `dist/Auralim.app`，默认只构建当前主机架构；`make run` 打开该应用包。应运行打包后的 `.app`，以便系统读取权限用途说明和资源。
+Quit the running app before building. `make build` creates and signs `dist/Auralim.app` for the host architecture by default. `make run` opens that app bundle. Run the packaged `.app` so macOS can read its permission usage descriptions and resources.
 
-默认使用 ad-hoc 签名。指定 Developer ID 身份可使用：
+Builds use ad-hoc signing by default. To specify a Developer ID identity:
 
 ```sh
 AURALIM_SIGN_IDENTITY="Developer ID Application: Your Name (TEAMID)" make build
 ```
 
-正式分发还需完成 Apple 公证。通用包需要分别编译 Intel 与 Apple 芯片版本，合并后重新签名。构建产物、缓存和验证输出分别位于 `dist/`、`.build/`、`artifacts/`，均不纳入 Git。
+Production distribution also requires Apple notarization. For a universal package, build Intel and Apple silicon versions separately, combine them, and sign again. Build products, caches, and verification output are stored in `dist/`, `.build/`, and `artifacts/`; these directories are excluded from Git.
 
-### 项目结构
+### Project structure
 
 ```text
-Sources/Auralim/       菜单栏、设置、本地化、系统外观与定位服务
-Sources/AuralimCore/   天文计算、偏移、调度与离线时区查询
-Sources/CZoneDetect/   时区边界数据解析器
-Resources/            应用元数据、本地化显示名与签名权限
-Tests/                核心逻辑和原生界面测试
-scripts/              构建、测试与实机验证工具
-Makefile              开发命令入口
+Sources/Auralim/       Menu bar, settings, localization, appearance, and location services
+Sources/AuralimCore/   Solar calculations, offsets, scheduling, and offline time-zone lookup
+Sources/CZoneDetect/   Time-zone boundary data parser
+Resources/            App metadata, localized display names, and signing entitlements
+Tests/                Core logic and native UI tests
+scripts/              Build, test, and on-device verification tools
+Makefile              Development command entry points
 ```
 
-天文计算采用 Meeus / NOAA 太阳坐标方程与标准视地平线 `−0.833°`，在当地日期区间计算日出、日落。调度通过单次定时器和系统事件触发重算，外观请求串行执行；位置服务使用单次定位及可用的系统位置变化通知。
+Solar calculations use Meeus / NOAA solar coordinate equations and a standard apparent horizon of `−0.833°` to calculate sunrise and sunset within the local date. One-shot timers and system events trigger schedule updates, with appearance requests executed serially. Location services use one-time requests and system location-change notifications where available.
 
-### 按变更范围测试
+### Test only the affected scope
 
-每次修改仅运行受影响的测试。普通测试必须指定 `FILTER`，未指定时不会执行：
+Run only the tests affected by each change. Regular tests require an explicit `FILTER`; they will not run without one:
 
 ```sh
 make test FILTER=SolarTests
 make test FILTER=LocalizationTests
 ```
 
-| 命令 | 验证范围 |
+| Command | Scope |
 | --- | --- |
-| `make test-sliders` | 滑块渐变渲染 |
-| `make test-ui` | 滑块与输入框交互、同步和时间显示 |
-| `make test-ui-layout` | 设置与菜单栏布局、语言、深浅外观和滚动 |
-| `make test-appearance-mode` | 外观模式、系统状态读取与请求协调 |
-| `make test-ui-mode` | 托盘与设置的模式切换和同步 |
-| `make test-transitions` | 动画触发、系统结果与请求协调 |
-| `make test-ui-transitions` | 半屏日月过渡、动画开关与资源释放 |
+| `make test-sliders` | Slider gradient rendering |
+| `make test-ui` | Slider and input interactions, synchronization, and displayed switch times |
+| `make test-ui-layout` | Settings and menu bar layout, languages, light/dark appearance, and scrolling |
+| `make test-appearance-mode` | Appearance modes, system state reads, and request coordination |
+| `make test-ui-mode` | Appearance mode switching and synchronization between both panels |
+| `make test-transitions` | Animation triggers, system results, and request coordination |
+| `make test-ui-transitions` | Half-screen sun-and-moon transitions, the animation toggle, and resource cleanup |
 
-原生界面测试需要 macOS 登录会话、辅助功能和屏幕录制权限，使用临时偏好与替身系统服务。真实外观授权、睡眠唤醒、登录启动、定位权限和跨时区旅行需另行实机验收。
+Native UI tests require a macOS login session, Accessibility permission, and Screen Recording permission. They use temporary preferences and mock system services. Actual appearance authorization, sleep/wake recovery, launch at login, location permissions, and travel across time zones require separate on-device validation.
 
-部分 Command Line Tools 自带的 Swift Testing 框架要求 macOS 14+ 才能运行测试；这不改变应用的 macOS 13 部署目标。具体架构与系统版本的实机验证范围见对应 Release。
+Some Command Line Tools distributions ship a Swift Testing framework that requires macOS 14+ to run tests. This does not change the app's macOS 13 deployment target. See the relevant release for the architectures and macOS versions validated on hardware.
 
-## 许可与数据来源
+## License and data sources
 
-项目采用 [MIT License](LICENSE)。第三方组件与数据保留各自许可：
+The project uses the [MIT License](LICENSE). Third-party components and data retain their own licenses:
 
-- [ZoneDetect](https://github.com/BertoldVdb/ZoneDetect)：BSD-3-Clause，许可见 [ZoneDetect-LICENSE.txt](Sources/AuralimCore/Resources/ZoneDetect-LICENSE.txt)。
-- 时区边界数据包含 [timezone-boundary-builder](https://github.com/evansiroky/timezone-boundary-builder) 的信息，以 ODbL 1.0 提供，许可见 [TimezoneData-LICENSE.txt](Sources/AuralimCore/Resources/TimezoneData-LICENSE.txt)。
-- 内置数据库版本为 2024a，不在运行时更新；时区偏移与夏令时规则由 macOS Foundation 提供。固定来源与完整声明见 [TimezoneData-NOTICE.txt](Sources/AuralimCore/Resources/TimezoneData-NOTICE.txt)，也可从应用设置底部查看。
+- [ZoneDetect](https://github.com/BertoldVdb/ZoneDetect): BSD-3-Clause; see [ZoneDetect-LICENSE.txt](Sources/AuralimCore/Resources/ZoneDetect-LICENSE.txt).
+- Time-zone boundary data contains information from [timezone-boundary-builder](https://github.com/evansiroky/timezone-boundary-builder), made available under ODbL 1.0; see [TimezoneData-LICENSE.txt](Sources/AuralimCore/Resources/TimezoneData-LICENSE.txt).
+- The bundled database is version 2024a and is not updated at runtime. Time-zone offsets and daylight-saving rules come from macOS Foundation. See [TimezoneData-NOTICE.txt](Sources/AuralimCore/Resources/TimezoneData-NOTICE.txt) for pinned sources and full notices, also available from the bottom of the app's settings.
