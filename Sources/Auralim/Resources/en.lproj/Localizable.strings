@@ -116,6 +116,7 @@
 
 "licenses.open" = "Licenses & data sources";
 
+"appearance.retry" = "Retry";
 "appearance.mode" = "Appearance";
 "appearance.systemAuto" = "System Auto";
 "appearance.systemManaged" = "System managed";

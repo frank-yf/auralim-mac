@@ -53,9 +53,6 @@ struct SettingsContent: View {
                             .fixedSize(horizontal: false, vertical: true)
                     }
                     Spacer(minLength: 4)
-                    Button { model.retry() } label: { Image(systemName: "arrow.clockwise") }
-                        .buttonStyle(.borderless).help(model.t("check.now"))
-                        .accessibilityLabel(model.t("check.now")).accessibilityIdentifier("check-appearance")
                     AppearanceModePicker(selection: Binding(get: { model.appearanceMode }, set: { model.selectAppearanceMode($0) }),
                                          localizer: state.localizer, identifier: "settings-appearance-mode")
                         .frame(width: 210, alignment: .trailing)
@@ -63,7 +60,14 @@ struct SettingsContent: View {
                 Toggle(model.t("transition.enabled"), isOn: Binding(get: { model.transitionAnimationEnabled }, set: { model.transitionAnimationEnabled = $0 }))
                     .toggleStyle(.switch).controlSize(.small).font(.caption)
                     .accessibilityIdentifier("appearance-animation")
-                if let error = value.error { DuskNotice(text: error, warning: true) }
+                if let error = value.error {
+                    HStack(alignment: .top, spacing: 12) {
+                        DuskNotice(text: error, warning: true)
+                        Spacer(minLength: 0)
+                        Button(model.t("appearance.retry")) { model.retry() }
+                            .accessibilityIdentifier("retry-appearance")
+                    }
+                }
             }.duskCard()
         }
     }

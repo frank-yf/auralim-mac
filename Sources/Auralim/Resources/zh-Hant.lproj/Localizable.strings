@@ -116,6 +116,7 @@
 
 "licenses.open" = "授權與資料來源";
 
+"appearance.retry" = "重試";
 "appearance.mode" = "外觀模式";
 "appearance.systemAuto" = "系統自動";
 "appearance.systemManaged" = "系統管理";

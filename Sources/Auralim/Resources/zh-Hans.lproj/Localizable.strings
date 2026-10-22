@@ -116,6 +116,7 @@
 
 "licenses.open" = "许可与数据来源";
 
+"appearance.retry" = "重试";
 "appearance.mode" = "外观模式";
 "appearance.systemAuto" = "系统自动";
 "appearance.systemManaged" = "系统管理";

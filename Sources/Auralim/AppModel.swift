@@ -116,6 +116,7 @@ final class AppModel: ObservableObject {
          clock: @escaping () -> Date = Date.init, enableTimers: Bool = true,
          workspaceNotifications: NotificationCenter = NSWorkspace.shared.notificationCenter,
          systemNotifications: NotificationCenter = .default,
+         appearanceNotifications: NotificationCenter = DistributedNotificationCenter.default(),
          preferredLanguages: @escaping () -> [String] = { Locale.preferredLanguages },
          loginItemController: LoginItemControlling? = nil,
          locationController: LocationProviding? = nil,
@@ -142,6 +143,7 @@ final class AppModel: ObservableObject {
         observe(NSWorkspace.didWakeNotification, center: workspaceNotifications, refreshLocation: true)
         observe(NSWorkspace.sessionDidBecomeActiveNotification, center: workspaceNotifications, refreshLocation: true)
         observe(.NSSystemClockDidChange, center: systemNotifications)
+        observe(Notification.Name("AppleInterfaceThemeChangedNotification"), center: appearanceNotifications)
         observe(.NSSystemTimeZoneDidChange, center: systemNotifications, refreshLocation: true)
         let localeObserver = systemNotifications.addObserver(forName: NSLocale.currentLocaleDidChangeNotification,
                                                              object: nil, queue: .main) { [weak self] _ in
@@ -153,7 +155,7 @@ final class AppModel: ObservableObject {
         observers.append((systemNotifications, localeObserver))
         let activationObserver = systemNotifications.addObserver(forName: NSApplication.didBecomeActiveNotification,
                                                                  object: nil, queue: .main) { [weak self] _ in
-            Task { @MainActor in self?.refreshLoginItemStatus(); self?.refreshLocation() }
+            Task { @MainActor in self?.reconcile(); self?.refreshLoginItemStatus(); self?.refreshLocation() }
         }
         observers.append((systemNotifications, activationObserver))
         refreshLoginItemStatus()
