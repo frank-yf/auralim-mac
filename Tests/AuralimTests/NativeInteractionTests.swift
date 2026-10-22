@@ -303,8 +303,8 @@ struct NativeInteractionTests {
         #expect(locationCapture.terminationStatus == 0)
         location.onEvent?(.failed(.denied))
         settle()
-        #expect(model.city == model.manualCity)
-        #expect(model.locationStatus.contains("上海"))
+        #expect(model.city.timeZoneID == "America/New_York")
+        #expect(model.locationStatus.contains("缓存位置"))
         mode.selectedSegment = 0
         #expect(mode.sendAction(mode.action, to: mode.target))
         settle()

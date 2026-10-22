@@ -15,6 +15,16 @@ public struct City: Identifiable, Equatable, Sendable {
         self.timeZoneID = timeZoneID ?? id
     }
 
+    /// Match IANA identifiers first; TZif data also covers system aliases.
+    /// A time zone cannot distinguish cities that share the same zone.
+    public static func matching(timeZone: TimeZone) -> City? {
+        if let exact = all.first(where: { $0.timeZoneID == timeZone.identifier }) {
+            return exact
+        }
+        let data = (timeZone as NSTimeZone).data
+        return all.first { ($0.timeZone as NSTimeZone).data == data }
+    }
+
     public static let all: [City] = [
         .init(id: "Asia/Shanghai", name: "上海", latitude: 31.2304, longitude: 121.4737),
         .init(id: "beijing", name: "北京", latitude: 39.9042, longitude: 116.4074, timeZoneID: "Asia/Shanghai"),

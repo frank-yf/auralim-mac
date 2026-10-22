@@ -2,5 +2,5 @@
 "CFBundleDisplayName" = "Auralim";
 "NSAppleEventsUsageDescription" = "Auralim needs to control System Events to switch system appearance at locally calculated sunrise and sunset times.";
 
-"NSLocationUsageDescription" = "Auralim uses your location and bundled offline time-zone boundaries to calculate local sunrise and sunset while traveling. If location is unavailable, it uses your saved manual city.";
-"NSLocationWhenInUseUsageDescription" = "Auralim uses your location and bundled offline time-zone boundaries to calculate local sunrise and sunset while traveling. If location is unavailable, it uses your saved manual city.";
+"NSLocationUsageDescription" = "Auralim uses your location and offline time-zone data to calculate local sunrise and sunset. Coordinates are cached only on this Mac, never uploaded. Failed refreshes keep the cached location; without a valid cache, your manual city is used.";
+"NSLocationWhenInUseUsageDescription" = "Auralim uses your location and offline time-zone data to calculate local sunrise and sunset. Coordinates are cached only on this Mac, never uploaded. Failed refreshes keep the cached location; without a valid cache, your manual city is used.";

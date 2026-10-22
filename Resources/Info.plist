@@ -7,14 +7,14 @@
     <key>CFBundleDisplayName</key><string>Auralim</string>
     <key>CFBundlePackageType</key><string>APPL</string>
     <key>CFBundleIconFile</key><string>Auralim.icns</string>
-    <key>CFBundleShortVersionString</key><string>0.2.4</string>
-    <key>CFBundleVersion</key><string>23</string>
+    <key>CFBundleShortVersionString</key><string>0.2.5</string>
+    <key>CFBundleVersion</key><string>24</string>
     <key>CFBundleDevelopmentRegion</key><string>en</string>
     <key>CFBundleLocalizations</key><array><string>en</string><string>zh-Hans</string><string>zh-Hant</string></array>
     <key>LSMinimumSystemVersion</key><string>13.0</string>
     <key>LSUIElement</key><true/>
     <key>NSHighResolutionCapable</key><true/>
-    <key>NSLocationUsageDescription</key><string>Auralim uses your location and bundled offline time-zone boundaries to calculate local sunrise and sunset while traveling. If location is unavailable, it uses your saved manual city.</string>
-    <key>NSLocationWhenInUseUsageDescription</key><string>Auralim uses your location and bundled offline time-zone boundaries to calculate local sunrise and sunset while traveling. If location is unavailable, it uses your saved manual city.</string>
+    <key>NSLocationUsageDescription</key><string>Auralim uses your location and offline time-zone data to calculate local sunrise and sunset. Coordinates are cached only on this Mac, never uploaded. Failed refreshes keep the cached location; without a valid cache, your manual city is used.</string>
+    <key>NSLocationWhenInUseUsageDescription</key><string>Auralim uses your location and offline time-zone data to calculate local sunrise and sunset. Coordinates are cached only on this Mac, never uploaded. Failed refreshes keep the cached location; without a valid cache, your manual city is used.</string>
     <key>NSAppleEventsUsageDescription</key><string>Auralim needs to control System Events to switch system appearance at locally calculated sunrise and sunset times.</string>
 </dict></plist>

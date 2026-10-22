@@ -6,10 +6,11 @@ import AuralimCore
 @MainActor
 final class FakeLocation: LocationProviding {
     var onEvent: ((LocationEvent) -> Void)?
-    var starts = 0, refreshes = 0, stops = 0
+    var starts = 0, refreshes = 0, stops = 0, freshnessChecks = 0
     func start() { starts += 1; onEvent?(.locating) }
     func refresh() { refreshes += 1; onEvent?(.locating) }
     func stop() { stops += 1 }
+    func refreshIfNeeded() { freshnessChecks += 1 }
 }
 
 private final class LocationAppearanceSpy: AppearanceApplying {
@@ -38,7 +39,8 @@ struct LocationTests {
         let location = FakeLocation(), appearance = LocationAppearanceSpy()
         let workspace = NotificationCenter(), system = NotificationCenter()
         let model = AppModel(defaults: store, controller: appearance, clock: { now }, enableTimers: false,
-                             workspaceNotifications: workspace, systemNotifications: system, locationController: location)
+                             workspaceNotifications: workspace, systemNotifications: system,
+                             systemTimeZone: { TimeZone(identifier: "Asia/Shanghai")! }, locationController: location)
         defer { model.shutdown(); store.removePersistentDomain(forName: suite) }
         try await body(model, location, appearance, store, workspace, system)
     }
@@ -82,11 +84,10 @@ struct LocationTests {
         }
     }
 
-    @Test func eachFailureFallsBackAndCanRecoverWithoutOverwritingManualCity() async {
+    @Test func eachFailureWithoutCacheFallsBackAndCanRecoverWithoutOverwritingManualCity() async {
         await withModel(true) { model, location, _, store, _, _ in
             model.cityID = "Asia/Tokyo"
             for failure in [LocationFailure.denied, .servicesDisabled, .unavailable, .timeout, .timeZoneUnavailable] {
-                location.onEvent?(.resolved(newYork))
                 location.onEvent?(.failed(failure))
                 #expect(model.city.id == "Asia/Tokyo")
                 #expect(model.locatedCity == nil)
@@ -102,7 +103,7 @@ struct LocationTests {
         }
     }
 
-    @Test func automaticModePersistsButCoordinatesDoNot() async {
+    @Test func automaticModePersistsAndRestoresThroughTheLocationProvider() async {
         await withModel { model, location, _, store, _, _ in
             model.locationMode = .automatic
             location.onEvent?(.resolved(newYork))
@@ -130,7 +131,9 @@ struct LocationTests {
             await Task.yield()
             system.post(name: NSApplication.didBecomeActiveNotification, object: nil)
             await Task.yield()
-            #expect(location.refreshes == 3)
+            #expect(location.refreshes == 1 && location.freshnessChecks == 2)
+            model.refreshLocation()
+            #expect(location.refreshes == 2)
         }
     }
 
@@ -185,4 +188,62 @@ struct LocationTests {
         #expect(!valid(91))
         #expect(!valid(31, 181))
     }
+    @Test(arguments: [("Asia/Shanghai", "Asia/Shanghai"), ("Asia/Tokyo", "Asia/Tokyo"),
+                     ("America/New_York", "America/New_York"), ("US/Pacific", "America/Los_Angeles"),
+                     ("UTC", "Asia/Shanghai")])
+    func firstLaunchMatchesSystemTimeZoneAndPersistsCity(zone: String, expected: String) {
+        let suite = "Auralim.InitialCity.\(UUID().uuidString)"
+        let store = UserDefaults(suiteName: suite)!
+        defer { store.removePersistentDomain(forName: suite) }
+        let location = FakeLocation()
+        let model = AppModel(defaults: store, controller: LocationAppearanceSpy(), enableTimers: false,
+            systemTimeZone: { TimeZone(identifier: zone)! }, loginItemController: FakeLoginItem(),
+            locationController: location)
+        defer { model.shutdown() }
+        #expect(model.cityID == expected && store.string(forKey: "city") == expected)
+        #expect(model.locationMode == .manual && location.starts == 0)
+    }
+
+    @Test func savedManualCitySurvivesRestartAndObsoleteIntervalIsRemoved() {
+        let suite = "Auralim.SavedCity.\(UUID().uuidString)"
+        let store = UserDefaults(suiteName: suite)!
+        defer { store.removePersistentDomain(forName: suite) }
+        store.set("beijing", forKey: "city")
+        store.set("7d", forKey: "locationRefreshInterval")
+        let location = FakeLocation()
+        let model = AppModel(defaults: store, controller: LocationAppearanceSpy(), enableTimers: false,
+            systemTimeZone: { TimeZone(identifier: "America/New_York")! },
+            loginItemController: FakeLoginItem(), locationController: location)
+        defer { model.shutdown() }
+        #expect(model.cityID == "beijing")
+        #expect(store.object(forKey: "locationRefreshInterval") == nil)
+        #expect(location.starts == 0)
+    }
+
+    @Test func failedRefreshKeepsCachedCoordinatesTimeZoneAndSolarSchedule() async {
+        await withModel(true) { model, location, _, _, _, _ in
+            model.cityID = "Asia/Tokyo"
+            location.onEvent?(.resolved(newYork))
+            let transition = model.schedule?.nextTransition
+            for failure in [LocationFailure.denied, .servicesDisabled, .unavailable, .timeout, .timeZoneUnavailable] {
+                location.onEvent?(.locating)
+                #expect(model.city == newYork)
+                location.onEvent?(.failed(failure, cachedCity: newYork))
+                #expect(model.city == newYork && model.locatedCity == newYork)
+                #expect(model.schedule?.nextTransition == transition)
+                #expect(!model.isLocating && model.locationFailure == failure)
+                #expect(model.locationStatus.contains("cached location"))
+                #expect(model.locationStatus.contains("40.713") && model.locationStatus.contains("-74.006"))
+                #expect(!model.locationStatus.contains("Tokyo"))
+            }
+            // A provider without an attached fallback must not discard the last successful fix either.
+            location.onEvent?(.failed(.timeout))
+            #expect(model.city == newYork)
+            location.onEvent?(.resolved(City.all[0]))
+            #expect(model.locationFailure == nil && model.city == City.all[0])
+            model.locationMode = .manual
+            #expect(model.city.id == "Asia/Tokyo")
+        }
+    }
+
 }

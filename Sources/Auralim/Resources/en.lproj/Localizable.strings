@@ -14,7 +14,7 @@
 "light" = "Light";
 "no.schedule" = "No upcoming switches";
 "checking" = "Checking system appearance…";
-"settings.open" = "Settings…";
+"settings.open" = "Settings";
 "quit" = "Quit";
 "tab.general" = "Automatic switching";
 "tab.help" = "Help";
@@ -62,7 +62,7 @@
 "help.offset.title" = "Sunrise and sunset offsets";
 "help.offset.body" = "Adjust sunrise and sunset independently by up to 120 minutes in either direction, in 1-minute steps. The slider center means on time. At sunrise, left delays light mode and right brings it forward. At sunset, left delays dark mode and right brings it forward. Negative input means earlier; positive means later. Valid input previews immediately and applies when you release the slider, press Return, or leave the field. Reset restores a zero offset.";
 "help.city.title" = "Cities, time zones, and offline use";
-"help.city.body" = "Times use the active location’s time zone and local date, including daylight saving changes. Sunrise, sunset, and time-zone lookup are calculated on this Mac. Manual mode works offline without location permission. Automatic mode uses macOS Location Services and falls back to the saved manual city if it fails.";
+"help.city.body" = "Times use the active location’s time zone and local date, including daylight saving changes. Sunrise, sunset, and time-zone lookup are calculated on this Mac. Manual mode works offline without location permission. Automatic mode uses macOS Location Services with a one-time refresh every 3 hours. Failed refreshes keep the cached location; the saved manual city is used only when no valid cache exists. Location data stays on this Mac and is never uploaded.";
 "help.sleep.title" = "Switching and wake recovery";
 "help.sleep.body" = "Sunrise switches to Light and sunset switches to Dark. On launch and wake, Auralim checks and restores the scheduled appearance. Pausing or quitting keeps the last appearance. Keep the app running for scheduled switches.";
 "help.polar.title" = "Special dates and accuracy";
@@ -112,7 +112,7 @@
 "location.error.timeout" = "Location request timed out.";
 "location.error.timeZoneUnavailable" = "No unambiguous local time zone was found.";
 "help.location.title" = "Automatic location and travel";
-"help.location.body" = "Choose Automatic location to use macOS Location Services. Time zones are resolved from bundled offline boundaries, independently of the system time zone; sunrise and sunset still use local calculations. Current location is shown as coordinates, without online address lookup. Significant location changes, network changes, wake, session restore, and returning to the app can update the location; if location-change monitoring is unavailable, updates rely on those events or Update location. A failed or denied request uses the saved fallback city. Manual city stops location monitoring. Coordinates are held in memory and are not saved or uploaded by Auralim. macOS Location Services may need Wi-Fi or a network; the app cannot guarantee a fix offline. Time-zone boundaries contain information from timezone-boundary-builder, converted by ZoneDetect (2024a), available under ODbL 1.0. Near borders or after boundary changes, use a manual city if needed.";
+"help.location.body" = "Enabling automatic location for the first time requests macOS location permission. Coordinates, time zone, and fix time are cached only on this Mac and never uploaded. Time zones and sunrise/sunset use local data. A one-time fix is requested every 3 hours without continuous tracking. Manual refresh or a system time-zone change requests a new fix; failures keep the cache, or use the saved manual city if no valid cache exists. Manual mode cancels acquisition and refresh. macOS Location Services may require Wi-Fi or a network. Time-zone boundaries contain information from timezone-boundary-builder, converted by ZoneDetect (2024a), available under ODbL 1.0.";
 
 "licenses.open" = "Licenses & data sources";
 
@@ -128,3 +128,5 @@
 "transition.sunrise" = "Sunrise · Light appearance";
 "transition.sunset" = "Sunset · Dark appearance";
 "transition.enabled" = "Sunrise and sunset animation";
+
+"location.cachedFallback" = "%@ Using cached location: %@.";

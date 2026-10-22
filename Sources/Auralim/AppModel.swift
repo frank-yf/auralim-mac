@@ -118,6 +118,7 @@ final class AppModel: ObservableObject {
          systemNotifications: NotificationCenter = .default,
          appearanceNotifications: NotificationCenter = DistributedNotificationCenter.default(),
          preferredLanguages: @escaping () -> [String] = { Locale.preferredLanguages },
+         systemTimeZone: () -> TimeZone = { .current },
          loginItemController: LoginItemControlling? = nil,
          locationController: LocationProviding? = nil,
          systemSettings: @escaping @MainActor () -> SystemAppearanceSettings = { .current() },
@@ -125,12 +126,18 @@ final class AppModel: ObservableObject {
         self.defaults = defaults; self.controller = controller; self.clock = clock; self.enableTimers = enableTimers
         self.transitionPlayer = transitionPlayer ?? AppearanceTransitionController()
         self.loginItemController = loginItemController ?? LoginItemController()
-        self.locationController = locationController ?? LocationController()
+        self.locationController = locationController ?? LocationController(defaults: defaults)
         self.preferredLanguages = preferredLanguages
         self.readSystemSettings = systemSettings
         self.systemSettings = systemSettings()
         language = AppLanguage(rawValue: defaults.string(forKey: "language") ?? "system") ?? .system
-        cityID = defaults.string(forKey: "city") ?? City.all[0].id
+        if let savedCity = defaults.string(forKey: "city") {
+            cityID = savedCity
+        } else {
+            let initialCity = City.matching(timeZone: systemTimeZone()) ?? City.all[0]
+            cityID = initialCity.id
+            defaults.set(initialCity.id, forKey: "city")
+        }
         offset = SolarOffset.clamp(defaults.integer(forKey: "offset"))
         sunriseOffset = SolarOffset.clamp(defaults.integer(forKey: "sunriseOffset"))
         let automatic = defaults.bool(forKey: "enabled")
@@ -140,6 +147,7 @@ final class AppModel: ObservableObject {
         manualAppearance = nil
         transitionAnimationEnabled = defaults.bool(forKey: "transitionAnimationEnabled")
         locationMode = LocationMode(rawValue: defaults.string(forKey: "locationMode") ?? "manual") ?? .manual
+        defaults.removeObject(forKey: "locationRefreshInterval")
         observe(NSWorkspace.didWakeNotification, center: workspaceNotifications, refreshLocation: true)
         observe(NSWorkspace.sessionDidBecomeActiveNotification, center: workspaceNotifications, refreshLocation: true)
         observe(.NSSystemClockDidChange, center: systemNotifications)
@@ -155,7 +163,7 @@ final class AppModel: ObservableObject {
         observers.append((systemNotifications, localeObserver))
         let activationObserver = systemNotifications.addObserver(forName: NSApplication.didBecomeActiveNotification,
                                                                  object: nil, queue: .main) { [weak self] _ in
-            Task { @MainActor in self?.reconcile(); self?.refreshLoginItemStatus(); self?.refreshLocation() }
+            Task { @MainActor in self?.reconcile(); self?.refreshLoginItemStatus(); self?.refreshLocation(force: false) }
         }
         observers.append((systemNotifications, activationObserver))
         refreshLoginItemStatus()
@@ -164,9 +172,10 @@ final class AppModel: ObservableObject {
         if locationMode == .automatic { self.locationController.start() }
     }
 
-    func refreshLocation() {
+    func refreshLocation(force: Bool = true) {
         guard locationMode == .automatic else { return }
-        locationController.refresh()
+        if force { locationController.refresh() }
+        else { locationController.refreshIfNeeded() }
     }
 
     private func receiveLocation(_ event: LocationEvent) {
@@ -176,8 +185,8 @@ final class AppModel: ObservableObject {
         case .locating: isLocating = true; locationFailure = nil
         case .resolved(let city):
             locatedCity = city; isLocating = false; locationFailure = nil
-        case .failed(let error):
-            locatedCity = nil; isLocating = false; locationFailure = error
+        case .failed(let error, let cachedCity):
+            locatedCity = cachedCity ?? locatedCity; isLocating = false; locationFailure = error
         }
         guard previous != city else { return }
         // Location events are automatic; they must not repeatedly request a
@@ -187,14 +196,21 @@ final class AppModel: ObservableObject {
     }
 
     var locationStatus: String {
-        if let locationFailure { return t("location.fallback", t(locationFailure.localizationKey), cityName(manualCity)) }
+        if let locationFailure {
+            if let locatedCity {
+                return t("location.cachedFallback", t(locationFailure.localizationKey), locationCoordinates(locatedCity))
+            }
+            return t("location.fallback", t(locationFailure.localizationKey), cityName(manualCity))
+        }
         if isLocating { return t("location.locating") }
         if let locatedCity {
-            let coordinates = String(format: "%.3f, %.3f", locale: localizer.locale,
-                                     locatedCity.latitude, locatedCity.longitude)
-            return t("location.using", coordinates)
+            return t("location.using", locationCoordinates(locatedCity))
         }
         return t("location.manual.hint")
+    }
+
+    private func locationCoordinates(_ city: City) -> String {
+        String(format: "%.3f, %.3f", locale: localizer.locale, city.latitude, city.longitude)
     }
 
     func refreshLoginItemStatus() {
@@ -219,7 +235,7 @@ final class AppModel: ObservableObject {
         let token = center.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
             Task { @MainActor in
                 self?.reconcile()
-                if refreshLocation { self?.refreshLocation() }
+                if refreshLocation { self?.refreshLocation(force: name == .NSSystemTimeZoneDidChange) }
             }
         }
         observers.append((center, token))

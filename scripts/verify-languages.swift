@@ -59,7 +59,7 @@ func press(_ element: AXUIElement) {
 func openSettings() -> AXUIElement {
     if panelWindows().isEmpty { pressStatusItem() }
     guard let panel = panelWindows().first,
-          let button = descendants(panel).first(where: { ["设置…", "設定…", "Settings…"].contains(label($0)) }) else {
+          let button = descendants(panel).first(where: { ["设置", "設定", "Settings"].contains(label($0)) }) else {
         fatalError("No settings entry in menu panel")
     }
     press(button)
@@ -113,8 +113,8 @@ do {
     if brandOnly {
         guard let url = running.bundleURL, let bundle = Bundle(url: url) else { throw VerificationError(message: "No running app bundle") }
         try require(url.lastPathComponent == "Auralim.app", "Unexpected app package name")
-        try require(bundle.infoDictionary?["CFBundleShortVersionString"] as? String == "0.2.3", "Wrong app version")
-        try require(bundle.infoDictionary?["CFBundleVersion"] as? String == "22", "Wrong build number")
+        try require(bundle.infoDictionary?["CFBundleShortVersionString"] as? String == "0.2.5", "Wrong app version")
+        try require(bundle.infoDictionary?["CFBundleVersion"] as? String == "24", "Wrong build number")
         try require(bundle.infoDictionary?["CFBundleName"] as? String == "Auralim", "Wrong fallback name")
         for (language, expected) in [("en", "Auralim"), ("zh-Hans", "晨昏"), ("zh-Hant", "晨昏")] {
             let file = url.appendingPathComponent("Contents/Resources/\(language).lproj/InfoPlist.strings")

@@ -59,7 +59,7 @@ func press(_ element: AXUIElement) {
 func openSettings() -> AXUIElement {
     if panelWindows().isEmpty { pressStatusItem() }
     guard let panel = panelWindows().first,
-          let button = descendants(panel).first(where: { ["设置…", "設定…", "Settings…"].contains(label($0)) }) else {
+          let button = descendants(panel).first(where: { ["设置", "設定", "Settings"].contains(label($0)) }) else {
         fatalError("No settings entry in menu panel")
     }
     press(button)

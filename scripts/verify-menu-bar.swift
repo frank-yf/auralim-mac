@@ -58,7 +58,7 @@ func press(_ element: AXUIElement) {
 func openSettings() -> AXUIElement {
     if panelWindows().isEmpty { pressStatusItem() }
     guard let panel = panelWindows().first,
-          let button = descendants(panel).first(where: { ["设置…", "設定…", "Settings…"].contains(label($0)) }) else {
+          let button = descendants(panel).first(where: { ["设置", "設定", "Settings"].contains(label($0)) }) else {
         fatalError("No settings entry in menu panel")
     }
     press(button)
@@ -97,7 +97,7 @@ if settingsMode {
         let sliders = elements.filter { read($0, kAXRoleAttribute as CFString) as? String == "AXSlider" }
         let inputs = elements.filter { read($0, kAXRoleAttribute as CFString) as? String == "AXTextField" }
         precondition(sliders.isEmpty && inputs.isEmpty)
-        precondition(elements.contains { ["设置…", "設定…", "Settings…"].contains(label($0)) })
+        precondition(elements.contains { ["设置", "設定", "Settings"].contains(label($0)) })
         print("Open cycle \(cycle): \(measured.width) × \(measured.height); compact status, appearance modes, settings, quit; no offset editors")
         if cycle < 3 { pressStatusItem(); precondition(panelWindows().isEmpty) }
     }

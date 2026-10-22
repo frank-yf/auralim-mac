@@ -15,7 +15,7 @@ Auralim is a native macOS menu bar app built with Swift and SwiftUI. It switches
 - **Automatic sunrise and sunset switching**: independently calculates solar events to switch to light at sunrise and dark at sunset.
 - **Separate time offsets**: adjust sunrise and sunset independently by ±120 minutes, using synchronized sliders and minute inputs. Settings show the adjusted switch times.
 - **Three appearance modes**: Light, Auto, and Dark stay synchronized between the menu bar panel and settings. System Auto and App Auto are clearly distinguished.
-- **Travel support**: automatic location uses your current coordinates and local time zone. You can also choose a built-in city; failed location requests fall back to your saved manual city.
+- **Travel support**: automatic location uses your current coordinates and local time zone. You can also choose a built-in city; failed refreshes keep the cached location, using the saved manual city only when no valid cache exists.
 - **Wake recovery**: checks appearance and the schedule on launch, wake, session restore, and system time changes.
 - **Menu bar app**: no Dock icon or WebView. Scheduling uses events and one-shot timers, with no continuous background polling.
 - **Preferences**: launch at login, Simplified Chinese / Traditional Chinese / English, and an optional sun-and-moon transition animation that is off by default.
@@ -33,6 +33,8 @@ v0.2.1 is ad-hoc signed and has not been notarized by Apple. macOS may block the
 ### Usage
 
 Choose Manual city or Automatic location in settings, then select an appearance mode in the menu bar panel or settings:
+
+With no saved city, the app matches the system time zone to a built-in city. It uses the first listed city when several share a zone, and Shanghai if no match exists. The choice is saved for later launches.
 
 | Mode | Behavior |
 | --- | --- |
@@ -59,7 +61,7 @@ The automatic schedule keeps light appearance during polar day and dark appearan
 
 #### Offline use, privacy, and quitting
 
-Manual city mode works entirely offline. Automatic location uses macOS Location Services, which may require Wi-Fi or a network connection. If a valid location or time zone cannot be determined, Auralim falls back to your saved manual city. Auralim does not upload coordinates. Settings such as your city, offsets, and language are stored locally.
+Manual city mode works entirely offline. Enabling automatic location for the first time requests macOS location permission. Automatic location uses macOS Location Services, which may require Wi-Fi or a network connection. Coordinates, the local time zone, and the fix timestamp are cached only on your Mac; Auralim never uploads location data. It requests a one-time fix every 3 hours without continuous tracking or a configurable refresh interval. Launch and wake reuse fresh cached data; manual refresh and system time-zone changes request a new fix immediately. Failed refreshes keep the cached location. Your saved manual city is used only when no valid cache exists. City, offset, and language settings are also stored locally.
 
 Closing settings keeps the app running. Choose Quit from the menu bar panel to stop future scheduling while keeping the current system appearance. Launch at login can be enabled in settings. The sun-and-moon animation is off by default and respects the system's Reduce Motion setting when enabled.
 
@@ -103,7 +105,7 @@ scripts/              Build, test, and on-device verification tools
 Makefile              Development command entry points
 ```
 
-Solar calculations use Meeus / NOAA solar coordinate equations and a standard apparent horizon of `−0.833°` to calculate sunrise and sunset within the local date. One-shot timers and system events trigger schedule updates, with appearance requests executed serially. Location services use one-time requests and system location-change notifications where available.
+Solar calculations use Meeus / NOAA solar coordinate equations and a standard apparent horizon of `−0.833°` to calculate sunrise and sunset within the local date. One-shot timers and system events trigger schedule updates, with appearance requests executed serially. Location uses one-shot requests and one-shot periodic timers, with no continuous updates or significant-change monitoring. Transient failures receive bounded retries within a 30-second acquisition deadline.
 
 ### Test only the affected scope
 

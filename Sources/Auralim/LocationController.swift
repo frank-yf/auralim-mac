@@ -1,5 +1,5 @@
 import CoreLocation
-import Network
+import os
 import AuralimCore
 
 enum LocationMode: String, CaseIterable, Identifiable {
@@ -13,7 +13,7 @@ enum LocationFailure: String, Error {
 }
 
 enum LocationEvent {
-    case locating, resolved(City), failed(LocationFailure)
+    case locating, resolved(City), failed(LocationFailure, cachedCity: City? = nil)
 }
 
 @MainActor
@@ -22,6 +22,7 @@ protocol LocationProviding: AnyObject {
     func start()
     func refresh()
     func stop()
+    func refreshIfNeeded()
 }
 
 struct LocationSample {
@@ -38,121 +39,223 @@ struct LocationSample {
     }
 }
 
-/// Uses significant-change notifications where supported, one-shot fixes on
-/// network/wake/activation events otherwise. Never starts continuous updates.
+/// One-shot acquisition, a local cache and one-shot periodic refresh timers.
 @MainActor
-// Managers are created on the main run loop, where Core Location delivers
-// their delegate callbacks. The SDK's delegate protocol predates actor isolation.
-final class LocationController: NSObject, LocationProviding, @preconcurrency CLLocationManagerDelegate {
+final class LocationController: LocationProviding {
     var onEvent: ((LocationEvent) -> Void)?
-    private var manager: CLLocationManager?
-    private var network: NWPathMonitor?
+    private var session: (any LocationSession)?
     private var timeout: Timer?
+    private var retry: Timer?
+    private var refreshTimer: Timer?
+    private(set) var nextRefresh: Date?
     private var pending = false
-    private var monitoring = false
-    private var lastRequest: Date?
+    private var active = false
+    private var awaitingAuthorization = false
     private var requestGeneration = 0
+    private var refreshGeneration = 0
+    private var requestDeadline: Date?
+    private var attempt = 0
+    private let retryDelays: [TimeInterval] = [2, 5, 10]
+    private let defaults: UserDefaults
+    private var cache: CachedLocation?
+    private let makeSession: @MainActor () -> any LocationSession
+    private let servicesEnabled: @MainActor () -> Bool
+    private let schedule: @MainActor (TimeInterval, @escaping @MainActor () -> Void) -> Timer
+    private let now: () -> Date
+    private let lookupTimeZone: ((Double, Double) -> TimeZone?)?
     private lazy var timeZones = OfflineTimeZoneLookup()
+    private let logger = Logger(subsystem: "app.duskshift.mac", category: "Location")
 
-    func start() {
-        guard manager == nil else { refresh(); return }
-        let manager = CLLocationManager()
-        self.manager = manager
-        manager.delegate = self
-        manager.desiredAccuracy = kCLLocationAccuracyKilometer
-        let network = NWPathMonitor()
-        network.pathUpdateHandler = { [weak self] path in
-            guard path.status == .satisfied else { return }
-            Task { @MainActor in self?.requestFix(force: false) }
-        }
-        self.network = network
-        network.start(queue: DispatchQueue(label: "app.duskshift.location-network", qos: .utility))
-        requestFix(force: true)
+    init(defaults: UserDefaults = .standard,
+         makeSession: @escaping @MainActor () -> any LocationSession = { CoreLocationSession() },
+         servicesEnabled: @escaping @MainActor () -> Bool = { CLLocationManager.locationServicesEnabled() },
+         now: @escaping () -> Date = Date.init,
+         lookupTimeZone: ((Double, Double) -> TimeZone?)? = nil,
+         schedule: @escaping @MainActor (TimeInterval, @escaping @MainActor () -> Void) -> Timer = { delay, action in
+             let timer = Timer(timeInterval: delay, repeats: false) { _ in
+                 MainActor.assumeIsolated { action() }
+             }
+             RunLoop.main.add(timer, forMode: .common)
+             return timer
+         }) {
+        self.defaults = defaults
+        cache = defaults.data(forKey: "cachedLocation").flatMap { try? JSONDecoder().decode(CachedLocation.self, from: $0) }
+        self.makeSession = makeSession
+        self.servicesEnabled = servicesEnabled
+        self.now = now
+        self.lookupTimeZone = lookupTimeZone
+        self.schedule = schedule
     }
 
-    func refresh() { requestFix(force: true) }
+    func start() {
+        guard !active else { return }
+        active = true
+        if let city = cache?.usableCity(at: now()) { onEvent?(.resolved(city)) }
+        refreshIfNeeded()
+    }
 
-    private func requestFix(force: Bool) {
-        guard let manager, !pending else { return }
-        if !force, let lastRequest, Date().timeIntervalSince(lastRequest) < 60 { return }
-        guard CLLocationManager.locationServicesEnabled() else { fail(.servicesDisabled); return }
-        switch manager.authorizationStatus {
+    func refresh() {
+        guard active else { return }
+        requestFix()
+    }
+
+    func refreshIfNeeded() {
+        guard active, !pending, !awaitingAuthorization else { return }
+        if let cache, cache.isFresh(at: now()) {
+            scheduleRefresh(at: cache.timestamp.addingTimeInterval(LocationPolicy.refreshInterval))
+        } else if nextRefresh == nil || now() >= nextRefresh! {
+            requestFix()
+        }
+    }
+
+    private func requestFix() {
+        guard active, !pending else { return }
+        if session == nil {
+            let session = makeSession()
+            self.session = session
+            session.onEvent = { [weak self, weak session] event in
+                guard let self, let session, self.session === session else { return }
+                self.receive(event)
+            }
+        }
+        guard let session else { return }
+        guard servicesEnabled() else { fail(.servicesDisabled); return }
+        logger.info("Authorization status: \(session.authorizationStatus.rawValue, privacy: .public)")
+        switch session.authorizationStatus {
         case .denied, .restricted: fail(.denied)
         case .notDetermined:
+            guard !awaitingAuthorization else { return }
+            awaitingAuthorization = true
             onEvent?(.locating)
-            manager.requestWhenInUseAuthorization()
+            session.requestAuthorization()
         case .authorizedAlways:
+            awaitingAuthorization = false
             pending = true
+            attempt = 1
             requestGeneration += 1
             let generation = requestGeneration
-            lastRequest = Date()
+            requestDeadline = now().addingTimeInterval(30)
+            cancelRefresh()
             onEvent?(.locating)
-            if !monitoring, CLLocationManager.significantLocationChangeMonitoringAvailable() {
-                monitoring = true
-                manager.startMonitoringSignificantLocationChanges()
+            timeout = schedule(30) { [weak self] in
+                guard let self, self.pending, self.requestGeneration == generation else { return }
+                self.fail(.timeout)
             }
-            timeout?.invalidate()
-            let deadline = Timer(timeInterval: 30, repeats: false) { [weak self] _ in
-                Task { @MainActor in
-                    guard let self, self.pending, self.requestGeneration == generation else { return }
-                    self.fail(.timeout)
-                }
-            }
-            timeout = deadline
-            RunLoop.main.add(deadline, forMode: .common)
-            manager.requestLocation()
+            logger.info("Requesting location, attempt 1")
+            session.requestLocation()
         @unknown default: fail(.unavailable)
         }
     }
 
-    func stop() {
+    private func receive(_ event: LocationSessionEvent) {
+        switch event {
+        case .authorizationChanged:
+            guard let session else { return }
+            if session.authorizationStatus == .denied || session.authorizationStatus == .restricted {
+                fail(.denied)
+            } else {
+                requestFix()
+            }
+        case .locations(let samples):
+            guard let sample = samples.reversed().first(where: { $0.isUsable(at: now()) }) else {
+                scheduleRetry()
+                return
+            }
+            let zone: TimeZone?
+            if let lookupTimeZone {
+                zone = lookupTimeZone(sample.latitude, sample.longitude)
+            } else {
+                zone = timeZones?.timeZone(latitude: sample.latitude, longitude: sample.longitude)
+            }
+            guard let zone else { fail(.timeZoneUnavailable); return }
+            let cached = CachedLocation(sample: sample, timeZone: zone)
+            cache = cached
+            if let data = try? JSONEncoder().encode(cached) {
+                defaults.set(data, forKey: "cachedLocation")
+            }
+            cancelRequest()
+            releaseSession()
+            scheduleRefresh(at: sample.timestamp.addingTimeInterval(LocationPolicy.refreshInterval))
+            logger.info("Location resolved and cached using offline time-zone lookup")
+            if let city = cached.city { onEvent?(.resolved(city)) }
+        case .failed(let error):
+            let nsError = error as NSError
+            logger.error("Location error domain=\(nsError.domain, privacy: .public) code=\(nsError.code, privacy: .public)")
+            guard nsError.domain == kCLErrorDomain else { fail(.unavailable); return }
+            switch CLError.Code(rawValue: nsError.code) {
+            case .denied: fail(.denied)
+            case .locationUnknown, .network: scheduleRetry()
+            default: fail(.unavailable)
+            }
+        }
+    }
+
+    private func scheduleRetry() {
+        guard pending, session != nil, retry == nil else { return }
+        guard attempt <= retryDelays.count else { fail(.unavailable); return }
+        let delay = retryDelays[attempt - 1]
+        let generation = requestGeneration
+        logger.info("Retrying location after \(delay, privacy: .public) seconds")
+        retry = schedule(delay) { [weak self] in
+            guard let self, self.pending, self.requestGeneration == generation else { return }
+            self.retry = nil
+            guard let deadline = self.requestDeadline, self.now() < deadline else {
+                self.fail(.timeout); return
+            }
+            self.attempt += 1
+            self.logger.info("Requesting location, attempt \(self.attempt, privacy: .public)")
+            self.session?.requestLocation()
+        }
+    }
+
+    private func cancelRequest() {
         requestGeneration += 1
         timeout?.invalidate(); timeout = nil
-        network?.cancel(); network = nil
-        manager?.delegate = nil
-        manager?.stopUpdatingLocation()
-        manager?.stopMonitoringSignificantLocationChanges()
-        manager = nil; pending = false; monitoring = false; lastRequest = nil
+        retry?.invalidate(); retry = nil
+        pending = false
+        requestDeadline = nil
+    }
+
+    private func releaseSession() {
+        session?.onEvent = nil
+        session?.invalidate()
+        session = nil
+        awaitingAuthorization = false
+    }
+
+    private func cancelRefresh() {
+        refreshGeneration += 1
+        refreshTimer?.invalidate(); refreshTimer = nil; nextRefresh = nil
+    }
+
+    private func scheduleRefresh(at date: Date) {
+        cancelRefresh()
+        nextRefresh = date
+        guard active else { return }
+        let generation = refreshGeneration
+        refreshTimer = schedule(max(0, date.timeIntervalSince(now()))) { [weak self] in
+            guard let self, self.active, self.refreshGeneration == generation else { return }
+            self.refreshTimer = nil
+            self.nextRefresh = nil
+            self.requestFix()
+        }
+    }
+
+    func stop() {
+        active = false
+        cancelRequest()
+        cancelRefresh()
+        releaseSession()
     }
 
     private func fail(_ error: LocationFailure) {
-        guard manager != nil else { return }
-        requestGeneration += 1
-        timeout?.invalidate(); timeout = nil; pending = false
-        manager?.stopUpdatingLocation()
-        if error == .denied || error == .servicesDisabled {
-            manager?.stopMonitoringSignificantLocationChanges(); monitoring = false
-        }
-        onEvent?(.failed(error))
-    }
-
-    func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
-        guard manager === self.manager else { return }
-        if manager.authorizationStatus == .denied || manager.authorizationStatus == .restricted {
-            fail(.denied); return
-        }
-        requestFix(force: true)
-    }
-
-    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        guard manager === self.manager else { return }
-        guard let sample = locations.reversed().map({
-            LocationSample(latitude: $0.coordinate.latitude, longitude: $0.coordinate.longitude,
-                           accuracy: $0.horizontalAccuracy, timestamp: $0.timestamp)
-        }).first(where: { $0.isUsable(at: Date()) }) else {
-            requestFix(force: false); return
-        }
-        requestGeneration += 1
-        timeout?.invalidate(); timeout = nil; pending = false
-        guard let zone = timeZones?.timeZone(latitude: sample.latitude, longitude: sample.longitude) else {
-            fail(.timeZoneUnavailable); return
-        }
-        onEvent?(.resolved(City(id: "current-location", name: "", latitude: sample.latitude,
-                               longitude: sample.longitude, timeZoneID: zone.identifier)))
-    }
-
-    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        guard manager === self.manager else { return }
-        fail((error as? CLError)?.code == .denied ? .denied : .unavailable)
+        guard let session else { return }
+        cancelRequest()
+        session.stopUpdates()
+        releaseSession()
+        // Keep the previous fix and wait three hours before the next automatic attempt.
+        scheduleRefresh(at: now().addingTimeInterval(LocationPolicy.refreshInterval))
+        logger.error("Location request ended: \(error.rawValue, privacy: .public)")
+        onEvent?(.failed(error, cachedCity: cache?.usableCity(at: now())))
     }
 }
