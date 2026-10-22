@@ -107,18 +107,50 @@ func verify() throws {
             catch { print("RESTORE FAILED:", error) }
         }
     }
+    let verifyAnimations = CommandLine.arguments.contains("--animations")
+    // Nonactivating, click-through panels are not consistently included in
+    // AXWindows. Inspect only this process's visible Core Graphics windows.
+    func transition() -> [String: Any]? {
+        let list = CGWindowListCopyWindowInfo(.optionOnScreenOnly, kCGNullWindowID) as? [[String: Any]] ?? []
+        return list.first { info in
+            guard (info[kCGWindowOwnerPID as String] as? NSNumber)?.int32Value == running.processIdentifier,
+                  let bounds = info[kCGWindowBounds as String] as? [String: Any] else { return false }
+            return (bounds["Width"] as? NSNumber)?.intValue == 280 && (bounds["Height"] as? NSNumber)?.intValue == 184
+        }
+    }
     for (index, fromMenu) in [(2, true), (0, false), (1, true)] {
+        let wasDark = try systemIsDark()
         if fromMenu { try press(options(menu(), "menu-appearance-mode")[index]) }
         else { try chooseSettings(index) }
+        var observedAnimation = verifyAnimations ? transition() : nil
         let deadline = Date(timeIntervalSinceNow: 12)
         var matched = false
         repeat {
+            if verifyAnimations, observedAnimation == nil { observedAnimation = transition() }
             let settingsMatch = try selected(settings, "settings-appearance-mode") == index
             let appearanceMatches = try index == 1 || systemIsDark() == (index == 2)
             if settingsMatch && appearanceMatches && confirmed() { matched = true; break }
             Thread.sleep(forTimeInterval: 0.2)
         } while Date() < deadline
         try require(matched, "Mode or actual system appearance did not match index \(index)")
+        if verifyAnimations {
+            let dark = try systemIsDark()
+            if wasDark != dark {
+                guard let panel = observedAnimation ?? transition() else { throw VerificationFailure(message: "Missing actual appearance animation") }
+                let title = panel[kCGWindowName as String] as? String ?? ""
+                let expected = dark ? ["日落", "Sunset"] : ["日出", "Sunrise"]
+                try require(expected.contains { title.contains($0) }, "Wrong animation direction: \(title)")
+                if let focused = read(app, kAXFocusedWindowAttribute) {
+                    try require(width(focused as! AXUIElement) != 280, "Animation took keyboard focus")
+                }
+                print("Verified actual animation:", title)
+            } else {
+                try require(observedAnimation == nil && transition() == nil, "Unchanged appearance replayed an animation")
+            }
+            let end = Date(timeIntervalSinceNow: 2)
+            while transition() != nil && Date() < end { Thread.sleep(forTimeInterval: 0.1) }
+            try require(transition() == nil, "Animation window did not close")
+        }
         try require(try selected(menu(), "menu-appearance-mode") == index, "Menu selection did not synchronize")
         print("Verified actual mode:", ["Light", "Auto", "Dark"][index], "from", fromMenu ? "menu" : "settings", "system dark:", try systemIsDark())
     }

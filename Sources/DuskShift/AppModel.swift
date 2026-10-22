@@ -89,6 +89,7 @@ final class AppModel: ObservableObject {
 
     private let defaults: UserDefaults
     private let controller: AppearanceApplying
+    private let transitionPlayer: AppearanceTransitionPlaying
     private let loginItemController: LoginItemControlling
     private let locationController: LocationProviding
     private let clock: () -> Date
@@ -111,8 +112,10 @@ final class AppModel: ObservableObject {
          preferredLanguages: @escaping () -> [String] = { Locale.preferredLanguages },
          loginItemController: LoginItemControlling? = nil,
          locationController: LocationProviding? = nil,
-         systemSettings: @escaping @MainActor () -> SystemAppearanceSettings = { .current() }) {
+         systemSettings: @escaping @MainActor () -> SystemAppearanceSettings = { .current() },
+         transitionPlayer: AppearanceTransitionPlaying? = nil) {
         self.defaults = defaults; self.controller = controller; self.clock = clock; self.enableTimers = enableTimers
+        self.transitionPlayer = transitionPlayer ?? AppearanceTransitionController()
         self.loginItemController = loginItemController ?? LoginItemController()
         self.locationController = locationController ?? LocationController()
         self.preferredLanguages = preferredLanguages
@@ -267,7 +270,10 @@ final class AppModel: ObservableObject {
             if freshTarget != target { self.reconcile(); return }
             self.schedule = fresh
             switch result {
-            case .success:
+            case .success(let application):
+                if application.changed {
+                    self.transitionPlayer.play(target, title: self.t(target == .light ? "transition.sunrise" : "transition.sunset"))
+                }
                 self.failures = 0; self.failure = nil
                 self.statusState = .confirmed(target)
                 if self.enabled { self.arm(at: fresh.nextCheck) }
@@ -297,6 +303,7 @@ final class AppModel: ObservableObject {
     }
 
     func shutdown() {
+        transitionPlayer.stop()
         locationController.onEvent = nil
         locationController.stop()
         timer?.invalidate(); timer = nil; scheduledCheck = nil

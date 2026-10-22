@@ -1,8 +1,8 @@
 .DEFAULT_GOAL := help
-.PHONY: help build run test test-sliders test-ui test-ui-layout test-appearance-mode test-ui-mode
+.PHONY: help build run test test-sliders test-ui test-ui-layout test-appearance-mode test-ui-mode test-transitions test-ui-transitions
 
 help:
-	@printf '%s\n' 'make build                     构建并签名 dist/Dusk Shift.app（请先退出运行中的旧版）' 'make run                       打开已构建的应用' 'make test FILTER=SuiteOrTest    只运行指定套件或测试；必须提供 FILTER' 'make test-sliders              只验证滑块渐变渲染（深浅模式）' 'make test-ui                   只验证滑块与输入框交互并截图（需要辅助功能及屏幕录制权限）' 'make test-ui-layout            只验证菜单栏和设置的深浅外观、语言与滚动布局并截图' 'make test-appearance-mode      只验证外观模式、请求协调及相关布局' 'make test-ui-mode              只验证托盘与设置三段切换及同步'
+	@printf '%s\n' 'make build                     构建并签名 dist/Dusk Shift.app（请先退出运行中的旧版）' 'make run                       打开已构建的应用' 'make test FILTER=SuiteOrTest    只运行指定套件或测试；必须提供 FILTER' 'make test-sliders              只验证滑块渐变渲染（深浅模式）' 'make test-ui                   只验证滑块与输入框交互并截图（需要辅助功能及屏幕录制权限）' 'make test-ui-layout            只验证菜单栏和设置的深浅外观、语言与滚动布局并截图' 'make test-appearance-mode      只验证外观模式、请求协调及相关布局' 'make test-ui-mode              只验证托盘与设置三段切换及同步' 'make test-transitions          只验证切换动画触发、实际外观结果与请求协调' 'make test-ui-transitions       只验证日出日落浮层、两处触发、焦点及释放'
 
 build:
 	bash scripts/build-app.sh
@@ -32,3 +32,11 @@ test-appearance-mode:
 test-ui-mode:
 	@mkdir -p artifacts/appearance-mode-0.1.15
 	DUSK_SHIFT_MODE_UI_TESTS=1 DUSK_SHIFT_MODE_UI_OUTPUT="$(CURDIR)/artifacts/appearance-mode-0.1.15" bash scripts/test.sh --filter AppearanceModeInteractionTests
+
+
+test-transitions:
+	$(MAKE) test FILTER='AppearanceTransitionTests|AppearanceModeTests|SettingsPresentationTests/offsetOnlyPublishesEditedSectionAndTimeTextDuringAndAfterVerification'
+
+test-ui-transitions:
+	@mkdir -p artifacts/appearance-transition-0.1.16
+	DUSK_SHIFT_TRANSITION_UI_TESTS=1 DUSK_SHIFT_TRANSITION_UI_OUTPUT="$(CURDIR)/artifacts/appearance-transition-0.1.16" bash scripts/test.sh --filter AppearanceTransitionInteractionTests

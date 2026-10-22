@@ -5,8 +5,8 @@ import DuskShiftCore
 @testable import DuskShift
 
 private final class VisualAppearanceController: AppearanceApplying {
-    func apply(_ appearance: Appearance, completion: @escaping (Result<Void, AppearanceFailure>) -> Void) {
-        completion(.success(()))
+    func apply(_ appearance: Appearance, completion: @escaping (Result<AppearanceApplication, AppearanceFailure>) -> Void) {
+        completion(.success(AppearanceApplication(changed: false)))
     }
 }
 

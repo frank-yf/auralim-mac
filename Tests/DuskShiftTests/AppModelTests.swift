@@ -5,10 +5,10 @@ import DuskShiftCore
 
 private final class FakeAppearance: AppearanceApplying {
     var requests: [Appearance] = []
-    var result: Result<Void, AppearanceFailure> = .success(())
+    var result: Result<AppearanceApplication, AppearanceFailure> = .success(AppearanceApplication(changed: false))
     var hold = false
-    var pending: ((Result<Void, AppearanceFailure>) -> Void)?
-    func apply(_ appearance: Appearance, completion: @escaping (Result<Void, AppearanceFailure>) -> Void) {
+    var pending: ((Result<AppearanceApplication, AppearanceFailure>) -> Void)?
+    func apply(_ appearance: Appearance, completion: @escaping (Result<AppearanceApplication, AppearanceFailure>) -> Void) {
         requests.append(appearance)
         if hold { pending = completion } else { completion(result) }
     }
@@ -61,7 +61,7 @@ final class AppModelTests {
         model.reconcile(); model.reconcile()
         #expect(controller.requests.count == 1)
         #expect(model.errorMessage == "Denied")
-        controller.result = .success(())
+        controller.result = .success(AppearanceApplication(changed: false))
         model.retry()
         #expect(controller.requests.count == 2)
         #expect(model.errorMessage == nil)
@@ -96,7 +96,7 @@ final class AppModelTests {
         model.reconcile()
         #expect(controller.requests == [.light])
         controller.hold = false
-        controller.pending?(.success(()))
+        controller.pending?(.success(AppearanceApplication(changed: false)))
         #expect(controller.requests == [.light, .dark])
         #expect(model.schedule?.appearance == .dark)
         #expect(!(model.isApplying))

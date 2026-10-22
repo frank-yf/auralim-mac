@@ -123,3 +123,5 @@
 "appearance.current" = "%@ · 目前%@";
 "appearance.solarStatus" = "應用自動 · 按日出日落切換 · 目前%@";
 "appearance.auto.help" = "按當地日出日落自動切換";
+"transition.sunrise" = "日出 · 切換至淺色";
+"transition.sunset" = "日落 · 切換至深色";

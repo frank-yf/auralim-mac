@@ -8,12 +8,12 @@ private final class SettingsAppearanceSpy: AppearanceApplying {
     var requests: [Appearance] = []
     var hold = false
     var denied = false
-    var pending: ((Result<Void, AppearanceFailure>) -> Void)?
-    func apply(_ appearance: Appearance, completion: @escaping (Result<Void, AppearanceFailure>) -> Void) {
+    var pending: ((Result<AppearanceApplication, AppearanceFailure>) -> Void)?
+    func apply(_ appearance: Appearance, completion: @escaping (Result<AppearanceApplication, AppearanceFailure>) -> Void) {
         requests.append(appearance)
         if hold { pending = completion }
         else if denied { completion(.failure(AppearanceFailure(message: "", permissionDenied: true, reason: .authorization))) }
-        else { completion(.success(())) }
+        else { completion(.success(AppearanceApplication(changed: false))) }
     }
 }
 
@@ -58,7 +58,7 @@ struct SettingsPresentationTests {
             #expect(model.isApplying)
             await flush()
             #expect(changes == ["sunrise", "times"])
-            controller.pending?(.success(()))
+            controller.pending?(.success(AppearanceApplication(changed: false)))
             await flush()
             #expect(changes == ["sunrise", "times"])
             #expect(!model.isApplying)
@@ -67,7 +67,7 @@ struct SettingsPresentationTests {
             #expect(model.isApplying)
             await flush()
             #expect(changes == ["sunset", "times"])
-            controller.pending?(.success(()))
+            controller.pending?(.success(AppearanceApplication(changed: false)))
             await flush()
             #expect(changes == ["sunset", "times"])
         }

@@ -8,10 +8,10 @@ import DuskShiftCore
 private final class NativeAppearanceSpy: AppearanceApplying {
     var requests = 0
     var hold = false
-    var pending: ((Result<Void, AppearanceFailure>) -> Void)?
-    func apply(_ appearance: Appearance, completion: @escaping (Result<Void, AppearanceFailure>) -> Void) {
+    var pending: ((Result<AppearanceApplication, AppearanceFailure>) -> Void)?
+    func apply(_ appearance: Appearance, completion: @escaping (Result<AppearanceApplication, AppearanceFailure>) -> Void) {
         requests += 1
-        if hold { pending = completion } else { completion(.success(())) }
+        if hold { pending = completion } else { completion(.success(AppearanceApplication(changed: false))) }
     }
 }
 
@@ -278,7 +278,7 @@ struct NativeInteractionTests {
         #expect(descendants(host).compactMap { $0 as? NSSlider }[1] === sliders[1])
         #expect(descendants(host).compactMap { $0 as? NSTextField }.filter { $0.isEditable }[1] === fields[1])
         appearance.hold = false
-        appearance.pending?(.success(()))
+        appearance.pending?(.success(AppearanceApplication(changed: false)))
         settle()
         #expect(window.firstResponder === editorBeforeOffset)
         #expect(sliders.allSatisfy { $0.isEnabled })

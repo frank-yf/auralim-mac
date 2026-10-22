@@ -6,9 +6,9 @@ import DuskShiftCore
 
 private final class ModeUIAppearance: AppearanceApplying {
     var requests: [Appearance] = []
-    func apply(_ appearance: Appearance, completion: @escaping (Result<Void, AppearanceFailure>) -> Void) {
+    func apply(_ appearance: Appearance, completion: @escaping (Result<AppearanceApplication, AppearanceFailure>) -> Void) {
         requests.append(appearance)
-        completion(.success(()))
+        completion(.success(AppearanceApplication(changed: false)))
     }
 }
 

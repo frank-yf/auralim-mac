@@ -20,8 +20,8 @@ final class FakeLoginItem: LoginItemControlling {
 
 private final class LoginAppearanceSpy: AppearanceApplying {
     var requests = 0
-    func apply(_ appearance: Appearance, completion: @escaping (Result<Void, AppearanceFailure>) -> Void) {
-        requests += 1; completion(.success(()))
+    func apply(_ appearance: Appearance, completion: @escaping (Result<AppearanceApplication, AppearanceFailure>) -> Void) {
+        requests += 1; completion(.success(AppearanceApplication(changed: false)))
     }
 }
 

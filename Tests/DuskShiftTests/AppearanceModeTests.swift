@@ -6,10 +6,10 @@ import DuskShiftCore
 
 private final class ModeAppearanceSpy: AppearanceApplying {
     var requests: [Appearance] = []
-    var result: Result<Void, AppearanceFailure> = .success(())
+    var result: Result<AppearanceApplication, AppearanceFailure> = .success(AppearanceApplication(changed: false))
     var hold = false
-    var pending: ((Result<Void, AppearanceFailure>) -> Void)?
-    func apply(_ appearance: Appearance, completion: @escaping (Result<Void, AppearanceFailure>) -> Void) {
+    var pending: ((Result<AppearanceApplication, AppearanceFailure>) -> Void)?
+    func apply(_ appearance: Appearance, completion: @escaping (Result<AppearanceApplication, AppearanceFailure>) -> Void) {
         requests.append(appearance)
         if hold { pending = completion } else { completion(result) }
     }
@@ -198,7 +198,7 @@ struct AppearanceModeTests {
             model.offset = 10
             #expect(spy.requests == [.light])
             #expect(model.scheduledCheck == nil)
-            spy.result = .success(())
+            spy.result = .success(AppearanceApplication(changed: false))
             model.retry()
             #expect(spy.requests == [.light, .light])
             #expect(model.errorMessage == nil)
@@ -211,15 +211,15 @@ struct AppearanceModeTests {
             model.selectAppearanceMode(.automatic)
             model.selectAppearanceMode(.dark)
             #expect(spy.requests == [.light])
-            spy.pending?(.success(()))
+            spy.pending?(.success(AppearanceApplication(changed: false)))
             #expect(spy.requests == [.light, .dark])
             model.selectAppearanceMode(.light)
-            spy.pending?(.success(()))
+            spy.pending?(.success(AppearanceApplication(changed: false)))
             #expect(spy.requests == [.light, .dark, .light])
             model.selectAppearanceMode(.automatic)
-            spy.pending?(.success(()))
+            spy.pending?(.success(AppearanceApplication(changed: false)))
             #expect(spy.requests == [.light, .dark, .light, .light])
-            spy.pending?(.success(()))
+            spy.pending?(.success(AppearanceApplication(changed: false)))
             #expect(!model.isApplying)
             #expect(model.appearanceMode == .automatic)
             #expect(model.scheduledCheck != nil)
@@ -235,7 +235,7 @@ struct AppearanceModeTests {
             #expect(model.scheduledCheck == day.addingTimeInterval(10))
             model.reconcile()
             #expect(model.scheduledCheck == nil)
-            spy.result = .success(())
+            spy.result = .success(AppearanceApplication(changed: false))
             model.retry()
             #expect(model.scheduledCheck == nil)
             #expect(model.errorMessage == nil)

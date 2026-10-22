@@ -15,13 +15,13 @@ final class FakeLocation: LocationProviding {
 private final class LocationAppearanceSpy: AppearanceApplying {
     var requests: [Appearance] = []
     var permissionDenied = false
-    var pending: ((Result<Void, AppearanceFailure>) -> Void)?
+    var pending: ((Result<AppearanceApplication, AppearanceFailure>) -> Void)?
     var hold = false
-    func apply(_ appearance: Appearance, completion: @escaping (Result<Void, AppearanceFailure>) -> Void) {
+    func apply(_ appearance: Appearance, completion: @escaping (Result<AppearanceApplication, AppearanceFailure>) -> Void) {
         requests.append(appearance)
         if hold { pending = completion }
         else if permissionDenied { completion(.failure(AppearanceFailure(message: "denied", permissionDenied: true))) }
-        else { completion(.success(())) }
+        else { completion(.success(AppearanceApplication(changed: false))) }
     }
 }
 
@@ -141,7 +141,7 @@ struct LocationTests {
             location.onEvent?(.resolved(newYork))
             #expect(model.isApplying)
             appearance.hold = false
-            appearance.pending?(.success(()))
+            appearance.pending?(.success(AppearanceApplication(changed: false)))
             #expect(appearance.requests.last == .dark)
             #expect(model.schedule?.appearance == .dark)
             #expect(!model.isApplying)

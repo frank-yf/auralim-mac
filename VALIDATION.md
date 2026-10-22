@@ -1,5 +1,17 @@
 # 首版验证记录
 
+## 0.1.16 系统外观切换时播放日出日落（2026-10-22）
+
+- 转浅色播放日出，转深色播放日落；两面板共用系统应用结果。System Events 在同一次请求中返回最终外观及是否改变，最终外观验证成功且请求未过期才播放。重复核验、失败和无变化不播放；快速切换替换旧浮层。Canvas 绘制短动画，独立不可激活浮层不拦截鼠标，不驱动设置布局刷新。
+- 定向逻辑：`make test FILTER='AppearanceTransitionTests|AppearanceModeTests|SettingsPresentationTests/offsetOnlyPublishesEditedSectionAndTimeTextDuringAndAfterVerification'` 20 项通过（0.550 秒）。覆盖 7 项新动画结果 / 触发 / 失败 / 过期请求 / 自动计划 / 关闭测试，以及 12 项已有模式测试和 1 项局部发布检查。
+- 原生动画：`make test-ui-transitions` 1 项通过（10.073 秒）。从菜单切深色播放日落、从设置切浅色播放日出，两处选择同步；检查不抢键盘焦点、不接收鼠标、快速替换、无变化不重播、静态减少动态效果、窗口与 contentView 清理。初次检查发现 AppKit 嵌套事件循环下异步关闭未及时执行，已改为 common-mode 一次性 Timer，并通过上述复验。
+- 检查 7 张画面：日出 / 日落过程、减少动态效果的深浅两帧，以及同一生产 Canvas 的夜间 / 地平线 / 日间三帧；太阳位置与天空方向一致，简中文案及英文静态提示可见。系统外观控制在原生交互测试中使用替身。
+- 真实打包应用：`swift scripts/verify-appearance-mode.swift --apply --animations` 通过。从托盘切深色，读取实际系统为深色并检出「日落 · 切换至深色」；从设置切浅色，读取系统为浅色并检出「日出 · 切换至浅色」；切回应用自动且外观无变化时不播放。验证浮层关闭、未获取焦点及两处同步，最后恢复原来的应用自动模式。浮层使用 Core Graphics 可见窗口列表检测，因不可激活浮层不会稳定出现在辅助功能窗口列表中。
+- Release 0.1.16（build 17）构建、严格签名以及 Info.plist / 三套 strings 语法检查通过，已启动。
+- 本次共 21 项不同的定向测试及真实应用检查通过；未执行全量回归，未重新验证定位、登录启动、天文算法或滑块输入。已有其他测试仅适配外观控制成功结果类型并完成编译，未执行无关交互；动画结束后的低占用由窗口 / 内容清理与无持续轮询实现验证，未做 CPU 或内存基准。减少动态效果由注入系统选项验证，未修改用户辅助功能偏好。
+
+证据：[定向逻辑](artifacts/transition-tests.log)、[原生动画](artifacts/transition-ui.log)、[真实切换与动画](artifacts/transition-actual.log)、[日落过程](artifacts/appearance-transition-0.1.16/sunset-middle.png)、[日出过程](artifacts/appearance-transition-0.1.16/sunrise-middle.png)、[减少动态效果](artifacts/appearance-transition-0.1.16/reduced-motion-dark.png)、[Release 构建](artifacts/build-0.1.16.log)。
+
 ## 0.1.15 启动时区分系统自动与应用自动（2026-10-22）
 
 - 每次启动读取系统外观；未启用应用自动计划时固定浅 / 深高亮对应段，系统自动及无法确认时三段无高亮。启动不重新应用旧手动记录；已启用的应用日出日落计划继续保留。托盘与设置共用状态，新增三语来源文案及自动段提示。

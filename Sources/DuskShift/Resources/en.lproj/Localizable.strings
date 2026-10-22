@@ -123,3 +123,5 @@
 "appearance.current" = "%@ · Currently %@";
 "appearance.solarStatus" = "App Auto · Sunrise / sunset · Currently %@";
 "appearance.auto.help" = "Switch automatically at local sunrise and sunset";
+"transition.sunrise" = "Sunrise · Light appearance";
+"transition.sunset" = "Sunset · Dark appearance";
