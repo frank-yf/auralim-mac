@@ -113,8 +113,8 @@ do {
     if brandOnly {
         guard let url = running.bundleURL, let bundle = Bundle(url: url) else { throw VerificationError(message: "No running app bundle") }
         try require(url.lastPathComponent == "Auralim.app", "Unexpected app package name")
-        try require(bundle.infoDictionary?["CFBundleShortVersionString"] as? String == "0.2.2", "Wrong app version")
-        try require(bundle.infoDictionary?["CFBundleVersion"] as? String == "21", "Wrong build number")
+        try require(bundle.infoDictionary?["CFBundleShortVersionString"] as? String == "0.2.3", "Wrong app version")
+        try require(bundle.infoDictionary?["CFBundleVersion"] as? String == "22", "Wrong build number")
         try require(bundle.infoDictionary?["CFBundleName"] as? String == "Auralim", "Wrong fallback name")
         for (language, expected) in [("en", "Auralim"), ("zh-Hans", "晨昏"), ("zh-Hant", "晨昏")] {
             let file = url.appendingPathComponent("Contents/Resources/\(language).lproj/InfoPlist.strings")
@@ -150,18 +150,18 @@ do {
                 descendants(window).first { read($0, kAXIdentifierAttribute as CFString) as? String == id }.map(label)
             }
             try require(identifiedText(settings, "settings-app-name") == name, "Settings app name did not update")
-            try require(identifiedText(settings, "app-version") == name + " 0.2.2", "Settings version did not update")
+            try require(identifiedText(settings, "app-version") == name + " 0.2.3", "Settings version did not update")
             let slogan = option == "English" ? "Between light and dark." : "日升而明，日落而暗"
             try require(identifiedText(settings, "app-slogan") == slogan, "Settings slogan did not update")
             let filename = option == "English" ? "en" : option == "繁體中文" ? "zh-Hant" : "zh-Hans"
-            try FileManager.default.createDirectory(atPath: "artifacts/branding-0.2.2", withIntermediateDirectories: true)
-            try screenshot("artifacts/branding-0.2.2/settings-\(filename).png", width: 600)
+            try FileManager.default.createDirectory(atPath: "artifacts/branding-0.2.3", withIntermediateDirectories: true)
+            try screenshot("artifacts/branding-0.2.3/settings-\(filename).png", width: 600)
             pressStatusItem()
             guard let panel = panelWindows().first else { throw VerificationError(message: "No compact menu") }
             try require(identifiedText(panel, "menu-app-name") == name, "Menu app name did not update")
-            try screenshot("artifacts/branding-0.2.2/menu-\(filename).png", width: 320)
+            try screenshot("artifacts/branding-0.2.3/menu-\(filename).png", width: 320)
             pressStatusItem()
-            print("Verified app name and 0.2.2 version:", option, name, expectedTitle)
+            print("Verified app name and 0.2.3 version:", option, name, expectedTitle)
             continue
         }
         let generalElements = descendants(settings)

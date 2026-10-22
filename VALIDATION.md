@@ -1,5 +1,16 @@
 # 首版验证记录
 
+## 0.2.3 设置与托盘面板共用应用图标（2026-10-22）
+
+- 设置标题 40pt、托盘标题 30pt 的 DuskMark 统一使用新应用图标，去掉旧太阳符号和渐变底板；版本升级为 0.2.3（build 22）。
+- 从与 ICNS 相同的 256px 图像生成 Sources/Auralim/Resources/AppIcon.png（73,102 字节），随 SwiftPM 资源包分发；make icon 同时更新 ICNS 与面板缩略图，中英文开发说明同步更新。
+- 显式从运行时资源包读取 PNG，并缓存 NSImage，避免已安装包中 SwiftUI 命名图片查找未显示松散资源的问题；原色渲染、等比缩放，沿用两个标题的原有布局。
+- make icon、Release 构建、严格签名与 plist 校验通过。面板 PNG 与 ICNS 的 256px 表示逐像素一致，包内 PNG 与源码资源逐字节一致，版本 / build 为 0.2.3 / 22。
+- 仅打开新版本实际托盘和设置面板，截图人工确认两处图标及设置版本文字；启动参数关闭应用自动计划、定位和动画，未操作相关功能控件。当前系统外观下的完整面板已验证；共享生产组件另以 30pt / 40pt、浅色 / 深色环境离屏渲染，四种组合均检查通过。没有将启动参数视为完整面板深色外观的验收。
+- 验证前后对比应用自身的语言、城市、偏移、自动计划、手动外观、定位模式和动画设置，均未改变；验证实例已退出。未执行语言 / 定位 / 登录启动 / 外观切换等功能测试或全量回归。
+
+证据：[构建](artifacts/panel-icon-0.2.3-build.log)、[资源及签名](artifacts/panel-icon-0.2.3-resources.json)、[实际面板](artifacts/panel-icon-0.2.3-actual.log)、[托盘](artifacts/panel-icon-0.2.3/menu-current.png)、[设置](artifacts/panel-icon-0.2.3/settings-current.png)、[深浅渲染](artifacts/panel-icon-0.2.3-render.log)。
+
 ## 0.2.2 应用图标（2026-10-22）
 
 - 接入已确认的暖金日轮 / 蓝灰月弧图标，保留生成的 PNG 原稿 `Resources/Icons/Auralim.png`，提供 `Resources/Auralim.icns`。版本升级为 0.2.2（build 21）。

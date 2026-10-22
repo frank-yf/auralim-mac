@@ -12,4 +12,7 @@ for size in 16 32 128 256 512; do
     sips -z "$retina" "$retina" Resources/Icons/Auralim.png --out "$iconset/icon_${size}x${size}@2x.png" >/dev/null
 done
 iconutil -c icns "$iconset" -o Resources/Auralim.icns
-printf 'Generated: %s/Resources/Auralim.icns\n' "$PWD"
+# Reuse the 256px artwork for the settings/menu headers without bundling
+# a second full-size ICNS resource in the SwiftPM resource bundle.
+cp "$iconset/icon_256x256.png" Sources/Auralim/Resources/AppIcon.png
+printf 'Generated: %s/Resources/Auralim.icns and panel AppIcon.png\n' "$PWD"

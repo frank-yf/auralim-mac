@@ -26,16 +26,21 @@ enum DuskStyle {
 }
 
 struct DuskMark: View {
+    // Load the loose SwiftPM image explicitly: named SwiftUI image lookup may
+    // omit it in an installed bundle. Decode once for both panel headers.
+    private static let artwork: NSImage = {
+        let url = Localizer.resourceBundle.bundleURL.appendingPathComponent("AppIcon.png")
+        return NSImage(contentsOf: url) ?? NSImage(named: NSImage.applicationIconName) ?? NSImage()
+    }()
+
     var size: CGFloat = 36
     var body: some View {
-        Image(systemName: "sun.horizon.fill")
-            .font(.system(size: size * 0.52, weight: .medium))
-            .foregroundStyle(.white)
+        Image(nsImage: Self.artwork)
+            .renderingMode(.original)
+            .resizable()
+            .interpolation(.high)
+            .scaledToFit()
             .frame(width: size, height: size)
-            .background(LinearGradient(colors: [Color(red: 0.40, green: 0.49, blue: 0.68),
-                                                Color(red: 0.72, green: 0.65, blue: 0.57)],
-                                       startPoint: .topLeading, endPoint: .bottomTrailing),
-                        in: RoundedRectangle(cornerRadius: size * 0.28, style: .continuous))
             .accessibilityHidden(true)
     }
 }
