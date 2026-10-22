@@ -15,19 +15,19 @@ struct MenuLayoutTests {
         let host = NSHostingView(rootView: MenuContent(model: model))
         let size = host.fittingSize
         print("Unconstrained menu fitting size:", size)
-        #expect(size.width >= 380)
-        #expect(size.height >= 280)
-        #expect(size.height <= 720)
+        #expect(size.width == 320)
+        #expect(size.height == 240)
+        #expect(size.height <= 300)
         let controller = NSHostingController(rootView: MenuContent(model: model))
-        let compressed = controller.sizeThatFits(in: NSSize(width: 390, height: 1))
+        let compressed = controller.sizeThatFits(in: NSSize(width: 320, height: 1))
         print("Compressed menu fitting size:", compressed)
-        #expect(compressed.height >= 280)
+        #expect(compressed.height == 240)
     }
 
     @Test
     func panelFitsSmallerDisplays() {
-        #expect(MenuPanelLayout.height(availableHeight: 900) == 720)
-        #expect(MenuPanelLayout.height(availableHeight: 600) == 560)
-        #expect(MenuPanelLayout.height(availableHeight: 360) == 320)
+        #expect(SettingsPanelLayout.height(availableHeight: 900) == 720)
+        #expect(SettingsPanelLayout.height(availableHeight: 600) == 520)
+        #expect(SettingsPanelLayout.height(availableHeight: 480) == 400)
     }
 }

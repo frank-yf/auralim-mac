@@ -20,14 +20,11 @@ struct NativeInteractionTests {
         defer { if let point = previousCursor { CGWarpMouseCursorPosition(point) } }
         let model = AppModel(defaults: defaults, enableTimers: false)
         defer { model.shutdown() }
-        let host = NSHostingView(rootView: MenuContent(model: model, quit: { Issue.record("Unexpected quit button action") }))
-        let window = NSWindow(contentRect: NSRect(x: 200, y: 100, width: 390, height: 720),
-                              styleMask: [.titled, .closable], backing: .buffered, defer: false)
-        window.isReleasedWhenClosed = false
-        window.title = "Dusk Shift — UI Verification"
-        window.contentView = host
-        window.makeKeyAndOrderFront(nil)
-        app.activate(ignoringOtherApps: true)
+        let presenter = SettingsWindowController()
+        presenter.show(model: model)
+        let window = try #require(presenter.window)
+        let hosting = try #require(window.contentViewController as? NSHostingController<SettingsContent>)
+        let host = try #require(hosting.view as? NSHostingView<SettingsContent>)
         defer { window.close() }
         func settle() {
             let deadline = Date(timeIntervalSinceNow: 0.2)
@@ -184,6 +181,14 @@ struct NativeInteractionTests {
         #expect(model.offset == 0)
         #expect(fields.allSatisfy { $0.stringValue == "0" })
         #expect(sliders.allSatisfy { $0.doubleValue == 0.5 })
-        print("Verified: four drag directions, precise text, return, blur, invalid input, clamp, reset, and displayed switch times")
+        window.close()
+        model.sunriseOffset = -15
+        presenter.show(model: model)
+        settle()
+        #expect(presenter.window === window)
+        #expect(hosting.rootView.model === model)
+        #expect(fields[0].stringValue == "-15")
+        #expect(Int(fields[1].stringValue) == 0)
+        print("Verified settings window reuse and shared model; four drag directions, input, blur, reset, and displayed switch times")
     }
 }

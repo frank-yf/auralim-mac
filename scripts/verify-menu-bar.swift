@@ -24,6 +24,7 @@ guard let running = NSRunningApplication.runningApplications(withBundleIdentifie
 let app = AXUIElementCreateApplication(running.processIdentifier)
 print("Dusk Shift pid:", running.processIdentifier)
 let verify = CommandLine.arguments.contains("--verify")
+let settingsMode = CommandLine.arguments.contains("--settings")
 func appWindows() -> [AXUIElement] {
     read(app, kAXWindowsAttribute as CFString) as? [AXUIElement] ?? []
 }
@@ -42,21 +43,67 @@ func size(_ element: AXUIElement) -> CGSize {
 func descendants(_ element: AXUIElement) -> [AXUIElement] {
     [element] + children(element).flatMap(descendants)
 }
-if verify {
-    if !appWindows().isEmpty { pressStatusItem() }
+func panelWindows() -> [AXUIElement] {
+    appWindows().filter { (300...340).contains(size($0).width) }
+}
+func label(_ element: AXUIElement) -> String {
+    [kAXTitleAttribute, kAXDescriptionAttribute, kAXValueAttribute].compactMap {
+        read(element, $0 as CFString) as? String
+    }.first { !$0.isEmpty } ?? ""
+}
+func press(_ element: AXUIElement) {
+    precondition(AXUIElementPerformAction(element, kAXPressAction as CFString) == .success)
+    Thread.sleep(forTimeInterval: 0.5)
+}
+func openSettings() -> AXUIElement {
+    if panelWindows().isEmpty { pressStatusItem() }
+    guard let panel = panelWindows().first,
+          let button = descendants(panel).first(where: { label($0) == "设置…" }) else {
+        fatalError("No settings entry in menu panel")
+    }
+    press(button)
+    guard let settings = appWindows().first(where: { label($0) == "Dusk Shift 设置" }) else {
+        fatalError("Settings window did not open")
+    }
+    precondition(panelWindows().isEmpty, "Menu panel should dismiss when opening settings")
+    return settings
+}
+if settingsMode {
+    let settings = openSettings()
+    let measured = size(settings)
+    precondition((550...600).contains(measured.width) && measured.height >= 400)
+    let elements = descendants(settings)
+    precondition(elements.filter { read($0, kAXRoleAttribute as CFString) as? String == "AXSlider" }.count == 2)
+    precondition(elements.filter { read($0, kAXRoleAttribute as CFString) as? String == "AXTextField" }.count == 2)
+    let labels = elements.map(label).joined(separator: " ")
+    precondition(labels.contains("日出转亮") && labels.contains("日落转暗"))
+    print("Settings opened from real status item:", measured, "with city, offsets, and switch times")
+    guard let help = elements.first(where: { label($0) == "使用说明" }) else { fatalError("No instructions tab") }
+    press(help)
+    let helpText = descendants(settings).map(label).joined(separator: " ")
+    precondition(helpText.contains("开始使用") && helpText.contains("权限与隐私"))
+    print("Instructions tab includes setup, offsets, offline/time-zone behavior, sleep recovery, precision, and privacy")
+    guard let close = read(settings, kAXCloseButtonAttribute as CFString) else { fatalError("No close button") }
+    press(close as! AXUIElement)
+    let reopened = openSettings()
+    let matches = appWindows().filter { label($0) == "Dusk Shift 设置" }
+    precondition(matches.count == 1)
+    if let general = descendants(reopened).first(where: { label($0) == "自动切换" }) { press(general) }
+    print("Settings close/reopen: one reusable window; compact menu dismissed")
+} else if verify {
+    if !panelWindows().isEmpty { pressStatusItem() }
     for cycle in 1...3 {
         pressStatusItem()
-        guard let panel = appWindows().first else { fatalError("Panel did not open") }
+        guard let panel = panelWindows().first else { fatalError("Panel did not open") }
         let measured = size(panel)
-        precondition((380...410).contains(measured.width) && (280...760).contains(measured.height), "Collapsed panel: \(measured)")
+        precondition((310...330).contains(measured.width) && (230...250).contains(measured.height), "Unexpected panel: \(measured)")
         let elements = descendants(panel)
         let sliders = elements.filter { read($0, kAXRoleAttribute as CFString) as? String == "AXSlider" }
         let inputs = elements.filter { read($0, kAXRoleAttribute as CFString) as? String == "AXTextField" }
-        let text = elements.compactMap { read($0, kAXValueAttribute as CFString) as? String }.joined(separator: " ")
-        precondition(sliders.count == 2 && inputs.count == 2)
-        precondition(text.contains("日出转亮") && text.contains("日落转暗"))
-        print("Open cycle \(cycle): \(measured.width) × \(measured.height); two sliders, two inputs, both switch-time labels present")
-        if cycle < 3 { pressStatusItem() }
+        precondition(sliders.isEmpty && inputs.isEmpty)
+        precondition(elements.contains { label($0) == "设置…" })
+        print("Open cycle \(cycle): \(measured.width) × \(measured.height); compact status, toggle, settings, quit; no offset editors")
+        if cycle < 3 { pressStatusItem(); precondition(panelWindows().isEmpty) }
     }
 } else {
     if CommandLine.arguments.contains("--press") { pressStatusItem() }
@@ -68,13 +115,13 @@ for window in windows where window[kCGWindowOwnerPID as String] as? Int32 == run
     print("Owned visible window:", window[kCGWindowNumber as String] as Any, window[kCGWindowBounds as String] as Any)
     if let index = CommandLine.arguments.firstIndex(of: "--capture"), index + 1 < CommandLine.arguments.count,
        let number = window[kCGWindowNumber as String] as? Int,
-       let bounds = window[kCGWindowBounds as String] as? [String: Double], bounds["Width", default: 0] >= 380,
-       bounds["Height", default: 0] >= 280 {
+       let bounds = window[kCGWindowBounds as String] as? [String: Double], (settingsMode ? bounds["Width", default: 0] >= 550 : (310...330).contains(bounds["Width", default: 0])),
+       bounds["Height", default: 0] >= 230 {
         let capture = Process()
         capture.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
         capture.arguments = ["-x", "-l", String(number), CommandLine.arguments[index + 1]]
         try capture.run(); capture.waitUntilExit()
         precondition(capture.terminationStatus == 0)
-        print("Actual menu-bar panel screenshot:", CommandLine.arguments[index + 1])
+        print("Actual application window screenshot:", CommandLine.arguments[index + 1])
     }
 }
