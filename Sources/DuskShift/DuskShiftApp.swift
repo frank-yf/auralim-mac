@@ -16,6 +16,8 @@ struct DuskShiftApp: App {
 struct MenuContent: View {
     @ObservedObject var model: AppModel
     var quit: () -> Void = { NSApplication.shared.terminate(nil) }
+    @State private var panelHeight: CGFloat = MenuPanelLayout.height(
+        availableHeight: NSScreen.main?.visibleFrame.height ?? 800)
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
@@ -70,9 +72,22 @@ struct MenuContent: View {
                 }
             }
             .padding(18)
-            .frame(width: 390)
+            .frame(width: MenuPanelLayout.width)
         }
-        .frame(maxHeight: 720)
-        .onAppear { model.reconcile() }
+        // MenuBarExtra measures content using a compressed proposal. A maximum
+        // alone allows ScrollView to collapse to a one-point viewport.
+        .frame(width: MenuPanelLayout.width, height: panelHeight)
+        .onAppear {
+            let screen = NSScreen.screens.first { $0.frame.contains(NSEvent.mouseLocation) } ?? NSScreen.main
+            panelHeight = MenuPanelLayout.height(availableHeight: screen?.visibleFrame.height ?? 800)
+            model.reconcile()
+        }
+    }
+}
+
+enum MenuPanelLayout {
+    static let width: CGFloat = 390
+    static func height(availableHeight: CGFloat) -> CGFloat {
+        min(720, max(280, availableHeight - 40))
     }
 }

@@ -72,3 +72,11 @@ DUSK_SHIFT_UI_TESTS=1 bash scripts/test.sh --filter NativeInteractionTests
 该测试创建临时原生窗口，承载与菜单栏相同的 `MenuContent` 生产视图；使用独立临时偏好，保持自动切换关闭，不改系统外观。测试通过真实鼠标事件拖动和点击控件，通过原生文本编辑器输入并派发回车，验证四个滑动方向、双向同步、失焦提交、越界/非法输入及归零。它还截取自身窗口，使用本地 Vision 识别验证两项实际显示时间。结束时恢复光标位置并清理临时偏好。
 
 原生测试默认跳过；与普通单元测试分开运行，避免 AppKit 事件循环干扰 SwiftPM 的并发测试调度。测试宿主中控件层级的定位已在当前 macOS 验证，其他系统版本可能需要适配。它不替代菜单栏弹出层定位、真实自动化授权及实际睡眠恢复验收。
+
+0.1.3 修复了菜单栏在压缩尺寸建议下高度塌缩的问题。面板明确设置为 390 宽、最高 720 高，并适配较小屏幕保留滚动。实际菜单栏验证可在应用运行且验证进程具有辅助功能权限时执行：
+
+```sh
+CLANG_MODULE_CACHE_PATH="$PWD/.build/clang-cache" swift scripts/verify-menu-bar.swift --verify --capture /private/tmp/dusk-shift-menu.png
+```
+
+脚本直接操作本应用的菜单栏项目，重复打开三次，验证真实弹出窗口尺寸与控件，最后保留面板打开并截取该窗口。
