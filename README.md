@@ -4,7 +4,7 @@
 
 Between light and dark.
 
-本地目录：`auralim-mac`；仓库名称：`auralim-mac`；Swift 模块：`Auralim`（离线计算模块为 `AuralimCore`）。构建产物：`dist/Auralim.app`。当前为本地 Git 仓库，尚未配置远程仓库。
+本地目录：`auralim-mac`；仓库名称：`auralim-mac`；Swift 模块：`Auralim`（离线计算模块为 `AuralimCore`）。构建产物：`dist/Auralim.app`。GitHub 仓库：[frank-yf/auralim-mac](https://github.com/frank-yf/auralim-mac)。
 
 Swift + SwiftUI 原生 macOS 菜单栏应用，支持 macOS 13 及以上。提供浅色 / 自动 / 深色模式、自动定位 / 手动城市、离线日出日落和时区查询、日出/日落独立 ±120 分钟偏移、系统外观切换、唤醒恢复和登录时启动。自动定位使用 macOS 系统服务；不调用在线地址或时区 API，不做持续高精度定位。
 
@@ -247,7 +247,7 @@ CLANG_MODULE_CACHE_PATH="$PWD/.build/clang-cache" swift scripts/verify-login-ite
 
 Swift package / 可执行模块为 `Auralim`，计算模块为 `AuralimCore`，资源包与测试目标同步更名。版本 0.2.1（build 20），`make build` 输出 `dist/Auralim.app`，迁移现有旧名称应用目录并清除旧可执行文件和资源包。保留 `app.duskshift.mac` Bundle ID、偏好域以及原测试环境变量，以沿用设置、授权身份与测试入口。macOS 系统权限是否继续有效仍由系统的签名与授权策略决定。
 
-仓库及本地目录名称为 `auralim-mac`；本地路径为 `/Users/frank/Code/my_proj/auralim-mac`，未创建或重命名 GitHub 远程仓库。
+仓库及本地目录名称为 `auralim-mac`；本地路径为 `/Users/frank/Code/my_proj/auralim-mac`，远程仓库为 `git@github.com:frank-yf/auralim-mac.git`。
 
 
 ## 本地目录迁移
