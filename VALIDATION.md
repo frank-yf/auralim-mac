@@ -1,5 +1,21 @@
 # 首版验证记录
 
+## 0.3 Sparkle 后台更新与设置底部重启入口（2026-10-22）
+
+- 版本为 0.3（build 25），固定 Sparkle 2.10.0，并提交 Package.resolved。应用启动时创建唯一更新器，默认每天检查并后台下载；更新器独立于设置窗口存活，不依赖打开菜单或设置才启动。
+- 更新源为 `https://github.com/frank-yf/auralim-mac/releases/latest/download/appcast.xml`。设置底部显示检查、下载、准备、失败与就绪状态；就绪后才显示「重启以更新」。点击后调用 Sparkle 安装回调，正常使用过程中不强制重启；按用户明确接受的标准行为，正常退出时也允许安装已准备好的更新。
+- 检查/下载错误支持重试和固定 GitHub latest 发布页回退；简体中文、繁体中文、英文文案齐全。系统信息统计关闭，更新代码不读取或发送定位数据。
+- 新建独立 EdDSA 更新签名密钥，私钥仅在登录钥匙串的 `app.duskshift.mac` 账户中；应用携带公钥。清单与安装包均签名，解压前验证更新包；清单签名失败不随时间放宽校验。测试发现清单签名错误可能被外层 appcast 错误包装，已按底层校验错误正确分类，并增加回归测试。
+- `make test-updates`：9 项定向测试通过，包含下载/准备不主动调用重启、点击一次只安装一次、失效回调清理、终止取消后的主动重试、无更新/断网提示、嵌套签名错误和三语目录一致性。
+- `make test-update-ui` 对应的原生测试通过：通过实际鼠标事件点击底部重启按钮，确认只调用一次安装动作；检查下载、就绪、失败状态。简/繁/英三语的浅色与深色就绪截图已检查，底部状态和按钮完整可见。证据：[UI 截图目录](artifacts/update-ui-0.3/)。
+- `make test-update-install` 使用与生产相同的 UpdateController、独立 bundle ID、临时应用与本地签名源，实际完成 build 25 → 下载 → 校验/准备 → 等待操作 → 主动重启动作 → 安装 → build 26 重新启动。最终配置复验通过，未替换用户运行的应用。证据：[最终安装与重启事件](artifacts/update-install-0.3/3f2a65d6fd4245598e93af51b390ae68/events.log)。
+- `make test-update-quit` 实际确认正常退出后替换到 build 26，但不会自动重新拉起应用。证据：[正常退出事件](artifacts/update-install-0.3/7f53dae59a7e404680d98cac5476deb8/events.log)。
+- `make test-update-signature` 对已签名清单进行篡改，真实 Sparkle 拒绝该清单，界面报告校验失败；没有进入下载/就绪/安装，临时应用仍为 build 25。证据：[拒绝篡改清单事件](artifacts/update-install-0.3/4f4951b6b51e4ad99122b2abd85d97de/events.log)。
+- `AURALIM_UNIVERSAL=1 make build` 成功；主程序含 x86_64 / arm64，两个架构的最低系统版本均为 macOS 13.0。Sparkle 框架和安装助手正确嵌入，`codesign --verify --deep --strict` 通过。ad-hoc 本地构建保留上游框架签名，仅对 ad-hoc 主程序关闭库验证；Developer ID 路径保留库验证并从内向外重签。
+- `make prepare-update` 生成通用 ZIP、签名 appcast.xml 和 SHA256SUMS.txt；校验公钥匹配、版本/构建号、固定标签下载 URL、包大小、清单及安装包 EdDSA 签名通过。最终 ZIP 为 7,640,186 字节（约 7.6 MB），包内元数据与本机构建一致，Sparkle 完整许可随应用分发。
+- 本次未执行全量功能回归。Apple 芯片和 macOS 13 真机运行、Developer ID 签名/公证、需要管理员授权的安装、真实系统权限连续性，以及 GitHub 公网下载更新尚未验收。本次只准备本地产物，未创建或发布 GitHub Release；上线需将三个更新文件一起上传到 v0.3 正式 Release 并设为 Latest。
+
+
 ## 0.2.5 系统时区初始城市与固定 3 小时定位缓存策略（2026-10-22）
 
 - 版本升级为 0.2.5（build 24），定位策略、三语文案、测试及说明作为同一版本提交。托盘「设置」按钮移除省略号，三语及相关验证脚本同步更新。

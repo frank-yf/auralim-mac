@@ -18,6 +18,7 @@
 - **旅行适配**：自动定位后按当前位置和当地时区计算；也可选择内置城市，刷新失败时沿用缓存位置，无有效缓存时使用备用手动城市。
 - **唤醒恢复**：启动、唤醒、会话恢复和系统时间变化时重新检查外观与计划。
 - **菜单栏常驻**：没有 Dock 图标或 WebView，按事件与单次定时器调度，无后台持续轮询。
+- **应用内更新**：通过 GitHub Releases 自动检查和下载更新，准备好后在设置底部点击「重启以更新」。
 - **常用设置**：登录时启动、简体中文 / 繁体中文 / 英文切换，以及默认关闭的日月过渡动画。
 
 ### 下载与安装
@@ -29,6 +30,12 @@
 3. 点击菜单栏图标，再打开「设置…」。
 
 v0.2.1 使用 ad-hoc 签名，未经 Apple 公证。首次打开可能被系统拦截；确认下载来源后，可按 [Apple 官方说明](https://support.apple.com/zh-cn/102445) 处理。下载校验文件随 Release 提供。
+
+### 应用内更新
+
+从 0.3 起，应用使用 Sparkle 2，默认每天检查并后台下载兼容的正式更新。设置底部显示检查、下载和校验状态；准备好后显示「重启以更新」，点击后安装并重新打开应用，不会强制中断使用。按 Sparkle 标准行为，正常退出应用时也允许安装已准备好的更新。设置底部保留「检查更新」，失败时可重试或打开 GitHub 发布页手动下载。
+
+更新清单地址为 `https://github.com/frank-yf/auralim-mac/releases/latest/download/appcast.xml`；具体安装包使用不可变的 Release 标签地址。更新包和清单均使用 EdDSA 签名，应用在解压前校验；清单签名失败不会随时间自动放宽校验。更新请求连接 GitHub，不包含定位坐标；系统信息统计默认关闭。0.3 之前的版本需要先手动下载安装一次 0.3 或更高版本。
 
 ### 使用
 
@@ -93,6 +100,19 @@ AURALIM_SIGN_IDENTITY="Developer ID Application: Your Name (TEAMID)" make build
 
 正式分发还需完成 Apple 公证。通用包需要分别编译 Intel 与 Apple 芯片版本，合并后重新签名。构建产物、缓存和验证输出分别位于 `dist/`、`.build/`、`artifacts/`，均不纳入 Git。
 
+### 准备 GitHub 更新发布
+
+```sh
+AURALIM_UNIVERSAL=1 make build
+make prepare-update
+```
+
+该流程生成 `dist/updates/<版本>/` 下的通用 ZIP、签名 `appcast.xml` 和 `SHA256SUMS.txt`。将三个文件一起上传到 GitHub Release `v<版本>`，并将该正式 Release 设为 Latest。清单或安装包缺失会导致客户端检查/下载失败；不能只上传 DMG。脚本不会创建或发布 GitHub Release，也不会覆盖已生成的同版本文件。
+
+更新签名私钥保存在 macOS 登录钥匙串的 Sparkle 账户 `app.duskshift.mac`，公钥随应用分发，私钥不进入源码或发布包。迁移发布机器前使用 Sparkle `generate_keys` 工具安全备份/导入该账户密钥；新机器不能生成另一个密钥替代，否则现有用户将拒绝更新。生成脚本会检查公私钥是否匹配，并验证更新包与清单的签名。
+
+默认 ad-hoc 本地构建保留上游 Sparkle 框架签名，并只对 ad-hoc 主程序关闭库验证，以便加载不同签名身份的框架。指定 `AURALIM_SIGN_IDENTITY` 后使用 Developer ID 从内向外重签框架和安装助手，并保持库验证；正式分发仍需 Apple 公证。应用 bundle ID 保持不变以沿用偏好，真实系统权限连续性需要用正式签名链验收。
+
 ### 项目结构
 
 ```text
@@ -118,6 +138,11 @@ make test FILTER=LocalizationTests
 
 | 命令 | 验证范围 |
 | --- | --- |
+| `make test-updates` | 更新状态、点击安装与三语文案 |
+| `make test-update-ui` | 底部更新控件原生点击与三语深浅截图 |
+| `make test-update-install` | 隔离应用的真实后台下载、安装和重启 |
+| `make test-update-quit` | 隔离应用正常退出时安装且不重启 |
+| `make test-update-signature` | 篡改签名清单被拒绝且不安装 |
 | `make test-sliders` | 滑块渐变渲染 |
 | `make test-ui` | 滑块与输入框交互、同步和时间显示 |
 | `make test-ui-layout` | 设置与菜单栏布局、语言、深浅外观和滚动 |
@@ -137,3 +162,5 @@ make test FILTER=LocalizationTests
 - [ZoneDetect](https://github.com/BertoldVdb/ZoneDetect)：BSD-3-Clause，许可见 [ZoneDetect-LICENSE.txt](Sources/AuralimCore/Resources/ZoneDetect-LICENSE.txt)。
 - 时区边界数据包含 [timezone-boundary-builder](https://github.com/evansiroky/timezone-boundary-builder) 的信息，以 ODbL 1.0 提供，许可见 [TimezoneData-LICENSE.txt](Sources/AuralimCore/Resources/TimezoneData-LICENSE.txt)。
 - 内置数据库版本为 2024a，不在运行时更新；时区偏移与夏令时规则由 macOS Foundation 提供。固定来源与完整声明见 [TimezoneData-NOTICE.txt](Sources/AuralimCore/Resources/TimezoneData-NOTICE.txt)，也可从应用设置底部查看。
+
+Sparkle 使用 MIT 许可，完整声明随应用的「许可与数据来源」提供。

@@ -7,8 +7,8 @@
     <key>CFBundleDisplayName</key><string>Auralim</string>
     <key>CFBundlePackageType</key><string>APPL</string>
     <key>CFBundleIconFile</key><string>Auralim.icns</string>
-    <key>CFBundleShortVersionString</key><string>0.2.5</string>
-    <key>CFBundleVersion</key><string>24</string>
+    <key>CFBundleShortVersionString</key><string>0.3</string>
+    <key>CFBundleVersion</key><string>25</string>
     <key>CFBundleDevelopmentRegion</key><string>en</string>
     <key>CFBundleLocalizations</key><array><string>en</string><string>zh-Hans</string><string>zh-Hant</string></array>
     <key>LSMinimumSystemVersion</key><string>13.0</string>
@@ -17,4 +17,13 @@
     <key>NSLocationUsageDescription</key><string>Auralim uses your location and offline time-zone data to calculate local sunrise and sunset. Coordinates are cached only on this Mac, never uploaded. Failed refreshes keep the cached location; without a valid cache, your manual city is used.</string>
     <key>NSLocationWhenInUseUsageDescription</key><string>Auralim uses your location and offline time-zone data to calculate local sunrise and sunset. Coordinates are cached only on this Mac, never uploaded. Failed refreshes keep the cached location; without a valid cache, your manual city is used.</string>
     <key>NSAppleEventsUsageDescription</key><string>Auralim needs to control System Events to switch system appearance at locally calculated sunrise and sunset times.</string>
+    <key>SUFeedURL</key><string>https://github.com/frank-yf/auralim-mac/releases/latest/download/appcast.xml</string>
+    <key>SUPublicEDKey</key><string>W4s+YjViKyQnouBzRjsUxM/yz9jVOzM+Jhijf2A7eL0=</string>
+    <key>SUEnableAutomaticChecks</key><true/>
+    <key>SUAutomaticallyUpdate</key><true/>
+    <key>SUScheduledCheckInterval</key><integer>86400</integer>
+    <key>SUEnableSystemProfiling</key><false/>
+    <key>SUVerifyUpdateBeforeExtraction</key><true/>
+    <key>SURequireSignedFeed</key><true/>
+    <key>SUSignedFeedFailureExpirationInterval</key><integer>0</integer>
 </dict></plist>

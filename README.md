@@ -30,6 +30,12 @@ Requires **macOS 13 or later**. Release packages include both Intel and Apple si
 
 v0.2.1 is ad-hoc signed and has not been notarized by Apple. macOS may block the first launch. After confirming the download source, follow [Apple's official instructions](https://support.apple.com/en-us/102445). Checksum files are included with the release.
 
+### In-app updates
+
+Starting with 0.3, Sparkle 2 checks daily and downloads compatible stable updates in the background. Settings shows progress and a **Restart to update** button when ready. Clicking installs and relaunches; updates do not force a restart. Following Sparkle's standard behavior, a prepared update may also install on normal quit. Manual checks, inline errors, retry and a GitHub release-page fallback are available in the footer.
+
+The signed feed is hosted at `https://github.com/frank-yf/auralim-mac/releases/latest/download/appcast.xml`; package URLs point to immutable release tags. Both the feed and archives use EdDSA signatures, with verification before extraction; signed-feed failures never expire into relaxed validation. Requests go to GitHub without location coordinates; system profiling is disabled. Older versions need one manual installation of 0.3 or later to gain the updater.
+
 ### Usage
 
 Choose Manual city or Automatic location in settings, then select an appearance mode in the menu bar panel or settings:
@@ -93,6 +99,19 @@ AURALIM_SIGN_IDENTITY="Developer ID Application: Your Name (TEAMID)" make build
 
 Production distribution also requires Apple notarization. For a universal package, build Intel and Apple silicon versions separately, combine them, and sign again. Build products, caches, and verification output are stored in `dist/`, `.build/`, and `artifacts/`; these directories are excluded from Git.
 
+### Preparing a GitHub update release
+
+```sh
+AURALIM_UNIVERSAL=1 make build
+make prepare-update
+```
+
+Upload the universal ZIP, signed `appcast.xml` and `SHA256SUMS.txt` from `dist/updates/<version>/` to the stable GitHub Release `v<version>`, and mark it Latest. A DMG alone is not enough. The script validates versions, architecture, signing-key continuity and signatures; it does not publish releases or overwrite existing version artifacts.
+
+The update private key stays in the login Keychain under Sparkle account `app.duskshift.mac`; only its public key ships in the app. Securely back up/import that account with Sparkle's `generate_keys` tool before moving release machines. Generating a different key will break updates for existing installations.
+
+Local ad-hoc builds preserve upstream Sparkle signatures and disable library validation only for the ad-hoc host. Developer ID builds re-sign nested helpers and the framework inside-out and retain library validation; production distribution still requires notarization. The bundle ID remains unchanged to preserve preferences; permission continuity requires testing with the production signing identity.
+
 ### Project structure
 
 ```text
@@ -118,6 +137,11 @@ make test FILTER=LocalizationTests
 
 | Command | Scope |
 | --- | --- |
+| `make test-updates` | Update state, install action and localized strings |
+| `make test-update-ui` | Native footer clicks and localized light/dark screenshots |
+| `make test-update-install` | Real background download, install and relaunch in disposable apps |
+| `make test-update-quit` | Install on normal quit without relaunch in a disposable app |
+| `make test-update-signature` | Reject a tampered signed feed without installation |
 | `make test-sliders` | Slider gradient rendering |
 | `make test-ui` | Slider and input interactions, synchronization, and displayed switch times |
 | `make test-ui-layout` | Settings and menu bar layout, languages, light/dark appearance, and scrolling |
@@ -137,3 +161,5 @@ The project uses the [MIT License](LICENSE). Third-party components and data ret
 - [ZoneDetect](https://github.com/BertoldVdb/ZoneDetect): BSD-3-Clause; see [ZoneDetect-LICENSE.txt](Sources/AuralimCore/Resources/ZoneDetect-LICENSE.txt).
 - Time-zone boundary data contains information from [timezone-boundary-builder](https://github.com/evansiroky/timezone-boundary-builder), made available under ODbL 1.0; see [TimezoneData-LICENSE.txt](Sources/AuralimCore/Resources/TimezoneData-LICENSE.txt).
 - The bundled database is version 2024a and is not updated at runtime. Time-zone offsets and daylight-saving rules come from macOS Foundation. See [TimezoneData-NOTICE.txt](Sources/AuralimCore/Resources/TimezoneData-NOTICE.txt) for pinned sources and full notices, also available from the bottom of the app's settings.
+
+Sparkle is MIT licensed; its full notice is included in the app’s Licenses & data sources.

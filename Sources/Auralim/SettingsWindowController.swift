@@ -7,7 +7,7 @@ final class SettingsWindowController: ObservableObject {
     private(set) var window: NSWindow?
     private var languageSubscription: AnyCancellable?
 
-    func show(model: AppModel) {
+    func show(model: AppModel, updater: UpdateController? = nil) {
         model.refreshLoginItemStatus()
         model.reconcile()
         if let window {
@@ -19,7 +19,7 @@ final class SettingsWindowController: ObservableObject {
         }
         let screen = NSApplication.shared.keyWindow?.screen ?? NSScreen.main
         let height = SettingsPanelLayout.height(availableHeight: screen?.visibleFrame.height ?? 800)
-        let controller = NSHostingController(rootView: SettingsContent(model: model, height: height))
+        let controller = NSHostingController(rootView: SettingsContent(model: model, height: height, updater: updater))
         let window = NSWindow(contentViewController: controller)
         window.title = model.t("settings.title")
         window.identifier = NSUserInterfaceItemIdentifier("dusk-shift-settings")

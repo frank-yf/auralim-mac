@@ -5,11 +5,18 @@ import AuralimCore
 @main
 struct AuralimApp: App {
     @StateObject private var model = AppModel()
+    @StateObject private var updater: UpdateController
     @StateObject private var settings = SettingsWindowController()
+
+    init() {
+        let updater = UpdateController()
+        _updater = StateObject(wrappedValue: updater)
+        updater.start()
+    }
 
     var body: some Scene {
         MenuBarExtra(model.t("app.name"), systemImage: model.enabled ? "sun.max.circle.fill" : model.appearanceMode == nil ? "circle.lefthalf.filled" : model.appearanceMode == .dark ? "moon.circle" : "sun.max.circle") {
-            MenuContent(model: model, openSettings: { settings.show(model: model) })
+            MenuContent(model: model, openSettings: { settings.show(model: model, updater: updater) })
         }
         .menuBarExtraStyle(.window)
     }

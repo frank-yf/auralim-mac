@@ -130,3 +130,20 @@
 "transition.enabled" = "日出日落動畫";
 
 "location.cachedFallback" = "%@ 繼續使用快取位置：%@。";
+
+"update.automatic" = "自動檢查並下載更新";
+"update.check" = "檢查更新";
+"update.checking" = "正在檢查更新…";
+"update.downloading" = "正在下載更新…";
+"update.preparing" = "正在驗證並準備更新…";
+"update.current" = "暫無可用更新";
+"update.ready" = "新版 %@ 已就緒";
+"update.restart" = "重新啟動以更新";
+"update.installing" = "正在安裝並重新啟動…";
+"update.available" = "GitHub 上有新版本 %@";
+"update.retry" = "重試";
+"update.releases" = "發佈頁";
+"update.error.configuration" = "更新服務暫不可用，請前往發佈頁下載。";
+"update.error.network" = "檢查或下載更新失敗，請重試。";
+"update.error.validation" = "更新驗證失敗，未安裝該更新。";
+"update.error.installation" = "安裝更新失敗，請重試或前往 GitHub 下載。";

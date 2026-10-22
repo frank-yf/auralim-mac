@@ -130,3 +130,20 @@
 "transition.enabled" = "Sunrise and sunset animation";
 
 "location.cachedFallback" = "%@ Using cached location: %@.";
+
+"update.automatic" = "Automatically checks and downloads updates";
+"update.check" = "Check for updates";
+"update.checking" = "Checking for updates…";
+"update.downloading" = "Downloading update…";
+"update.preparing" = "Verifying and preparing update…";
+"update.current" = "No compatible update available";
+"update.ready" = "Version %@ is ready";
+"update.restart" = "Restart to update";
+"update.installing" = "Installing and restarting…";
+"update.available" = "Version %@ is available on GitHub";
+"update.retry" = "Retry";
+"update.releases" = "Release page";
+"update.error.configuration" = "Update service is unavailable. Open the release page to download.";
+"update.error.network" = "Could not check or download the update. Please retry.";
+"update.error.validation" = "Update verification failed. The update was not installed.";
+"update.error.installation" = "Could not install the update. Please retry or download from GitHub.";

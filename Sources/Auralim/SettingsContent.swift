@@ -5,11 +5,13 @@ import AuralimCore
 struct SettingsContent: View {
     let model: AppModel
     var height: CGFloat
+    let updater: UpdateController?
     @StateObject private var state: SettingsPresentation
 
-    init(model: AppModel, height: CGFloat = 720) {
+    init(model: AppModel, height: CGFloat = 720, updater: UpdateController? = nil) {
         self.model = model
         self.height = height
+        self.updater = updater
         _state = StateObject(wrappedValue: SettingsPresentation(model: model))
     }
 
@@ -154,6 +156,9 @@ struct SettingsContent: View {
                     }
                 }.accessibilityIdentifier("language-picker").frame(width: 235)
             }
+            if let updater {
+                UpdateSettingsView(updater: updater, localizer: state.localizer)
+            }
             HStack {
                 if let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String {
                     Text("\(model.t("app.name")) \(version)").accessibilityIdentifier("app-version").font(.caption2).foregroundStyle(.tertiary)
@@ -184,8 +189,7 @@ struct SettingsContent: View {
     }
 
     private func openNotices() {
-        if let bundle = Bundle.main.url(forResource: "Auralim_AuralimCore", withExtension: "bundle"),
-           let notice = Bundle(url: bundle)?.url(forResource: "TimezoneData-NOTICE", withExtension: "txt") {
+        if let notice = Localizer.resourceBundle.url(forResource: "ThirdPartyNotices", withExtension: "txt") {
             NSWorkspace.shared.open(notice)
         }
     }
