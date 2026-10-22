@@ -8,7 +8,18 @@ final class AppModel: ObservableObject {
     @Published var cityID: String { didSet { defaults.set(cityID, forKey: "city"); configurationChanged() } }
     @Published var sunriseOffset: Int { didSet { if sunriseOffset != oldValue { defaults.set(sunriseOffset, forKey: "sunriseOffset"); offsetChanged() } } }
     @Published var offset: Int { didSet { if offset != oldValue { defaults.set(offset, forKey: "offset"); offsetChanged() } } }
-    @Published var enabled: Bool { didSet { defaults.set(enabled, forKey: "enabled"); configurationChanged() } }
+    @Published var enabled: Bool {
+        didSet {
+            if enabled { manualAppearance = nil; defaults.removeObject(forKey: "manualAppearance") }
+            defaults.set(enabled, forKey: "enabled")
+            configurationChanged()
+        }
+    }
+    @Published private(set) var manualAppearance: Appearance?
+    @Published private var fallbackAppearance: Appearance
+    var appearanceMode: AppearanceMode {
+        enabled ? .automatic : (manualAppearance ?? fallbackAppearance) == .dark ? .dark : .light
+    }
     @Published var locationMode: LocationMode {
         didSet {
             guard locationMode != oldValue else { return }
@@ -35,7 +46,7 @@ final class AppModel: ObservableObject {
         }
     }
     var settingsStatus: String {
-        if enabled {
+        if enabled || manualAppearance != nil {
             switch statusState {
             case .disabled, .paused: return t("checking")
             default: break
@@ -63,6 +74,7 @@ final class AppModel: ObservableObject {
     private let locationController: LocationProviding
     private let clock: () -> Date
     private let preferredLanguages: () -> [String]
+    private let systemAppearance: @MainActor () -> Appearance
     private let enableTimers: Bool
     private(set) var scheduledCheck: Date?
     private var timer: Timer?
@@ -79,16 +91,23 @@ final class AppModel: ObservableObject {
          systemNotifications: NotificationCenter = .default,
          preferredLanguages: @escaping () -> [String] = { Locale.preferredLanguages },
          loginItemController: LoginItemControlling? = nil,
-         locationController: LocationProviding? = nil) {
+         locationController: LocationProviding? = nil,
+         systemAppearance: @escaping @MainActor () -> Appearance = {
+             NSApplication.shared.effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua ? .dark : .light
+         }) {
         self.defaults = defaults; self.controller = controller; self.clock = clock; self.enableTimers = enableTimers
         self.loginItemController = loginItemController ?? LoginItemController()
         self.locationController = locationController ?? LocationController()
         self.preferredLanguages = preferredLanguages
+        self.systemAppearance = systemAppearance
+        fallbackAppearance = systemAppearance()
         language = AppLanguage(rawValue: defaults.string(forKey: "language") ?? "system") ?? .system
         cityID = defaults.string(forKey: "city") ?? City.all[0].id
         offset = SolarOffset.clamp(defaults.integer(forKey: "offset"))
         sunriseOffset = SolarOffset.clamp(defaults.integer(forKey: "sunriseOffset"))
-        enabled = defaults.bool(forKey: "enabled")
+        let automatic = defaults.bool(forKey: "enabled")
+        enabled = automatic
+        manualAppearance = automatic ? nil : defaults.string(forKey: "manualAppearance").flatMap(Appearance.init(rawValue:))
         locationMode = LocationMode(rawValue: defaults.string(forKey: "locationMode") ?? "manual") ?? .manual
         observe(NSWorkspace.didWakeNotification, center: workspaceNotifications, refreshLocation: true)
         observe(NSWorkspace.sessionDidBecomeActiveNotification, center: workspaceNotifications, refreshLocation: true)
@@ -186,41 +205,60 @@ final class AppModel: ObservableObject {
         reconcile()
     }
 
+    func selectAppearanceMode(_ mode: AppearanceMode) {
+        guard mode != appearanceMode || (!enabled && manualAppearance == nil) else { return }
+        statusState = .disabled
+        if mode == .automatic {
+            enabled = true
+        } else {
+            manualAppearance = mode.appearance
+            defaults.set(mode.appearance!.rawValue, forKey: "manualAppearance")
+            if enabled { enabled = false }
+            else { configurationChanged() }
+        }
+    }
+
     func retry() { configurationChanged() }
 
     func reconcile() {
         timer?.invalidate(); timer = nil; scheduledCheck = nil
         let state = ScheduleEngine().evaluate(now: clock(), city: city, sunriseOffset: sunriseOffset, sunsetOffset: offset)
         schedule = state
-        guard enabled else {
+        // Legacy paused installs keep the current system theme until the user
+        // explicitly chooses a manual mode; opening the app must not change it.
+        guard let target = enabled ? state.appearance : manualAppearance else {
+            let actual = systemAppearance()
+            if fallbackAppearance != actual { fallbackAppearance = actual }
             statusState = .paused
             return
         }
-        arm(at: state.nextCheck)
+        if enabled { arm(at: state.nextCheck) }
         guard !permissionBlocked, !isApplying else { return }
         isApplying = true
         let requestGeneration = generation
-        controller.apply(state.appearance) { [weak self] result in
+        controller.apply(target) { [weak self] result in
             guard let self else { return }
             self.isApplying = false
-            guard self.enabled else { return }
+            guard self.enabled || self.manualAppearance != nil else { return }
             guard requestGeneration == self.generation else { self.reconcile(); return }
-            // A request may span a clock change or solar boundary while waiting for consent.
+            // Requests can span a clock/solar boundary or a manual/auto change.
             let fresh = ScheduleEngine().evaluate(now: self.clock(), city: self.city, sunriseOffset: self.sunriseOffset, sunsetOffset: self.offset)
-            if fresh.appearance != state.appearance { self.reconcile(); return }
+            let freshTarget = self.enabled ? fresh.appearance : self.manualAppearance
+            if freshTarget != target { self.reconcile(); return }
             self.schedule = fresh
             switch result {
             case .success:
                 self.failures = 0; self.failure = nil
-                self.statusState = .confirmed(state.appearance)
-                self.arm(at: fresh.nextCheck)
+                self.statusState = .confirmed(target)
+                if self.enabled { self.arm(at: fresh.nextCheck) }
             case .failure(let error):
                 self.failure = error
                 self.statusState = .attention
                 self.permissionBlocked = error.permissionDenied
                 self.failures += 1
                 if !error.permissionDenied && self.failures <= 2 {
-                    self.arm(at: min(fresh.nextCheck, self.clock().addingTimeInterval(Double(self.failures) * 5)))
+                    let retry = self.clock().addingTimeInterval(Double(self.failures) * 5)
+                    self.arm(at: self.enabled ? min(fresh.nextCheck, retry) : retry)
                 }
             }
         }

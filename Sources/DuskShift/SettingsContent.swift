@@ -48,7 +48,7 @@ struct SettingsContent: View {
                 HStack(spacing: 12) {
                     DuskSymbol(name: "circle.lefthalf.filled")
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(model.t("auto.system")).font(.system(size: 13, weight: .semibold))
+                        Text(model.t("appearance.mode")).font(.system(size: 13, weight: .semibold))
                         Text(value.status).font(.caption).foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
                     }
@@ -56,9 +56,9 @@ struct SettingsContent: View {
                     Button { model.retry() } label: { Image(systemName: "arrow.clockwise") }
                         .buttonStyle(.borderless).help(model.t("check.now"))
                         .accessibilityLabel(model.t("check.now")).accessibilityIdentifier("check-appearance")
-                    Toggle(model.t("auto.system"), isOn: Binding(get: { model.enabled }, set: { model.enabled = $0 }))
-                        .toggleStyle(.switch).labelsHidden()
-                        .accessibilityIdentifier("settings-auto-switch")
+                    AppearanceModePicker(selection: Binding(get: { model.appearanceMode }, set: { model.selectAppearanceMode($0) }),
+                                         localizer: state.localizer, identifier: "settings-appearance-mode")
+                        .frame(width: 210, alignment: .trailing)
                 }
                 if let error = value.error { DuskNotice(text: error, warning: true) }
             }.duskCard()

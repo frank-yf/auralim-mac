@@ -8,7 +8,7 @@ struct DuskShiftApp: App {
     @StateObject private var settings = SettingsWindowController()
 
     var body: some Scene {
-        MenuBarExtra("Dusk Shift", systemImage: model.enabled ? "sun.max.circle.fill" : "sun.max.circle") {
+        MenuBarExtra("Dusk Shift", systemImage: model.enabled ? "sun.max.circle.fill" : model.appearanceMode == .dark ? "moon.circle" : "sun.max.circle") {
             MenuContent(model: model, openSettings: { settings.show(model: model) })
         }
         .menuBarExtraStyle(.window)
@@ -23,17 +23,16 @@ struct MenuContent: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 10) {
-                DuskMark(size: 34)
+            HStack(spacing: 8) {
+                DuskMark(size: 30)
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("Dusk Shift").font(.system(size: 15, weight: .semibold))
-                    Text(model.enabled ? model.t("auto") : model.t("paused"))
+                    Text("Dusk Shift").font(.system(size: 14, weight: .semibold)).lineLimit(1)
+                    Text(model.t(model.appearanceMode.localizationKey))
                         .font(.caption).foregroundStyle(.secondary)
-                }
-                Spacer()
-                Toggle(model.t("auto.switch"), isOn: $model.enabled)
-                    .toggleStyle(.switch).controlSize(.small).labelsHidden()
-                    .accessibilityIdentifier("menu-auto-switch")
+                }.frame(maxWidth: .infinity, alignment: .leading)
+                AppearanceModePicker(selection: Binding(get: { model.appearanceMode }, set: { model.selectAppearanceMode($0) }),
+                                     localizer: model.localizer, identifier: "menu-appearance-mode")
+                    .frame(width: 158, alignment: .trailing)
             }
             VStack(alignment: .leading, spacing: 10) {
                 HStack(spacing: 5) {
@@ -61,7 +60,7 @@ struct MenuContent: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }.duskCard(padding: 12)
-            Label(model.settingsStatus, systemImage: model.errorMessage != nil ? "exclamationmark.circle" : model.enabled ? "checkmark.circle" : "pause.circle")
+            Label(model.settingsStatus, systemImage: model.errorMessage != nil ? "exclamationmark.circle" : (model.enabled || model.manualAppearance != nil) ? "checkmark.circle" : "pause.circle")
                 .font(.caption).foregroundStyle(model.errorMessage == nil ? Color.secondary : .orange)
                 .lineLimit(2).frame(maxWidth: .infinity, minHeight: 28, alignment: .leading)
                 .help(model.errorMessage ?? model.settingsStatus)

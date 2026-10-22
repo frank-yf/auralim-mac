@@ -283,7 +283,7 @@ struct NativeInteractionTests {
         #expect(window.firstResponder === editorBeforeOffset)
         #expect(sliders.allSatisfy { $0.isEnabled })
         try type("\(storedOffset)", into: fields[0], submit: true)
-        let mode = try #require(descendants(host).compactMap { $0 as? NSSegmentedControl }.first)
+        let mode = try #require(descendants(host).compactMap { $0 as? NSSegmentedControl }.first(where: { $0.segmentCount == 2 }))
         mode.selectedSegment = 1
         #expect(mode.sendAction(mode.action, to: mode.target))
         settle()

@@ -50,7 +50,7 @@
 "status.disabled" = "自动切换尚未启用";
 "status.paused" = "已暂停，当前系统外观保持不变";
 "status.confirmed" = "已确认系统为%@外观";
-"status.attention" = "自动切换需要处理";
+"status.attention" = "外观切换需要处理";
 "none" = "无";
 "error.permission" = "需要自动化权限：请在系统设置 → 隐私与安全性 → 自动化中允许 Dusk Shift 控制 System Events，然后点击重试。";
 "error.script" = "外观切换失败（%d）：%@";
@@ -114,3 +114,5 @@
 "help.location.body" = "选择「自动定位」后使用 macOS 定位服务获取位置。时区通过内置离线边界数据查询，不依赖系统当前时区；日出日落继续在本地计算。界面显示坐标，不做在线地址查询。系统显著位置变化、网络变化、唤醒、会话恢复和返回应用时可更新位置；不支持位置变化监测的设备依靠这些事件或「更新位置」按钮刷新。请求失败或权限被拒绝时使用已保存的备用手动城市；切回手动城市会停止定位监测。坐标仅保存在内存，Dusk Shift 不保存或上传坐标。macOS 定位服务可能需要 Wi-Fi 或网络，无法保证断网时取得位置。时区边界来自 timezone-boundary-builder，经 ZoneDetect 转换（2024a），以 ODbL 1.0 授权。边界附近或数据更新前可改用手动城市。";
 
 "licenses.open" = "许可与数据来源";
+
+"appearance.mode" = "外观模式";

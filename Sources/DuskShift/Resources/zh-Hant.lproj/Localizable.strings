@@ -50,7 +50,7 @@
 "status.disabled" = "尚未啟用自動切換";
 "status.paused" = "已暫停，目前系統外觀保持不變";
 "status.confirmed" = "已確認系統為%@外觀";
-"status.attention" = "自動切換需要處理";
+"status.attention" = "外觀切換需要處理";
 "none" = "無";
 "error.permission" = "需要自動化權限：請在系統設定 → 隱私權與安全性 → 自動化中允許 Dusk Shift 控制 System Events，然後重試。";
 "error.script" = "外觀切換失敗（%d）：%@";
@@ -114,3 +114,5 @@
 "help.location.body" = "選擇「自動定位」後使用 macOS 定位服務取得位置。時區透過內建離線邊界資料查詢，不依賴系統目前時區；日出日落繼續在本機計算。介面顯示座標，不做線上地址查詢。系統顯著位置變化、網路變化、喚醒、工作階段恢復和返回應用程式時可更新位置；不支援位置變化監測的裝置依靠這些事件或「更新位置」按鈕重新整理。請求失敗或權限遭拒時使用已儲存的備用手動城市；切回手動城市會停止定位監測。座標僅保留在記憶體，Dusk Shift 不儲存或上傳座標。macOS 定位服務可能需要 Wi-Fi 或網路，無法保證離線時取得位置。時區邊界來自 timezone-boundary-builder，經 ZoneDetect 轉換（2024a），以 ODbL 1.0 授權。邊界附近或資料更新前可改用手動城市。";
 
 "licenses.open" = "授權與資料來源";
+
+"appearance.mode" = "外觀模式";

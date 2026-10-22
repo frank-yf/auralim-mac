@@ -1,0 +1,120 @@
+import AppKit
+import SwiftUI
+import Testing
+import DuskShiftCore
+@testable import DuskShift
+
+private final class ModeUIAppearance: AppearanceApplying {
+    var requests: [Appearance] = []
+    func apply(_ appearance: Appearance, completion: @escaping (Result<Void, AppearanceFailure>) -> Void) {
+        requests.append(appearance)
+        completion(.success(()))
+    }
+}
+
+@Suite(.serialized)
+struct AppearanceModeInteractionTests {
+    @MainActor
+    @Test(.enabled(if: ProcessInfo.processInfo.environment["DUSK_SHIFT_MODE_UI_TESTS"] == "1"))
+    func nativePickersStaySynchronizedAndFitBothPanels() throws {
+        let app = NSApplication.shared
+        app.setActivationPolicy(.regular)
+        app.finishLaunching()
+        let suite = "DuskShift.ModeUI.\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defaults.set("zh-Hans", forKey: "language")
+        defaults.set(true, forKey: "enabled")
+        let controller = ModeUIAppearance()
+        let model = AppModel(defaults: defaults, controller: controller,
+            clock: { ISO8601DateFormatter().date(from: "2026-10-22T04:00:00Z")! }, enableTimers: false,
+            workspaceNotifications: NotificationCenter(), systemNotifications: NotificationCenter(),
+            loginItemController: FakeLoginItem(), locationController: FakeLocation(), systemAppearance: { .light })
+        defer { model.shutdown(); defaults.removePersistentDomain(forName: suite) }
+        let output = URL(fileURLWithPath: ProcessInfo.processInfo.environment["DUSK_SHIFT_MODE_UI_OUTPUT"] ?? "/private/tmp/dusk-shift-mode-ui")
+        try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
+        func settle() {
+            let end = Date(timeIntervalSinceNow: 0.18)
+            repeat {
+                while Date() < end, let event = app.nextEvent(matching: .any, until: Date(), inMode: .default, dequeue: true) { app.sendEvent(event) }
+                RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.01))
+            } while Date() < end
+        }
+        func descendants(_ view: NSView) -> [NSView] { [view] + view.subviews.flatMap(descendants) }
+        func picker(_ window: NSWindow) throws -> NSSegmentedControl {
+            try #require(descendants(window.contentView!).compactMap { $0 as? NSSegmentedControl }.first { $0.segmentCount == 3 })
+        }
+        let presenter = SettingsWindowController()
+        presenter.show(model: model)
+        let settings = try #require(presenter.window)
+        defer { settings.close() }
+        let menu = NSWindow(contentViewController: NSHostingController(rootView: MenuContent(model: model, quit: {})))
+        menu.isReleasedWhenClosed = false
+        menu.setContentSize(NSSize(width: MenuPanelLayout.width, height: MenuPanelLayout.height))
+        menu.center()
+        menu.makeKeyAndOrderFront(nil)
+        defer { menu.close() }
+        settle()
+        let menuPicker = try picker(menu), settingsPicker = try picker(settings)
+        #expect(menuPicker.selectedSegment == 1 && settingsPicker.selectedSegment == 1)
+        func select(_ control: NSSegmentedControl, _ segment: Int) {
+            control.selectedSegment = segment
+            #expect(control.sendAction(control.action, to: control.target))
+            settle()
+            #expect(menuPicker.selectedSegment == segment)
+            #expect(settingsPicker.selectedSegment == segment)
+        }
+        // A legacy paused install highlights its current theme. Clicking that
+        // already-highlighted segment must still establish an explicit choice.
+        model.enabled = false
+        settle()
+        select(settingsPicker, 0)
+        #expect(model.manualAppearance == .light)
+        select(menuPicker, 1)
+        select(menuPicker, 2)
+        #expect(model.appearanceMode == .dark && !model.enabled)
+        #expect(controller.requests.last == .dark)
+        #expect(model.scheduledCheck == nil)
+        select(menuPicker, 1)
+        #expect(model.appearanceMode == .automatic && model.enabled)
+        #expect(controller.requests.last == .light)
+        #expect(model.scheduledCheck != nil)
+        select(settingsPicker, 0)
+        #expect(model.appearanceMode == .light && !model.enabled)
+        #expect(controller.requests.last == .light)
+        select(settingsPicker, 2)
+        #expect(model.appearanceMode == .dark && controller.requests.last == .dark)
+        select(settingsPicker, 1)
+        #expect(model.enabled && model.scheduledCheck != nil)
+        func capture(_ window: NSWindow, name: String) throws {
+            window.makeKeyAndOrderFront(nil)
+            settle()
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
+            process.arguments = ["-x", "-l", String(window.windowNumber), output.appendingPathComponent(name + ".png").path]
+            try process.run(); process.waitUntilExit()
+            #expect(process.terminationStatus == 0)
+        }
+        for language in [AppLanguage.simplifiedChinese, .traditionalChinese, .english] {
+            model.language = language
+            settle()
+            let labels = ["light", "auto", "dark"].map { model.t($0) }
+            for window in [menu, settings] {
+                let control = try picker(window)
+                #expect((0..<3).map { control.label(forSegment: $0) ?? "" } == labels)
+                #expect(control.bounds.width >= control.intrinsicContentSize.width - 0.5)
+                #expect(control.visibleRect.width >= control.bounds.width - 0.5)
+            }
+            for theme in [NSAppearance.Name.aqua, .darkAqua] {
+                menu.appearance = NSAppearance(named: theme)
+                settings.appearance = NSAppearance(named: theme)
+                for (index, mode) in AppearanceMode.allCases.enumerated() {
+                    select(try picker(settings), index)
+                    let name = "\(language.rawValue)-\(theme == .aqua ? "light" : "dark")-\(mode.rawValue)"
+                    try capture(settings, name: "settings-" + name)
+                    try capture(menu, name: "menu-" + name)
+                }
+            }
+        }
+        print("Verified native menu/settings selection in both directions, manual/auto effects, selected segments, 3 languages and 2 appearances; system services are faked")
+    }
+}

@@ -98,7 +98,7 @@ if settingsMode {
         let inputs = elements.filter { read($0, kAXRoleAttribute as CFString) as? String == "AXTextField" }
         precondition(sliders.isEmpty && inputs.isEmpty)
         precondition(elements.contains { ["设置…", "設定…", "Settings…"].contains(label($0)) })
-        print("Open cycle \(cycle): \(measured.width) × \(measured.height); compact status, toggle, settings, quit; no offset editors")
+        print("Open cycle \(cycle): \(measured.width) × \(measured.height); compact status, appearance modes, settings, quit; no offset editors")
         if cycle < 3 { pressStatusItem(); precondition(panelWindows().isEmpty) }
     }
 } else {

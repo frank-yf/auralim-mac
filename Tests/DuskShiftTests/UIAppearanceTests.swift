@@ -60,20 +60,13 @@ struct UIAppearanceTests {
         #expect(descendants(host).compactMap { $0 as? NSTextField }.filter(\.isEditable).count == 2)
         let switches = descendants(host).compactMap { $0 as? NSSwitch }
         print("Native settings switches:", switches.count)
-        #expect(switches.count == 2)
-        if switches.count == 2 {
-            // SwiftUI forwards the action but its native bridge can return false;
-            // verify the binding and service requests after each press instead.
-            _ = switches[0].accessibilityPerformPress()
-            settle()
-            #expect(model.enabled)
-            _ = switches[0].accessibilityPerformPress()
-            settle()
-            #expect(!model.enabled)
-            _ = switches[1].accessibilityPerformPress()
+        #expect(switches.count == 1)
+        if let loginSwitch = switches.first {
+            // The SwiftUI bridge can return false after forwarding the action.
+            _ = loginSwitch.accessibilityPerformPress()
             settle()
             #expect(login.requests == [true])
-            _ = switches[1].accessibilityPerformPress()
+            _ = loginSwitch.accessibilityPerformPress()
             settle()
             #expect(login.requests == [true, false])
         }
