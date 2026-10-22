@@ -4,18 +4,38 @@ import SwiftUI
 
 @MainActor
 final class AppModel: ObservableObject {
+    @Published var language: AppLanguage { didSet { defaults.set(language.rawValue, forKey: "language") } }
     @Published var cityID: String { didSet { defaults.set(cityID, forKey: "city"); configurationChanged() } }
     @Published var sunriseOffset: Int { didSet { defaults.set(sunriseOffset, forKey: "sunriseOffset"); configurationChanged() } }
     @Published var offset: Int { didSet { defaults.set(offset, forKey: "offset"); configurationChanged() } }
     @Published var enabled: Bool { didSet { defaults.set(enabled, forKey: "enabled"); configurationChanged() } }
     @Published private(set) var schedule: Schedule?
-    @Published private(set) var status = "自动切换尚未启用"
-    @Published private(set) var errorMessage: String?
+    private enum Status { case disabled, paused, confirmed(Appearance), attention }
+    @Published private var statusState: Status = .disabled
+    @Published private var failure: AppearanceFailure?
+    var status: String {
+        switch statusState {
+        case .disabled: return t("status.disabled")
+        case .paused: return t("status.paused")
+        case .confirmed(let mode): return t("status.confirmed", t(mode == .dark ? "dark" : "light"))
+        case .attention: return t("status.attention")
+        }
+    }
+    var errorMessage: String? {
+        guard let failure else { return nil }
+        switch failure.reason {
+        case .custom: return failure.message
+        case .authorization: return t("error.permission")
+        case .script(let code): return t("error.script", code, failure.message.isEmpty ? t("error.unknown") : failure.message)
+        case .verification: return t("error.verification")
+        }
+    }
     @Published private(set) var isApplying = false
 
     private let defaults: UserDefaults
     private let controller: AppearanceApplying
     private let clock: () -> Date
+    private let preferredLanguages: () -> [String]
     private let enableTimers: Bool
     private(set) var scheduledCheck: Date?
     private var timer: Timer?
@@ -28,8 +48,11 @@ final class AppModel: ObservableObject {
     init(defaults: UserDefaults = .standard, controller: AppearanceApplying = AppearanceController(),
          clock: @escaping () -> Date = Date.init, enableTimers: Bool = true,
          workspaceNotifications: NotificationCenter = NSWorkspace.shared.notificationCenter,
-         systemNotifications: NotificationCenter = .default) {
+         systemNotifications: NotificationCenter = .default,
+         preferredLanguages: @escaping () -> [String] = { Locale.preferredLanguages }) {
         self.defaults = defaults; self.controller = controller; self.clock = clock; self.enableTimers = enableTimers
+        self.preferredLanguages = preferredLanguages
+        language = AppLanguage(rawValue: defaults.string(forKey: "language") ?? "system") ?? .system
         cityID = defaults.string(forKey: "city") ?? City.all[0].id
         offset = SolarOffset.clamp(defaults.integer(forKey: "offset"))
         sunriseOffset = SolarOffset.clamp(defaults.integer(forKey: "sunriseOffset"))
@@ -38,6 +61,14 @@ final class AppModel: ObservableObject {
         observe(NSWorkspace.sessionDidBecomeActiveNotification, center: workspaceNotifications)
         observe(.NSSystemClockDidChange, center: systemNotifications)
         observe(.NSSystemTimeZoneDidChange, center: systemNotifications)
+        let localeObserver = systemNotifications.addObserver(forName: NSLocale.currentLocaleDidChangeNotification,
+                                                             object: nil, queue: .main) { [weak self] _ in
+            Task { @MainActor in
+                guard let self, self.language == .system else { return }
+                self.language = .system
+            }
+        }
+        observers.append((systemNotifications, localeObserver))
         reconcile()
     }
 
@@ -49,7 +80,7 @@ final class AppModel: ObservableObject {
     }
 
     private func configurationChanged() {
-        generation += 1; failures = 0; permissionBlocked = false; errorMessage = nil
+        generation += 1; failures = 0; permissionBlocked = false; failure = nil
         reconcile()
     }
 
@@ -60,7 +91,7 @@ final class AppModel: ObservableObject {
         let state = ScheduleEngine().evaluate(now: clock(), city: city, sunriseOffset: sunriseOffset, sunsetOffset: offset)
         schedule = state
         guard enabled else {
-            status = "已暂停，当前系统外观保持不变"
+            statusState = .paused
             return
         }
         arm(at: state.nextCheck)
@@ -78,12 +109,12 @@ final class AppModel: ObservableObject {
             self.schedule = fresh
             switch result {
             case .success:
-                self.failures = 0; self.errorMessage = nil
-                self.status = "已确认系统为\(state.appearance == .dark ? "深色" : "浅色")外观"
+                self.failures = 0; self.failure = nil
+                self.statusState = .confirmed(state.appearance)
                 self.arm(at: fresh.nextCheck)
             case .failure(let error):
-                self.errorMessage = error.message
-                self.status = "自动切换需要处理"
+                self.failure = error
+                self.statusState = .attention
                 self.permissionBlocked = error.permissionDenied
                 self.failures += 1
                 if !error.permissionDenied && self.failures <= 2 {
@@ -111,12 +142,21 @@ final class AppModel: ObservableObject {
         observers.removeAll()
     }
 
+    var localizer: Localizer { localizer(for: language) }
+    func localizer(for language: AppLanguage) -> Localizer {
+        Localizer(language: language, preferredLanguages: preferredLanguages())
+    }
+    func t(_ key: String, _ arguments: CVarArg...) -> String {
+        localizer.text(key, arguments: arguments)
+    }
+    func cityName(_ city: City? = nil) -> String { localizer.cityName(city ?? self.city) }
+
     func time(_ date: Date?) -> String {
-        guard let date else { return "无" }
+        guard let date else { return t("none") }
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "zh_CN")
+        formatter.locale = localizer.locale
         formatter.timeZone = city.timeZone
-        formatter.dateFormat = "MM-dd HH:mm"
+        formatter.setLocalizedDateFormatFromTemplate("MMMdHHmm")
         return formatter.string(from: date)
     }
 }

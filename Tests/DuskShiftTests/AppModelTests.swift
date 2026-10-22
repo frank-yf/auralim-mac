@@ -136,4 +136,56 @@ final class AppModelTests {
         #expect(restored.sunriseOffset == 37)
         #expect(restored.offset == -30)
     }
+    @MainActor
+    @Test
+    func languageSwitchIsImmediatePersistsAndDoesNotApplyAppearance() {
+        let suite = "DuskShift.Language.\(UUID().uuidString)"
+        let store = UserDefaults(suiteName: suite)!
+        defer { store.removePersistentDomain(forName: suite) }
+        store.set(true, forKey: "enabled")
+        store.set(-30, forKey: "offset")
+        let controller = FakeAppearance()
+        let model = AppModel(defaults: store, controller: controller,
+                             clock: { self.date("2026-10-22T04:00:00Z") }, enableTimers: false,
+                             preferredLanguages: { ["zh-CN"] })
+        defer { model.shutdown() }
+        let requests = controller.requests.count
+        let nextCheck = model.scheduledCheck
+        let nextSwitch = model.schedule?.nextTransition
+        model.language = .english
+        #expect(model.status == "System appearance confirmed: Light")
+        #expect(model.cityName() == "Shanghai")
+        #expect(model.t("sunrise.switch") == "Switch to light")
+        model.language = .traditionalChinese
+        #expect(model.status == "已確認系統為淺色外觀")
+        #expect(controller.requests.count == requests)
+        #expect(model.scheduledCheck == nextCheck)
+        #expect(model.schedule?.nextTransition == nextSwitch)
+        #expect(model.offset == -30)
+        let restored = AppModel(defaults: store, controller: FakeAppearance(), enableTimers: false)
+        defer { restored.shutdown() }
+        #expect(restored.language == .traditionalChinese)
+        #expect(restored.offset == -30)
+    }
+
+    @MainActor
+    @Test
+    func existingPermissionErrorRelocalizesAndInvalidPreferenceFallsBack() {
+        let suite = "DuskShift.LanguageError.\(UUID().uuidString)"
+        let store = UserDefaults(suiteName: suite)!
+        defer { store.removePersistentDomain(forName: suite) }
+        store.set(true, forKey: "enabled")
+        store.set("unsupported", forKey: "language")
+        let controller = FakeAppearance()
+        controller.result = .failure(AppearanceFailure(message: "", permissionDenied: true, reason: .authorization))
+        let model = AppModel(defaults: store, controller: controller, enableTimers: false,
+                             preferredLanguages: { ["zh-TW"] })
+        defer { model.shutdown() }
+        #expect(model.language == .system)
+        #expect(model.errorMessage?.contains("自動化權限") == true)
+        let requests = controller.requests.count
+        model.language = .english
+        #expect(model.errorMessage?.contains("Automation permission") == true)
+        #expect(controller.requests.count == requests)
+    }
 }

@@ -1,9 +1,11 @@
 import AppKit
 import SwiftUI
+import Combine
 
 @MainActor
 final class SettingsWindowController: ObservableObject {
     private(set) var window: NSWindow?
+    private var languageSubscription: AnyCancellable?
 
     func show(model: AppModel) {
         model.reconcile()
@@ -16,7 +18,7 @@ final class SettingsWindowController: ObservableObject {
         let height = SettingsPanelLayout.height(availableHeight: screen?.visibleFrame.height ?? 800)
         let controller = NSHostingController(rootView: SettingsContent(model: model, height: height))
         let window = NSWindow(contentViewController: controller)
-        window.title = "Dusk Shift 设置"
+        window.title = model.t("settings.title")
         window.identifier = NSUserInterfaceItemIdentifier("dusk-shift-settings")
         window.styleMask = [.titled, .closable]
         window.isReleasedWhenClosed = false
@@ -28,6 +30,10 @@ final class SettingsWindowController: ObservableObject {
             window.center()
         }
         self.window = window
+        languageSubscription = model.$language.sink { [weak window, weak model] language in
+            guard let model else { return }
+            window?.title = model.localizer(for: language).text("settings.title")
+        }
         NSApplication.shared.activate(ignoringOtherApps: true)
         window.makeKeyAndOrderFront(nil)
     }

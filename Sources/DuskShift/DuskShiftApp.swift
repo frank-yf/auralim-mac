@@ -26,38 +26,39 @@ struct MenuContent: View {
             HStack {
                 Text("Dusk Shift").font(.headline)
                 Spacer()
-                Text(model.enabled ? "自动" : "已暂停")
+                Text(model.enabled ? model.t("auto") : model.t("paused"))
                     .font(.caption).foregroundStyle(.secondary)
             }
-            Toggle("自动切换", isOn: $model.enabled).disabled(model.isApplying)
+            Toggle(model.t("auto.switch"), isOn: $model.enabled).disabled(model.isApplying)
             VStack(alignment: .leading, spacing: 5) {
-                Text(model.city.name + " · " + (model.enabled ? "下次切换" : "计划预览"))
+                Text(model.cityName() + " · " + (model.enabled ? model.t("next") : model.t("preview")))
                     .font(.caption).foregroundStyle(.secondary)
                 if let next = model.schedule?.nextTransition {
-                    Label("\(model.time(next.date)) · \(next.appearance == .dark ? "深色" : "浅色")",
+                    Label("\(model.time(next.date)) · \(next.appearance == .dark ? model.t("dark") : model.t("light"))",
                           systemImage: next.appearance == .dark ? "moon.fill" : "sun.max.fill")
                 } else {
-                    Text("近期无切换计划").font(.callout)
+                    Text(model.t("no.schedule")).font(.callout)
                 }
             }
-            Text(model.isApplying ? "正在检查系统外观…" : model.status)
+            Text(model.isApplying ? model.t("checking") : model.status)
                 .font(.caption).foregroundStyle(model.errorMessage == nil ? Color.secondary : .orange)
                 .fixedSize(horizontal: false, vertical: true)
             Divider()
             HStack {
-                Button("设置…") {
+                Button(model.t("settings.open")) {
                     dismiss()
                     openSettings()
                 }
                 .keyboardShortcut(",", modifiers: .command)
                 .accessibilityIdentifier("open-settings")
                 Spacer()
-                Button("退出", action: quit)
+                Button(model.t("quit"), action: quit)
             }
         }
         .padding(18)
         // Keep an explicit viewport: MenuBarExtra can propose a near-zero height.
         .frame(width: MenuPanelLayout.width, height: MenuPanelLayout.height)
+        .environment(\.locale, model.localizer.locale)
         .onAppear { model.reconcile() }
     }
 }

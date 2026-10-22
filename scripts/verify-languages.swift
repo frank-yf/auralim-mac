@@ -1,0 +1,151 @@
+import AppKit
+import ApplicationServices
+
+func read(_ element: AXUIElement, _ name: CFString) -> CFTypeRef? {
+    var value: CFTypeRef?
+    guard AXUIElementCopyAttributeValue(element, name, &value) == .success else { return nil }
+    return value
+}
+func children(_ element: AXUIElement) -> [AXUIElement] {
+    read(element, kAXChildrenAttribute as CFString) as? [AXUIElement] ?? []
+}
+func describe(_ element: AXUIElement, depth: Int = 0) {
+    guard depth < 6 else { return }
+    let role = read(element, kAXRoleAttribute as CFString) as? String ?? ""
+    let title = read(element, kAXTitleAttribute as CFString) as? String ?? ""
+    let description = read(element, kAXDescriptionAttribute as CFString) as? String ?? ""
+    print(String(repeating: " ", count: depth), role, title, description)
+    for child in children(element) { describe(child, depth: depth + 1) }
+}
+guard AXIsProcessTrusted() else { fatalError("Menu-bar verification requires Accessibility permission") }
+guard let running = NSRunningApplication.runningApplications(withBundleIdentifier: "app.duskshift.mac").first else {
+    fatalError("Dusk Shift is not running")
+}
+let app = AXUIElementCreateApplication(running.processIdentifier)
+print("Dusk Shift pid:", running.processIdentifier)
+let verify = CommandLine.arguments.contains("--verify")
+let settingsMode = CommandLine.arguments.contains("--settings")
+func appWindows() -> [AXUIElement] {
+    read(app, kAXWindowsAttribute as CFString) as? [AXUIElement] ?? []
+}
+func pressStatusItem() {
+    guard let extra = read(app, kAXExtrasMenuBarAttribute as CFString),
+          let item = children(extra as! AXUIElement).first else { fatalError("No Dusk Shift status item") }
+    precondition(AXUIElementPerformAction(item, kAXPressAction as CFString) == .success)
+    Thread.sleep(forTimeInterval: 0.5)
+}
+func size(_ element: AXUIElement) -> CGSize {
+    guard let raw = read(element, kAXSizeAttribute as CFString) else { fatalError("No AXSize") }
+    var result = CGSize.zero
+    precondition(AXValueGetValue(raw as! AXValue, .cgSize, &result))
+    return result
+}
+func descendants(_ element: AXUIElement) -> [AXUIElement] {
+    [element] + children(element).flatMap(descendants)
+}
+func panelWindows() -> [AXUIElement] {
+    appWindows().filter { (300...340).contains(size($0).width) }
+}
+func label(_ element: AXUIElement) -> String {
+    [kAXTitleAttribute, kAXDescriptionAttribute, kAXValueAttribute].compactMap {
+        read(element, $0 as CFString) as? String
+    }.first { !$0.isEmpty } ?? ""
+}
+func press(_ element: AXUIElement) {
+    precondition(AXUIElementPerformAction(element, kAXPressAction as CFString) == .success)
+    Thread.sleep(forTimeInterval: 0.5)
+}
+func openSettings() -> AXUIElement {
+    if panelWindows().isEmpty { pressStatusItem() }
+    guard let panel = panelWindows().first,
+          let button = descendants(panel).first(where: { ["设置…", "設定…", "Settings…"].contains(label($0)) }) else {
+        fatalError("No settings entry in menu panel")
+    }
+    press(button)
+    guard let settings = appWindows().first(where: { ["Dusk Shift 设置", "Dusk Shift 設定", "Dusk Shift Settings"].contains(label($0)) }) else {
+        fatalError("Settings window did not open")
+    }
+    precondition(panelWindows().isEmpty, "Menu panel should dismiss when opening settings")
+    return settings
+}
+
+struct VerificationError: Error { let message: String }
+func require(_ condition: Bool, _ message: String) throws {
+    if !condition { throw VerificationError(message: message) }
+}
+func role(_ element: AXUIElement) -> String { read(element, kAXRoleAttribute as CFString) as? String ?? "" }
+let settings = openSettings()
+func languagePicker() throws -> AXUIElement {
+    let pickers = descendants(settings).filter { role($0) == "AXPopUpButton" }
+    try require(pickers.count == 2, "Expected language and city pickers")
+    return pickers[0]
+}
+func choose(_ title: String) throws {
+    _ = AXUIElementPerformAction(settings, kAXRaiseAction as CFString)
+    let picker = try languagePicker()
+    press(picker)
+    let items = descendants(picker).filter { role($0) == "AXMenuItem" }
+    guard let item = items.first(where: { label($0) == title }) else {
+        throw VerificationError(message: "No language option \(title); options: \(items.map(label))")
+    }
+    press(item)
+}
+func screenshot(_ path: String, width: Double) throws {
+    let windows = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID) as? [[String: Any]] ?? []
+    guard let info = windows.first(where: {
+        guard $0[kCGWindowOwnerPID as String] as? Int32 == running.processIdentifier,
+              let bounds = $0[kCGWindowBounds as String] as? [String: Double] else { return false }
+        return abs(bounds["Width", default: 0] - width) < 2
+    }), let number = info[kCGWindowNumber as String] as? Int else {
+        throw VerificationError(message: "No matching window for screenshot")
+    }
+    let capture = Process()
+    capture.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
+    capture.arguments = ["-x", "-l", String(number), path]
+    try capture.run(); capture.waitUntilExit()
+    try require(capture.terminationStatus == 0, "Screenshot failed")
+}
+do {
+    let original = read(try languagePicker(), kAXValueAttribute as CFString) as? String ?? ""
+    print("Original language choice:", original)
+    defer {
+        let systemOptions = ["跟随系统", "跟隨系統", "Follow System", ""]
+        let restore = systemOptions.contains(original) ? "跟随系统" : original
+        do { try choose("简体中文"); try choose(restore); print("Restored original language choice:", original) }
+        catch { print("Could not restore language:", error) }
+    }
+    for (option, expectedTitle, nextLabel, helpLabel, startLabel) in [
+        ("English", "Dusk Shift Settings", "Schedule preview", "Help", "Getting started"),
+        ("繁體中文", "Dusk Shift 設定", "計畫預覽", "使用說明", "開始使用"),
+        ("简体中文", "Dusk Shift 设置", "计划预览", "使用说明", "开始使用")
+    ] {
+        try choose(option)
+        try require(label(settings) == expectedTitle, "Window title did not update: \(label(settings))")
+        let generalElements = descendants(settings)
+        let values = generalElements.map(label).joined(separator: " ")
+        let expectedSwitch = option == "English" ? "Switch to light" : option == "繁體中文" ? "日出轉亮" : "日出转亮"
+        try require(values.contains(expectedSwitch), "Settings labels did not update")
+        let filename = option == "English" ? "en" : option == "繁體中文" ? "zh-Hant" : "zh-Hans"
+        try screenshot("artifacts/settings-\(filename).png", width: 560)
+        pressStatusItem()
+        let panel = try { () throws -> AXUIElement in
+            guard let panel = panelWindows().first else { throw VerificationError(message: "No compact menu") }
+            return panel
+        }()
+        let menuText = descendants(panel).map(label).joined(separator: " ")
+        try require(menuText.contains(nextLabel) || menuText.contains(option == "English" ? "Next switch" : option == "繁體中文" ? "下次切換" : "下次切换"), "Menu did not update")
+        if option == "English" { try screenshot("artifacts/menu-bar-en.png", width: 320) }
+        pressStatusItem()
+        guard let help = descendants(settings).first(where: { label($0) == helpLabel }) else { throw VerificationError(message: "Missing help tab") }
+        press(help)
+        try require(descendants(settings).map(label).joined(separator: " ").contains(startLabel), "Help did not update")
+        if option == "English" { try screenshot("artifacts/settings-en-help.png", width: 560) }
+        let generalLabel = option == "English" ? "Automatic switching" : option == "繁體中文" ? "自動切換" : "自动切换"
+        guard let general = descendants(settings).first(where: { label($0) == generalLabel }) else { throw VerificationError(message: "Missing general tab") }
+        press(general)
+        print("Verified live language choice:", option, "title, settings, menu, city/date presentation, and help")
+    }
+} catch {
+    fputs("Language verification failed: \(error)\n", stderr)
+    exit(1)
+}

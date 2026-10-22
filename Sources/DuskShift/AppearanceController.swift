@@ -4,6 +4,8 @@ import DuskShiftCore
 struct AppearanceFailure: Error {
     let message: String
     let permissionDenied: Bool
+    enum Reason { case custom, authorization, script(Int), verification }
+    var reason: Reason = .custom
 }
 
 protocol AppearanceApplying {
@@ -33,13 +35,12 @@ final class AppearanceController: AppearanceApplying {
                 let code = error[NSAppleScript.errorNumber] as? Int ?? 0
                 let denied = code == -1743 || code == -1744
                 outcome = .failure(AppearanceFailure(
-                    message: denied ? "需要自动化权限：请在系统设置 → 隐私与安全性 → 自动化中允许 Dusk Shift 控制 System Events，然后点击重试。"
-                        : "外观切换失败（\(code)）：\(error[NSAppleScript.errorMessage] as? String ?? "未知错误")",
-                    permissionDenied: denied))
+                    message: error[NSAppleScript.errorMessage] as? String ?? "",
+                    permissionDenied: denied, reason: denied ? .authorization : .script(code)))
             } else if let result, result.booleanValue == (appearance == .dark) {
                 outcome = .success(())
             } else {
-                outcome = .failure(AppearanceFailure(message: "系统外观未达到预期，请重试。", permissionDenied: false))
+                outcome = .failure(AppearanceFailure(message: "", permissionDenied: false, reason: .verification))
             }
             DispatchQueue.main.async { completion(outcome) }
         }

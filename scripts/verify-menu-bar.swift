@@ -58,11 +58,11 @@ func press(_ element: AXUIElement) {
 func openSettings() -> AXUIElement {
     if panelWindows().isEmpty { pressStatusItem() }
     guard let panel = panelWindows().first,
-          let button = descendants(panel).first(where: { label($0) == "设置…" }) else {
+          let button = descendants(panel).first(where: { ["设置…", "設定…", "Settings…"].contains(label($0)) }) else {
         fatalError("No settings entry in menu panel")
     }
     press(button)
-    guard let settings = appWindows().first(where: { label($0) == "Dusk Shift 设置" }) else {
+    guard let settings = appWindows().first(where: { ["Dusk Shift 设置", "Dusk Shift 設定", "Dusk Shift Settings"].contains(label($0)) }) else {
         fatalError("Settings window did not open")
     }
     precondition(panelWindows().isEmpty, "Menu panel should dismiss when opening settings")
@@ -76,19 +76,19 @@ if settingsMode {
     precondition(elements.filter { read($0, kAXRoleAttribute as CFString) as? String == "AXSlider" }.count == 2)
     precondition(elements.filter { read($0, kAXRoleAttribute as CFString) as? String == "AXTextField" }.count == 2)
     let labels = elements.map(label).joined(separator: " ")
-    precondition(labels.contains("日出转亮") && labels.contains("日落转暗"))
+    precondition((["日出转亮", "日出轉亮", "Switch to light"].contains { labels.contains($0) }) && (["日落转暗", "日落轉暗", "Switch to dark"].contains { labels.contains($0) }))
     print("Settings opened from real status item:", measured, "with city, offsets, and switch times")
-    guard let help = elements.first(where: { label($0) == "使用说明" }) else { fatalError("No instructions tab") }
+    guard let help = elements.first(where: { ["使用说明", "使用說明", "Help"].contains(label($0)) }) else { fatalError("No instructions tab") }
     press(help)
     let helpText = descendants(settings).map(label).joined(separator: " ")
-    precondition(helpText.contains("开始使用") && helpText.contains("权限与隐私"))
+    precondition((["开始使用", "開始使用", "Getting started"].contains { helpText.contains($0) }) && (["权限与隐私", "權限與隱私", "Permissions and privacy"].contains { helpText.contains($0) }))
     print("Instructions tab includes setup, offsets, offline/time-zone behavior, sleep recovery, precision, and privacy")
     guard let close = read(settings, kAXCloseButtonAttribute as CFString) else { fatalError("No close button") }
     press(close as! AXUIElement)
     let reopened = openSettings()
-    let matches = appWindows().filter { label($0) == "Dusk Shift 设置" }
+    let matches = appWindows().filter { ["Dusk Shift 设置", "Dusk Shift 設定", "Dusk Shift Settings"].contains(label($0)) }
     precondition(matches.count == 1)
-    if let general = descendants(reopened).first(where: { label($0) == "自动切换" }) { press(general) }
+    if let general = descendants(reopened).first(where: { ["自动切换", "自動切換", "Automatic switching"].contains(label($0)) }) { press(general) }
     print("Settings close/reopen: one reusable window; compact menu dismissed")
 } else if verify {
     if !panelWindows().isEmpty { pressStatusItem() }
@@ -101,7 +101,7 @@ if settingsMode {
         let sliders = elements.filter { read($0, kAXRoleAttribute as CFString) as? String == "AXSlider" }
         let inputs = elements.filter { read($0, kAXRoleAttribute as CFString) as? String == "AXTextField" }
         precondition(sliders.isEmpty && inputs.isEmpty)
-        precondition(elements.contains { label($0) == "设置…" })
+        precondition(elements.contains { ["设置…", "設定…", "Settings…"].contains(label($0)) })
         print("Open cycle \(cycle): \(measured.width) × \(measured.height); compact status, toggle, settings, quit; no offset editors")
         if cycle < 3 { pressStatusItem(); precondition(panelWindows().isEmpty) }
     }

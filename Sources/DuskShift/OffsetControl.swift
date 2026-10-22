@@ -6,6 +6,8 @@ struct OffsetControl: View {
     let leftLabel: String
     let rightLabel: String
     @Binding var minutes: Int
+    var localizer = Localizer(language: .system)
+    var identifier = "offset"
     @State private var draft = 0
     @State private var text = "0"
     @State private var inputError = false
@@ -14,11 +16,11 @@ struct OffsetControl: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
-                Text("\(title)偏移").font(.headline)
+                Text(localizer.text("offset.title", title)).font(.headline)
                 Spacer()
-                Text(draft == 0 ? "准时切换" : "\(draft < 0 ? "提前" : "延后") \(abs(draft)) 分钟")
+                Text(summary)
                     .font(.caption).foregroundStyle(.secondary)
-                Button("归零") { updateDraft(0); commit() }.font(.caption)
+                Button(localizer.text("offset.reset")) { updateDraft(0); commit() }.font(.caption)
             }
             HStack(spacing: 12) {
                 ZStack {
@@ -30,11 +32,11 @@ struct OffsetControl: View {
                     ), in: -120...120, step: 1, onEditingChanged: { editing in
                         if !editing { commit() }
                     })
-                    .accessibilityLabel("\(title)偏移，左侧\(leftLabel)，右侧\(rightLabel)")
-                    .accessibilityIdentifier("\(title)-slider")
-                    .accessibilityValue(draft == 0 ? "准时" : "\(draft < 0 ? "提前" : "延后")\(abs(draft))分钟")
+                    .accessibilityLabel(localizer.text("offset.accessibility", title, leftLabel, rightLabel))
+                    .accessibilityIdentifier("\(identifier)-slider")
+                    .accessibilityValue(summary)
                 }
-                TextField("分钟", text: $text)
+                TextField(localizer.text("offset.placeholder"), text: $text)
                     .textFieldStyle(.roundedBorder)
                     .multilineTextAlignment(.trailing)
                     .frame(width: 62)
@@ -45,9 +47,9 @@ struct OffsetControl: View {
                         if let parsed = SolarOffset.parse(value) { draft = parsed; inputError = false }
                     }
                     .onChange(of: inputFocused) { focused in if !focused { commitText() } }
-                    .accessibilityLabel("\(title)偏移分钟，负数提前，正数延后")
-                    .accessibilityIdentifier("\(title)-input")
-                Text("分").font(.caption)
+                    .accessibilityLabel(localizer.text("offset.inputAccessibility", title))
+                    .accessibilityIdentifier("\(identifier)-input")
+                Text(localizer.text("offset.unit")).font(.caption)
             }
             HStack {
                 Text(leftLabel)
@@ -56,11 +58,16 @@ struct OffsetControl: View {
                 Spacer()
                 Text(rightLabel)
             }.font(.caption).foregroundStyle(.secondary).padding(.trailing, 88)
-            Text(inputError ? "请输入 −120～+120 的整数分钟。" : "负数提前，正数延后；松开滑块或输入回车后生效。")
+            Text(localizer.text(inputError ? "offset.invalid" : "offset.hint"))
                 .font(.caption2).foregroundStyle(inputError ? .red : .secondary)
         }
         .onAppear { updateDraft(minutes) }
         .onChange(of: minutes) { updateDraft($0) }
+    }
+
+    private var summary: String {
+        draft == 0 ? localizer.text("offset.onTime")
+            : localizer.text(draft < 0 ? "offset.earlier" : "offset.later", abs(draft))
     }
 
     private func updateDraft(_ value: Int) {

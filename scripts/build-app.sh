@@ -8,6 +8,11 @@ app="$PWD/dist/Dusk Shift.app"
 mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
 cp "$bin_dir/DuskShift" "$app/Contents/MacOS/DuskShift"
 cp Resources/Info.plist "$app/Contents/Info.plist"
+cp -R "$bin_dir/DuskShift_DuskShift.bundle" "$app/Contents/Resources/"
+for language in en zh-Hans zh-Hant; do
+    mkdir -p "$app/Contents/Resources/$language.lproj"
+    cp "Resources/$language.lproj/InfoPlist.strings" "$app/Contents/Resources/$language.lproj/"
+done
 codesign --force --sign "${DUSK_SHIFT_SIGN_IDENTITY:--}" --options runtime --entitlements Resources/DuskShift.entitlements "$app"
 codesign --verify --strict "$app"
 printf 'Built: %s\n' "$app"

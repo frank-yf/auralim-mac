@@ -3,6 +3,15 @@ import AppKit
 import SwiftUI
 import Vision
 @testable import DuskShift
+import DuskShiftCore
+
+private final class NativeAppearanceSpy: AppearanceApplying {
+    var requests = 0
+    func apply(_ appearance: Appearance, completion: @escaping (Result<Void, AppearanceFailure>) -> Void) {
+        requests += 1
+        completion(.success(()))
+    }
+}
 
 /// Opt-in window-hosted tests: same production SwiftUI controls, real AppKit events.
 @Suite(.serialized)
@@ -15,10 +24,12 @@ struct NativeInteractionTests {
         app.finishLaunching()
         let suite = "DuskShift.UI.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suite)!
+        defaults.set("zh-Hans", forKey: "language")
         defer { defaults.removePersistentDomain(forName: suite) }
         let previousCursor = CGEvent(source: nil)?.location
         defer { if let point = previousCursor { CGWarpMouseCursorPosition(point) } }
-        let model = AppModel(defaults: defaults, enableTimers: false)
+        let appearance = NativeAppearanceSpy()
+        let model = AppModel(defaults: defaults, controller: appearance, enableTimers: false)
         defer { model.shutdown() }
         let presenter = SettingsWindowController()
         presenter.show(model: model)
@@ -189,6 +200,24 @@ struct NativeInteractionTests {
         #expect(hosting.rootView.model === model)
         #expect(fields[0].stringValue == "-15")
         #expect(Int(fields[1].stringValue) == 0)
+        let storedOffset = model.sunriseOffset
+        model.enabled = true
+        settle()
+        let appearanceRequests = appearance.requests
+        model.language = .english
+        settle()
+        #expect(window.title == "Dusk Shift Settings")
+        #expect(fields[0].stringValue == "-15")
+        #expect(model.sunriseOffset == storedOffset)
+        #expect(appearance.requests == appearanceRequests)
+        model.language = .traditionalChinese
+        settle()
+        #expect(window.title == "Dusk Shift 設定")
+        #expect(model.t("tab.help") == "使用說明")
+        #expect(appearance.requests == appearanceRequests)
+        model.language = .simplifiedChinese
+        settle()
+        #expect(window.title == "Dusk Shift 设置")
         print("Verified settings window reuse and shared model; four drag directions, input, blur, reset, and displayed switch times")
     }
 }
