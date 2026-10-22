@@ -64,8 +64,33 @@ struct GradientSliderTests {
                     for x in position < 0.5 ? [25, 150, 175] : [25, 50, 175] {
                         #expect(try difference(color(selected, x: x), color(neutral, x: x)) < 0.01)
                     }
-                    // The color blends into the base at zero, with no two-piece seam.
-                    #expect(try difference(color(selected, x: 99), color(selected, x: 101)) < 0.05)
+                    // No center marker can bleed into the unselected side.
+                    let centerOutside = position < 0.5 ? 100 : 99
+                    #expect(try difference(color(selected, x: centerOutside), color(neutral, x: centerOutside)) < 0.01)
+                }
+            }
+        }
+    }
+
+    @Test func smallOffsetsHaveStrongMutedBlueGrayOrWarmTintInBothAppearances() throws {
+        for appearance in [NSAppearance.Name.aqua, .darkAqua] {
+            for sunrise in [true, false] {
+                let neutral = try render(sunrise: sunrise, position: 0.5, appearance: appearance)
+                for minutes in [5.0, 10.0, 15.0] {
+                    for direction in [-1.0, 1.0] {
+                        let position = 0.5 + direction * minutes / 240
+                        let selected = try render(sunrise: sunrise, position: position, appearance: appearance)
+                        let x = Int(100 + direction * minutes * 200 / 240 * 0.65)
+                        let tint = try color(selected, x: x)
+                        let base = try color(neutral, x: x)
+                        #expect(difference(tint, base) > 0.3)
+                        let light = sunrise ? direction > 0 : direction < 0
+                        if !light {
+                            // Blue-gray: recognizable cool tint without saturated blue.
+                            #expect(tint.blueComponent - tint.redComponent > 0.1)
+                            #expect(tint.blueComponent - tint.redComponent < 0.23)
+                        }
+                    }
                 }
             }
         }

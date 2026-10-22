@@ -1,9 +1,17 @@
 import SwiftUI
 import DuskShiftCore
 
+@MainActor
 struct SettingsContent: View {
-    @ObservedObject var model: AppModel
-    var height: CGFloat = 720
+    let model: AppModel
+    var height: CGFloat
+    @StateObject private var state: SettingsPresentation
+
+    init(model: AppModel, height: CGFloat = 720) {
+        self.model = model
+        self.height = height
+        _state = StateObject(wrappedValue: SettingsPresentation(model: model))
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -11,10 +19,22 @@ struct SettingsContent: View {
                 Text("Dusk Shift").font(.title2.bold())
                 Text(model.t("slogan")).foregroundStyle(.secondary)
             }.padding(.horizontal, 24).padding(.top, 20)
-            general
-                .padding(.horizontal, 16)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 18) {
+                    appearance
+                    Divider()
+                    location
+                    offset(sunrise: true)
+                    offset(sunrise: false)
+                    times
+                    Divider()
+                    login
+                }
+                .padding(18)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }.padding(.horizontal, 16)
             HStack {
-                Picker(model.t("language"), selection: $model.language) {
+                Picker(model.t("language"), selection: Binding(get: { model.language }, set: { model.language = $0 })) {
                     ForEach(AppLanguage.allCases) { language in
                         Text(language == .system ? model.t("language.system") : language.nativeName).tag(language)
                     }
@@ -25,91 +45,96 @@ struct SettingsContent: View {
             }.padding(.horizontal, 34).padding(.bottom, 20)
         }
         .frame(width: SettingsPanelLayout.width, height: height)
-        .environment(\.locale, model.localizer.locale)
+        .environment(\.locale, state.localizer.locale)
         .onAppear { model.refreshLoginItemStatus(); model.reconcile() }
     }
 
-    private var general: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                VStack(alignment: .leading, spacing: 8) {
-                    Toggle(model.t("auto.system"), isOn: $model.enabled).disabled(model.isApplying)
-                    HStack {
-                        Text(model.isApplying ? model.t("checking") : model.status)
-                            .font(.caption).foregroundStyle(.secondary)
-                        Spacer()
-                        Button(model.t("check.now")) { model.retry() }.disabled(model.isApplying)
-                            .font(.caption)
-                    }
-                    if let error = model.errorMessage {
-                        Text(error).font(.caption).foregroundStyle(.red)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
+    private var appearance: some View {
+        SettingsSectionView(section: state.appearance) { value in
+            VStack(alignment: .leading, spacing: 8) {
+                Toggle(model.t("auto.system"), isOn: Binding(get: { model.enabled }, set: { model.enabled = $0 }))
+                HStack {
+                    Text(value.status).font(.caption).foregroundStyle(.secondary)
+                    Spacer()
+                    Button(model.t("check.now")) { model.retry() }.font(.caption)
                 }
-                Divider()
-                VStack(alignment: .leading, spacing: 6) {
-                    Picker(model.t("location.mode"), selection: $model.locationMode) {
-                        Text(model.t("location.manual")).tag(LocationMode.manual)
-                        Text(model.t("location.automatic")).tag(LocationMode.automatic)
-                    }.pickerStyle(.segmented).accessibilityIdentifier("location-mode")
-                    Picker(model.t(model.locationMode == .automatic ? "location.fallbackCity" : "city.picker"), selection: $model.cityID) {
-                        ForEach(City.all) { Text(model.cityName($0)).tag($0.id) }
-                    }.disabled(model.isApplying)
-                    Text(model.t("city.timeZone", model.city.timeZone.identifier))
-                        .font(.caption).foregroundStyle(.secondary)
-                    if model.locationMode == .automatic {
-                        Text(model.locationStatus).font(.caption)
-                            .foregroundStyle(model.locationFailure == nil ? Color.secondary : .orange)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .accessibilityIdentifier("location-status")
-                        Button(model.t("location.refresh")) { model.refreshLocation() }.disabled(model.isLocating)
-                    }
-                }
-                OffsetControl(title: model.t("sunrise"), leftLabel: model.t("sunrise.left"), rightLabel: model.t("sunrise.right"),
-                              minutes: $model.sunriseOffset, localizer: model.localizer, identifier: "sunrise").disabled(model.isApplying)
-                OffsetControl(title: model.t("sunset"), leftLabel: model.t("sunset.left"), rightLabel: model.t("sunset.right"),
-                              minutes: $model.offset, localizer: model.localizer, identifier: "sunset", sunrise: false).disabled(model.isApplying)
-                if let state = model.schedule {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text(model.t("today.city", model.cityName())).font(.headline)
-                        LabeledContent(model.t("sunrise.switch"), value: state.today.sunrise == nil ? model.t("no.sunrise") : state.todayLightTime.map { model.time($0) } ?? model.t("skipped"))
-                            .accessibilityIdentifier("sunrise-switch-time")
-                            .help(model.t("sunrise") + ": " + model.time(state.today.sunrise))
-                        LabeledContent(model.t("sunset.switch"), value: state.today.sunset == nil ? model.t("no.sunset") : state.todayDarkTime.map { model.time($0) } ?? model.t("skipped"))
-                            .accessibilityIdentifier("sunset-switch-time")
-                            .help(model.t("sunset") + ": " + model.time(state.today.sunset))
-                    }
-                    if state.today.condition != .normal {
-                        Text(state.today.condition == .polarDay ? model.t("polar.day") : model.t("polar.night"))
-                            .font(.caption).foregroundStyle(.secondary)
-                    }
-                    if state.offsetWasClipped {
-                        Text(model.t("clipped"))
-                            .font(.caption).foregroundStyle(.orange)
-                    }
-                }
-                Divider()
-                VStack(alignment: .leading, spacing: 6) {
-                    Toggle(model.t("login.title"), isOn: Binding(
-                        get: { model.loginItemStatus.isRegistered },
-                        set: { model.setLaunchAtLogin($0) }
-                    )).accessibilityIdentifier("launch-at-login")
-                    if model.loginItemStatus != .notRegistered && model.loginItemStatus != .enabled {
-                        Text(model.t(model.loginItemStatus.localizationKey))
-                            .font(.caption).foregroundStyle(.secondary)
-                            .accessibilityIdentifier("login-item-status")
-                    }
-                    if let error = model.loginItemError {
-                        Text(error).font(.caption).foregroundStyle(.red)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                    if model.loginItemStatus == .requiresApproval || model.loginItemError != nil {
-                        Button(model.t("login.settings")) { model.openLoginItemSettings() }
-                    }
+                if let error = value.error {
+                    Text(error).font(.caption).foregroundStyle(.red)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
-            .padding(18)
-            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    private var location: some View {
+        SettingsSectionView(section: state.location) { value in
+            VStack(alignment: .leading, spacing: 6) {
+                Picker(model.t("location.mode"), selection: Binding(get: { model.locationMode }, set: { model.locationMode = $0 })) {
+                    Text(model.t("location.manual")).tag(LocationMode.manual)
+                    Text(model.t("location.automatic")).tag(LocationMode.automatic)
+                }.pickerStyle(.segmented).accessibilityIdentifier("location-mode")
+                Picker(model.t(value.mode == .automatic ? "location.fallbackCity" : "city.picker"),
+                       selection: Binding(get: { model.cityID }, set: { model.cityID = $0 })) {
+                    ForEach(City.all) { Text(model.cityName($0)).tag($0.id) }
+                }
+                Text(model.t("city.timeZone", value.timeZoneID)).font(.caption).foregroundStyle(.secondary)
+                if let status = value.status {
+                    Text(status).font(.caption)
+                        .foregroundStyle(value.failed ? Color.orange : .secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("location-status")
+                    Button(model.t("location.refresh")) { model.refreshLocation() }.disabled(value.isLocating)
+                }
+            }
+        }
+    }
+
+    private func offset(sunrise: Bool) -> some View {
+        SettingsSectionView(section: sunrise ? state.sunrise : state.sunset) { _ in
+            OffsetControl(title: model.t(sunrise ? "sunrise" : "sunset"),
+                leftLabel: model.t(sunrise ? "sunrise.left" : "sunset.left"),
+                rightLabel: model.t(sunrise ? "sunrise.right" : "sunset.right"),
+                minutes: Binding(get: { sunrise ? model.sunriseOffset : model.offset }, set: {
+                    if sunrise { model.sunriseOffset = $0 } else { model.offset = $0 }
+                }), localizer: state.localizer, identifier: sunrise ? "sunrise" : "sunset", sunrise: sunrise)
+        }
+    }
+
+    private var times: some View {
+        SettingsSectionView(section: state.times) { value in
+            VStack(alignment: .leading, spacing: 8) {
+                Text(value.title).font(.headline)
+                LabeledContent(model.t("sunrise.switch"), value: value.lightTime)
+                    .accessibilityIdentifier("sunrise-switch-time").help(value.sunriseHelp)
+                LabeledContent(model.t("sunset.switch"), value: value.darkTime)
+                    .accessibilityIdentifier("sunset-switch-time").help(value.sunsetHelp)
+                if let notice = value.polarNotice {
+                    Text(notice).font(.caption).foregroundStyle(.secondary)
+                }
+                if value.clipped {
+                    Text(model.t("clipped")).font(.caption).foregroundStyle(.orange)
+                }
+            }
+        }
+    }
+
+    private var login: some View {
+        SettingsSectionView(section: state.login) { value in
+            VStack(alignment: .leading, spacing: 6) {
+                Toggle(model.t("login.title"), isOn: Binding(get: { model.loginItemStatus.isRegistered }, set: { model.setLaunchAtLogin($0) }))
+                    .accessibilityIdentifier("launch-at-login")
+                if value.status != .notRegistered && value.status != .enabled {
+                    Text(model.t(value.status.localizationKey)).font(.caption).foregroundStyle(.secondary)
+                        .accessibilityIdentifier("login-item-status")
+                }
+                if let error = value.error {
+                    Text(error).font(.caption).foregroundStyle(.red)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                if value.status == .requiresApproval || value.error != nil {
+                    Button(model.t("login.settings")) { model.openLoginItemSettings() }
+                }
+            }
         }
     }
 
@@ -119,5 +144,11 @@ struct SettingsContent: View {
             NSWorkspace.shared.open(notice)
         }
     }
+}
 
+@MainActor
+private struct SettingsSectionView<Value: Equatable, Content: View>: View {
+    @ObservedObject var section: SettingsSection<Value>
+    @ViewBuilder let content: (Value) -> Content
+    var body: some View { content(section.value) }
 }

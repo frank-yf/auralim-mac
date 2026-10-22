@@ -1,5 +1,17 @@
 # 首版验证记录
 
+## 0.1.11 小偏移蓝灰色与设置局部更新（2026-10-22）
+
+- 未选中轨道配色保持不变；偏暗方向改为低饱和蓝灰色，深色窗口另有更亮的蓝灰色。选区快速过渡到明显颜色，非零小偏移圆点也直接显色；偏亮方向保留暖金色。
+- 新增 SettingsPresentation 和独立的区域状态发布器。只有显示值变化的区域发布更新，根面板仅在语言变化时发布；偏移编辑不再让整页订阅失效。取消后台校验时所有设置控件的禁用与临时检查文字，保留必要的真实状态/错误更新。
+- 普通测试 60 项通过，原生交互 1 项默认跳过，汇总 61 项。新增测试在延迟外观响应的替身下逐个统计区域通知：日出偏移只发布 sunrise + times，日落只发布 sunset + times，完成校验后没有多余通知。另覆盖重复提交、保留授权错误与不重复请求、语言/位置变化仍能更新，以及 5/10/15 分钟在两种外观、两条滑块四个方向的显色。
+- 独立原生交互回归通过（24.379 秒）。延迟后台校验期间，两条滑块与输入框均保持启用，另一控件原生实例和值不变，输入焦点和实际 NSScrollView 滚动位置保留；时间文本截图识别正确。原有四向拖动、精确输入、边界/非法输入、归零、键盘、辅助功能、语言和定位模式回归通过。
+- 初次原生回归发现主队列合并通知在同步测试/嵌套 AppKit 循环中延后，导致时间文本及归零读值滞后。改为主运行循环 common modes 派发，并让控件绑定直接读取真实模型后通过。普通与原生测试均在该修复后重跑通过。
+- 已检查 5 分钟蓝灰圆点、10 分钟蓝灰选区及 10 分钟暖色选区在 Aqua / Dark Aqua 面板的截图；深色外观仅设置到临时测试窗口，没有更改系统外观。实际系统主题变化仍会按系统通知重绘面板，不将其视为应抑制的刷新。
+- Release 0.1.11 编译、严格签名及 plist 校验通过，已运行。实际设置打开/重开及 560 × 752 尺寸验证通过；三语实际切换、控件标签和菜单栏验证通过，结束恢复原语言。
+
+证据：[实际设置窗口](artifacts/settings-local-update-actual.png)、[实际窗口验证](artifacts/settings-verification.log)、[实际语言切换](artifacts/language-verification.log)、[10 分钟蓝灰（浅色）](artifacts/settings-gradient-dark-offsets.png)、[10 分钟蓝灰（深色）](artifacts/settings-gradient-dark-offsets-dark-appearance.png)、[5 分钟偏移](artifacts/settings-gradient-five-minutes.png)、[10 分钟暖色（浅色）](artifacts/settings-gradient-small-warm.png)、[10 分钟暖色（深色）](artifacts/settings-gradient-small-warm-dark-appearance.png)、[普通测试](artifacts/unit-test.log)、[原生交互回归](artifacts/native-ui-test.log)。
+
 ## 0.1.10 柔和底轨与日出/日落显色（2026-10-22）
 
 - 两条滑块同步调整：浅色窗口底轨改为柔和浅灰，深色窗口底轨只比卡片背景略亮；不再使用接近黑色的固定底色。

@@ -6,8 +6,8 @@ import SwiftUI
 final class AppModel: ObservableObject {
     @Published var language: AppLanguage { didSet { defaults.set(language.rawValue, forKey: "language") } }
     @Published var cityID: String { didSet { defaults.set(cityID, forKey: "city"); configurationChanged() } }
-    @Published var sunriseOffset: Int { didSet { defaults.set(sunriseOffset, forKey: "sunriseOffset"); configurationChanged() } }
-    @Published var offset: Int { didSet { defaults.set(offset, forKey: "offset"); configurationChanged() } }
+    @Published var sunriseOffset: Int { didSet { if sunriseOffset != oldValue { defaults.set(sunriseOffset, forKey: "sunriseOffset"); offsetChanged() } } }
+    @Published var offset: Int { didSet { if offset != oldValue { defaults.set(offset, forKey: "offset"); offsetChanged() } } }
     @Published var enabled: Bool { didSet { defaults.set(enabled, forKey: "enabled"); configurationChanged() } }
     @Published var locationMode: LocationMode {
         didSet {
@@ -33,6 +33,15 @@ final class AppModel: ObservableObject {
         case .confirmed(let mode): return t("status.confirmed", t(mode == .dark ? "dark" : "light"))
         case .attention: return t("status.attention")
         }
+    }
+    var settingsStatus: String {
+        if enabled {
+            switch statusState {
+            case .disabled, .paused: return t("checking")
+            default: break
+            }
+        }
+        return status
     }
     var errorMessage: String? {
         guard let failure else { return nil }
@@ -167,6 +176,13 @@ final class AppModel: ObservableObject {
 
     private func configurationChanged() {
         generation += 1; failures = 0; permissionBlocked = false; failure = nil
+        reconcile()
+    }
+
+    private func offsetChanged() {
+        // Editing a schedule is not an explicit permission retry. Keep any
+        // existing error visible instead of collapsing and re-adding its row.
+        generation += 1; failures = 0
         reconcile()
     }
 

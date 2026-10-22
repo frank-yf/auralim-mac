@@ -7,9 +7,11 @@ import DuskShiftCore
 
 private final class NativeAppearanceSpy: AppearanceApplying {
     var requests = 0
+    var hold = false
+    var pending: ((Result<Void, AppearanceFailure>) -> Void)?
     func apply(_ appearance: Appearance, completion: @escaping (Result<Void, AppearanceFailure>) -> Void) {
         requests += 1
-        completion(.success(()))
+        if hold { pending = completion } else { completion(.success(())) }
     }
 }
 
@@ -236,6 +238,28 @@ struct NativeInteractionTests {
         model.language = .simplifiedChinese
         settle()
         #expect(window.title == "Dusk Shift 设置")
+        window.makeFirstResponder(fields[0])
+        settle()
+        let editorBeforeOffset = window.firstResponder
+        let scrollView = try #require(sliders[0].enclosingScrollView)
+        let scrollBeforeOffset = scrollView.contentView.bounds.origin
+        let otherInputBeforeOffset = fields[1].stringValue
+        appearance.hold = true
+        try type("-5", into: fields[0], submit: true)
+        #expect(model.isApplying)
+        #expect(sliders.allSatisfy { $0.isEnabled })
+        #expect(fields.allSatisfy { $0.isEnabled })
+        #expect(window.firstResponder === editorBeforeOffset)
+        #expect(scrollView.contentView.bounds.origin == scrollBeforeOffset)
+        #expect(fields[1].stringValue == otherInputBeforeOffset)
+        #expect(descendants(host).compactMap { $0 as? NSSlider }[1] === sliders[1])
+        #expect(descendants(host).compactMap { $0 as? NSTextField }.filter { $0.isEditable }[1] === fields[1])
+        appearance.hold = false
+        appearance.pending?(.success(()))
+        settle()
+        #expect(window.firstResponder === editorBeforeOffset)
+        #expect(sliders.allSatisfy { $0.isEnabled })
+        try type("\(storedOffset)", into: fields[0], submit: true)
         let mode = try #require(descendants(host).compactMap { $0 as? NSSegmentedControl }.first)
         mode.selectedSegment = 1
         #expect(mode.sendAction(mode.action, to: mode.target))
@@ -277,14 +301,28 @@ struct NativeInteractionTests {
         window.makeFirstResponder(nil)
         settle()
         try captureVariant("settings-gradient-deeper.png")
-        try type("+30", into: fields[0], submit: true)
-        try type("-30", into: fields[1], submit: true)
+        try type("+10", into: fields[0], submit: true)
+        try type("-10", into: fields[1], submit: true)
         window.makeFirstResponder(nil)
         settle()
         try captureVariant("settings-gradient-dark-offsets.png")
         window.appearance = NSAppearance(named: .darkAqua)
         settle()
         try captureVariant("settings-gradient-dark-offsets-dark-appearance.png")
+        window.appearance = NSAppearance(named: .aqua)
+        try type("+5", into: fields[0], submit: true)
+        try type("-5", into: fields[1], submit: true)
+        window.makeFirstResponder(nil)
+        settle()
+        try captureVariant("settings-gradient-five-minutes.png")
+        try type("-10", into: fields[0], submit: true)
+        try type("+10", into: fields[1], submit: true)
+        window.makeFirstResponder(nil)
+        settle()
+        try captureVariant("settings-gradient-small-warm.png")
+        window.appearance = NSAppearance(named: .darkAqua)
+        settle()
+        try captureVariant("settings-gradient-small-warm-dark-appearance.png")
         window.appearance = NSAppearance(named: .aqua)
         try type("-120", into: fields[0], submit: true)
         try type("+120", into: fields[1], submit: true)
@@ -298,5 +336,6 @@ struct NativeInteractionTests {
         print("Verified settings window reuse and shared model; four drag directions, input, blur, reset, and displayed switch times")
         print("Verified native location mode selection, New York time zone, failure fallback, and stopping location in manual mode")
         print("Verified 1-minute keyboard steps, Option 10-minute steps; captured darker/lighter limits and dark appearance without changing system appearance")
+        print("Held background appearance check: controls stayed enabled, other slider/input identities and value stayed unchanged; focus and scroll position preserved")
     }
 }
