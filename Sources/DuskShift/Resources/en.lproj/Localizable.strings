@@ -112,3 +112,5 @@
 "location.error.timeZoneUnavailable" = "No unambiguous local time zone was found.";
 "help.location.title" = "Automatic location and travel";
 "help.location.body" = "Choose Automatic location to use macOS Location Services. Time zones are resolved from bundled offline boundaries, independently of the system time zone; sunrise and sunset still use local calculations. Current location is shown as coordinates, without online address lookup. Significant location changes, network changes, wake, session restore, and returning to the app can update the location; if location-change monitoring is unavailable, updates rely on those events or Update location. A failed or denied request uses the saved fallback city. Manual city stops location monitoring. Coordinates are held in memory and are not saved or uploaded by Dusk Shift. macOS Location Services may need Wi-Fi or a network; the app cannot guarantee a fix offline. Time-zone boundaries contain information from timezone-boundary-builder, converted by ZoneDetect (2024a), available under ODbL 1.0. Near borders or after boundary changes, use a manual city if needed.";
+
+"licenses.open" = "Licenses & data sources";

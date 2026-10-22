@@ -79,7 +79,7 @@ guard let toggle = identified("launch-at-login") else {
     fatalError("No login item toggle")
 }
 func isOn() -> Bool { (read(toggle, kAXValueAttribute as CFString) as? NSNumber)?.boolValue ?? false }
-func statusText() -> String { identified("login-item-status").map(label) ?? "missing" }
+func statusText() -> String { identified("login-item-status").map(label) ?? (isOn() ? "Switch is enabled" : "Switch is off") }
 let original = isOn()
 print("Original launch-at-login:", original, "status:", statusText())
 // Always restore the original system registration, including if verification throws.

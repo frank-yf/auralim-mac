@@ -8,34 +8,32 @@ struct OffsetControl: View {
     @Binding var minutes: Int
     var localizer = Localizer(language: .system)
     var identifier = "offset"
+    var sunrise = true
     @State private var draft = 0
     @State private var text = "0"
     @State private var inputError = false
     @FocusState private var inputFocused: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text(localizer.text("offset.title", title)).font(.headline)
+                Label(localizer.text("offset.title", title), systemImage: sunrise ? "sunrise.fill" : "sunset.fill").font(.headline)
                 Spacer()
                 Text(summary)
                     .font(.caption).foregroundStyle(.secondary)
                 Button(localizer.text("offset.reset")) { updateDraft(0); commit() }.font(.caption)
+                    .accessibilityIdentifier("\(identifier)-reset")
             }
             HStack(spacing: 12) {
-                ZStack {
-                    Rectangle().fill(.secondary.opacity(0.5))
-                        .frame(width: 1, height: 18).allowsHitTesting(false)
-                    Slider(value: Binding(
+                GradientOffsetSlider(value: Binding(
                         get: { SolarOffset.sliderPosition(for: draft) },
                         set: { updateDraft(SolarOffset.minutes(forSliderPosition: $0)) }
-                    ), in: -120...120, step: 1, onEditingChanged: { editing in
+                    ), sunrise: sunrise,
+                    label: localizer.text("offset.accessibility", title, leftLabel, rightLabel),
+                    summary: summary, identifier: "\(identifier)-slider", onEditingChanged: { editing in
                         if !editing { commit() }
                     })
-                    .accessibilityLabel(localizer.text("offset.accessibility", title, leftLabel, rightLabel))
-                    .accessibilityIdentifier("\(identifier)-slider")
-                    .accessibilityValue(summary)
-                }
+                    .frame(height: 28)
                 TextField(localizer.text("offset.placeholder"), text: $text)
                     .textFieldStyle(.roundedBorder)
                     .multilineTextAlignment(.trailing)
@@ -52,15 +50,18 @@ struct OffsetControl: View {
                 Text(localizer.text("offset.unit")).font(.caption)
             }
             HStack {
-                Text(leftLabel)
+                Label(leftLabel, systemImage: sunrise ? "moon.fill" : "sun.max.fill")
                 Spacer()
                 Text("0")
                 Spacer()
-                Text(rightLabel)
+                Label(rightLabel, systemImage: sunrise ? "sun.max.fill" : "moon.fill")
             }.font(.caption).foregroundStyle(.secondary).padding(.trailing, 88)
-            Text(localizer.text(inputError ? "offset.invalid" : "offset.hint"))
-                .font(.caption2).foregroundStyle(inputError ? .red : .secondary)
+            if inputError {
+                Text(localizer.text("offset.invalid")).font(.caption2).foregroundStyle(.red)
+            }
         }
+        .padding(14)
+        .background(Color.primary.opacity(0.035), in: RoundedRectangle(cornerRadius: 12))
         .onAppear { updateDraft(minutes) }
         .onChange(of: minutes) { updateDraft($0) }
     }

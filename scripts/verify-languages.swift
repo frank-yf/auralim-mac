@@ -78,7 +78,10 @@ let settings = openSettings()
 func languagePicker() throws -> AXUIElement {
     let pickers = descendants(settings).filter { role($0) == "AXPopUpButton" }
     try require(pickers.count == 2, "Expected language and city pickers")
-    return pickers[0]
+    guard let language = pickers.first(where: { read($0, kAXIdentifierAttribute as CFString) as? String == "language-picker" }) else {
+        throw VerificationError(message: "Missing language picker identifier")
+    }
+    return language
 }
 func choose(_ title: String) throws {
     _ = AXUIElementPerformAction(settings, kAXRaiseAction as CFString)
@@ -114,10 +117,10 @@ do {
         do { try choose("简体中文"); try choose(restore); print("Restored original language choice:", original) }
         catch { print("Could not restore language:", error) }
     }
-    for (option, expectedTitle, nextLabel, helpLabel, startLabel) in [
-        ("English", "Dusk Shift Settings", "Schedule preview", "Help", "Getting started"),
-        ("繁體中文", "Dusk Shift 設定", "計畫預覽", "使用說明", "開始使用"),
-        ("简体中文", "Dusk Shift 设置", "计划预览", "使用说明", "开始使用")
+    for (option, expectedTitle, nextLabel) in [
+        ("English", "Dusk Shift Settings", "Schedule preview"),
+        ("繁體中文", "Dusk Shift 設定", "計畫預覽"),
+        ("简体中文", "Dusk Shift 设置", "计划预览")
     ] {
         try choose(option)
         try require(label(settings) == expectedTitle, "Window title did not update: \(label(settings))")
@@ -136,14 +139,8 @@ do {
         try require(menuText.contains(nextLabel) || menuText.contains(option == "English" ? "Next switch" : option == "繁體中文" ? "下次切換" : "下次切换"), "Menu did not update")
         if option == "English" { try screenshot("artifacts/menu-bar-en.png", width: 320) }
         pressStatusItem()
-        guard let help = descendants(settings).first(where: { label($0) == helpLabel }) else { throw VerificationError(message: "Missing help tab") }
-        press(help)
-        try require(descendants(settings).map(label).joined(separator: " ").contains(startLabel), "Help did not update")
-        if option == "English" { try screenshot("artifacts/settings-en-help.png", width: 560) }
-        let generalLabel = option == "English" ? "Automatic switching" : option == "繁體中文" ? "自動切換" : "自动切换"
-        guard let general = descendants(settings).first(where: { label($0) == generalLabel }) else { throw VerificationError(message: "Missing general tab") }
-        press(general)
-        print("Verified live language choice:", option, "title, settings, menu, city/date presentation, and help")
+        try require(!descendants(settings).contains { ["Help", "使用说明", "使用說明"].contains(label($0)) }, "Unexpected instructions tab")
+        print("Verified live language choice:", option, "title, streamlined settings, menu, and city/date presentation")
     }
 } catch {
     fputs("Language verification failed: \(error)\n", stderr)

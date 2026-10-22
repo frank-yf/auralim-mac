@@ -90,6 +90,21 @@ struct NativeInteractionTests {
         settle()
         try type("0", into: fields[0], submit: true)
         try type("0", into: fields[1], submit: true)
+        window.makeFirstResponder(sliders[0])
+        func arrow(_ code: UInt16, modifiers: NSEvent.ModifierFlags = []) throws {
+            let event = try #require(NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: modifiers,
+                timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: window.windowNumber,
+                context: nil, characters: "", charactersIgnoringModifiers: "", isARepeat: false, keyCode: code))
+            app.sendEvent(event)
+            settle()
+        }
+        try arrow(123)
+        #expect(model.sunriseOffset == 1)
+        try arrow(124)
+        #expect(model.sunriseOffset == 0)
+        try arrow(124, modifiers: .option)
+        #expect(model.sunriseOffset == -10)
+        try type("0", into: fields[0], submit: true)
         print("AX trust:", AXIsProcessTrusted())
         _ = sliders[0].accessibilityPerformDecrement()
         settle()
@@ -169,16 +184,18 @@ struct NativeInteractionTests {
         let digits = visible.filter(\.isNumber)
         #expect(digits.contains(model.time(model.schedule?.todayLightTime).filter(\.isNumber)))
         #expect(digits.contains(model.time(model.schedule?.todayDarkTime).filter(\.isNumber)))
-        // SwiftUI's native focus-ring hosts are observed in this platform's view
-        // hierarchy. The first two right-aligned hosts are the two reset buttons.
-        let resets = Array(descendants(host).filter {
-            String(describing: Swift.type(of: $0)) == "_FocusRingView" && $0.frame.minX > 300
-        }.prefix(2))
-        try #require(resets.count == 2)
-        for (index, button) in resets.enumerated() {
+        // Locate the right-aligned reset in each slider's header. Other controls
+        // can also have native focus-ring hosts; their global ordering is not stable.
+        for slider in sliders {
+            let sliderPoint = slider.convert(NSPoint(x: 0, y: slider.bounds.midY), to: nil)
+            let candidates = descendants(host).filter {
+                guard String(describing: Swift.type(of: $0)) == "_FocusRingView" else { return false }
+                let point = $0.convert(NSPoint(x: $0.bounds.midX, y: $0.bounds.midY), to: nil)
+                return point.x > host.bounds.midX && point.y > sliderPoint.y && point.y < sliderPoint.y + 60
+            }
+            let button = try #require(candidates.first)
+            #expect(candidates.count == 1)
             let point = button.convert(NSPoint(x: button.bounds.midX, y: button.bounds.midY), to: nil)
-            let sliderPoint = sliders[index].convert(NSPoint(x: 0, y: sliders[index].bounds.midY), to: nil)
-            try #require(point.y > sliderPoint.y && point.y < sliderPoint.y + 80)
             let screen = window.convertPoint(toScreen: point)
             let quartz = CGPoint(x: screen.x, y: NSScreen.screens[0].frame.height - screen.y)
             DispatchQueue.global().async {
@@ -246,7 +263,31 @@ struct NativeInteractionTests {
         settle()
         #expect(model.locationMode == .manual)
         #expect(location.stops == 1)
+        func captureVariant(_ name: String) throws {
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
+            let destination = URL(fileURLWithPath: output).deletingLastPathComponent().appendingPathComponent(name)
+            process.arguments = ["-x", "-l", String(window.windowNumber), destination.path]
+            try process.run(); process.waitUntilExit()
+            #expect(process.terminationStatus == 0)
+        }
+        window.appearance = NSAppearance(named: .aqua)
+        try type("+120", into: fields[0], submit: true)
+        try type("-120", into: fields[1], submit: true)
+        window.makeFirstResponder(nil)
+        settle()
+        try captureVariant("settings-gradient-deeper.png")
+        try type("-120", into: fields[0], submit: true)
+        try type("+120", into: fields[1], submit: true)
+        window.makeFirstResponder(nil)
+        settle()
+        try captureVariant("settings-gradient-lighter.png")
+        window.appearance = NSAppearance(named: .darkAqua)
+        settle()
+        try captureVariant("settings-gradient-dark-appearance.png")
+        window.appearance = nil
         print("Verified settings window reuse and shared model; four drag directions, input, blur, reset, and displayed switch times")
         print("Verified native location mode selection, New York time zone, failure fallback, and stopping location in manual mode")
+        print("Verified 1-minute keyboard steps, Option 10-minute steps; captured darker/lighter limits and dark appearance without changing system appearance")
     }
 }

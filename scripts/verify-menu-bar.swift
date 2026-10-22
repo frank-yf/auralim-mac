@@ -78,18 +78,14 @@ if settingsMode {
     let labels = elements.map(label).joined(separator: " ")
     precondition((["日出转亮", "日出轉亮", "Switch to light"].contains { labels.contains($0) }) && (["日落转暗", "日落轉暗", "Switch to dark"].contains { labels.contains($0) }))
     print("Settings opened from real status item:", measured, "with city, offsets, and switch times")
-    guard let help = elements.first(where: { ["使用说明", "使用說明", "Help"].contains(label($0)) }) else { fatalError("No instructions tab") }
-    press(help)
-    let helpText = descendants(settings).map(label).joined(separator: " ")
-    precondition((["开始使用", "開始使用", "Getting started"].contains { helpText.contains($0) }) && (["权限与隐私", "權限與隱私", "Permissions and privacy"].contains { helpText.contains($0) }))
-    print("Instructions tab includes setup, offsets, offline/time-zone behavior, sleep recovery, precision, and privacy")
+    precondition(!elements.contains { ["使用说明", "使用說明", "Help"].contains(label($0)) })
+    print("Streamlined settings: no instructions tab or long usage explanations")
     guard let close = read(settings, kAXCloseButtonAttribute as CFString) else { fatalError("No close button") }
     press(close as! AXUIElement)
-    let reopened = openSettings()
+    _ = openSettings()
     let matches = appWindows().filter { ["Dusk Shift 设置", "Dusk Shift 設定", "Dusk Shift Settings"].contains(label($0)) }
     precondition(matches.count == 1)
-    if let general = descendants(reopened).first(where: { ["自动切换", "自動切換", "Automatic switching"].contains(label($0)) }) { press(general) }
-    print("Settings close/reopen: one reusable window; compact menu dismissed")
+    print("Settings close/reopen: one reusable window; compact menu dismissed; no tabs")
 } else if verify {
     if !panelWindows().isEmpty { pressStatusItem() }
     for cycle in 1...3 {
