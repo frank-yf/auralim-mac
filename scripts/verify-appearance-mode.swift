@@ -95,6 +95,12 @@ func verify() throws {
     guard CommandLine.arguments.contains("--apply") else { return }
     // A stored manual value may be stale after startup. Only mutate when the
     // displayed status confirms an explicit app-owned mode we can restore.
+    if original >= 0 && original != 1 && !confirmed() && CommandLine.arguments.contains("--adopt-current") {
+        try press(options(settings, "settings-appearance-mode")[original])
+        let deadline = Date(timeIntervalSinceNow: 12)
+        while !confirmed() && Date() < deadline { Thread.sleep(forTimeInterval: 0.1) }
+        print("Adopted current fixed appearance for verification; restart app afterward to restore system-managed display")
+    }
     try require(original >= 0 && confirmed(), "System-managed state: use read-only verification")
     var restored = false
     func chooseSettings(_ index: Int) throws {
@@ -108,6 +114,15 @@ func verify() throws {
         }
     }
     let verifyAnimations = CommandLine.arguments.contains("--animations")
+    let animationToggle = descendants(settings).first { read($0, kAXIdentifierAttribute) as? String == "appearance-animation" }
+    func animationEnabled() -> Bool { animationToggle.flatMap { read($0, kAXValueAttribute) as? NSNumber }?.boolValue ?? false }
+    let originalAnimation = animationEnabled()
+    defer {
+        if verifyAnimations, let toggle = animationToggle, animationEnabled() != originalAnimation {
+            do { try press(toggle); print("Restored animation preference:", animationEnabled()) }
+            catch { print("ANIMATION RESTORE FAILED:", error) }
+        }
+    }
     // Nonactivating, click-through panels are not consistently included in
     // AXWindows. Inspect only this process's visible Core Graphics windows.
     func transition() -> [String: Any]? {
@@ -115,8 +130,35 @@ func verify() throws {
         return list.first { info in
             guard (info[kCGWindowOwnerPID as String] as? NSNumber)?.int32Value == running.processIdentifier,
                   let bounds = info[kCGWindowBounds as String] as? [String: Any] else { return false }
-            return (bounds["Width"] as? NSNumber)?.intValue == 280 && (bounds["Height"] as? NSNumber)?.intValue == 184
+            let primaryTop = NSScreen.screens.first?.frame.maxY ?? 0
+            return NSScreen.screens.contains { screen in
+                let frame = screen.frame
+                let size = CGSize(width: frame.width * 0.8, height: frame.height * 0.625)
+                return abs(((bounds["X"] as? NSNumber)?.doubleValue ?? -99999) - (frame.midX - size.width / 2)) < 1
+                    && abs(((bounds["Y"] as? NSNumber)?.doubleValue ?? -99999) - (primaryTop - frame.midY - size.height / 2)) < 1
+                    && abs(((bounds["Width"] as? NSNumber)?.doubleValue ?? 0) - size.width) < 1
+                    && abs(((bounds["Height"] as? NSNumber)?.doubleValue ?? 0) - size.height) < 1
+            }
         }
+    }
+    if verifyAnimations {
+        guard let toggle = animationToggle else { throw VerificationFailure(message: "No animation setting") }
+        print("Original animation preference:", originalAnimation)
+        if animationEnabled() { try press(toggle) }
+        // Verify real switching still works with the animation disabled.
+        let target = try systemIsDark() ? 0 : 2
+        try chooseSettings(target)
+        let deadline = Date(timeIntervalSinceNow: 12)
+        while !confirmed() && Date() < deadline { Thread.sleep(forTimeInterval: 0.1) }
+        try require(try confirmed() && systemIsDark() == (target == 2), "Appearance did not switch with animation disabled")
+        try require(transition() == nil, "Disabled animation was displayed")
+        print("Verified actual appearance switch with animation disabled")
+        try chooseSettings(0)
+        let lightDeadline = Date(timeIntervalSinceNow: 12)
+        while !confirmed() && Date() < lightDeadline { Thread.sleep(forTimeInterval: 0.1) }
+        try require(try confirmed() && !systemIsDark(), "Could not prepare Light appearance")
+        try press(toggle)
+        try require(animationEnabled(), "Animation setting did not enable")
     }
     for (index, fromMenu) in [(2, true), (0, false), (1, true)] {
         let wasDark = try systemIsDark()
@@ -141,13 +183,13 @@ func verify() throws {
                 let expected = dark ? ["日落", "Sunset"] : ["日出", "Sunrise"]
                 try require(expected.contains { title.contains($0) }, "Wrong animation direction: \(title)")
                 if let focused = read(app, kAXFocusedWindowAttribute) {
-                    try require(width(focused as! AXUIElement) != 280, "Animation took keyboard focus")
+                    try require((read(focused as! AXUIElement, kAXTitleAttribute) as? String ?? "") != title, "Animation took keyboard focus")
                 }
-                print("Verified actual animation:", title)
+                print("Verified actual centered half-area animation:", title)
             } else {
                 try require(observedAnimation == nil && transition() == nil, "Unchanged appearance replayed an animation")
             }
-            let end = Date(timeIntervalSinceNow: 2)
+            let end = Date(timeIntervalSinceNow: 4)
             while transition() != nil && Date() < end { Thread.sleep(forTimeInterval: 0.1) }
             try require(transition() == nil, "Animation window did not close")
         }

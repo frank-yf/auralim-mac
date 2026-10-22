@@ -60,8 +60,8 @@ struct UIAppearanceTests {
         #expect(descendants(host).compactMap { $0 as? NSTextField }.filter(\.isEditable).count == 2)
         let switches = descendants(host).compactMap { $0 as? NSSwitch }
         print("Native settings switches:", switches.count)
-        #expect(switches.count == 1)
-        if let loginSwitch = switches.first {
+        #expect(switches.count == 2)
+        if let loginSwitch = switches.last {
             // The SwiftUI bridge can return false after forwarding the action.
             _ = loginSwitch.accessibilityPerformPress()
             settle()

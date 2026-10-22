@@ -60,6 +60,9 @@ struct SettingsContent: View {
                                          localizer: state.localizer, identifier: "settings-appearance-mode")
                         .frame(width: 210, alignment: .trailing)
                 }
+                Toggle(model.t("transition.enabled"), isOn: Binding(get: { model.transitionAnimationEnabled }, set: { model.transitionAnimationEnabled = $0 }))
+                    .toggleStyle(.switch).controlSize(.small).font(.caption)
+                    .accessibilityIdentifier("appearance-animation")
                 if let error = value.error { DuskNotice(text: error, warning: true) }
             }.duskCard()
         }

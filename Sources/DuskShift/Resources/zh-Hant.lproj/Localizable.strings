@@ -125,3 +125,4 @@
 "appearance.auto.help" = "按當地日出日落自動切換";
 "transition.sunrise" = "日出 · 切換至淺色";
 "transition.sunset" = "日落 · 切換至深色";
+"transition.enabled" = "日出日落動畫";

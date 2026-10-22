@@ -15,6 +15,13 @@ final class AppModel: ObservableObject {
             configurationChanged()
         }
     }
+    @Published var transitionAnimationEnabled: Bool {
+        didSet {
+            guard transitionAnimationEnabled != oldValue else { return }
+            defaults.set(transitionAnimationEnabled, forKey: "transitionAnimationEnabled")
+            if !transitionAnimationEnabled { transitionPlayer.stop() }
+        }
+    }
     @Published private(set) var manualAppearance: Appearance?
     @Published private var systemSettings: SystemAppearanceSettings
     var appearanceMode: AppearanceMode? {
@@ -130,6 +137,7 @@ final class AppModel: ObservableObject {
         // Solar Auto remains an explicit app preference. Otherwise each launch
         // starts from macOS, rather than reapplying a stale saved manual theme.
         manualAppearance = nil
+        transitionAnimationEnabled = defaults.bool(forKey: "transitionAnimationEnabled")
         locationMode = LocationMode(rawValue: defaults.string(forKey: "locationMode") ?? "manual") ?? .manual
         observe(NSWorkspace.didWakeNotification, center: workspaceNotifications, refreshLocation: true)
         observe(NSWorkspace.sessionDidBecomeActiveNotification, center: workspaceNotifications, refreshLocation: true)
@@ -271,7 +279,7 @@ final class AppModel: ObservableObject {
             self.schedule = fresh
             switch result {
             case .success(let application):
-                if application.changed {
+                if application.changed && self.transitionAnimationEnabled {
                     self.transitionPlayer.play(target, title: self.t(target == .light ? "transition.sunrise" : "transition.sunset"))
                 }
                 self.failures = 0; self.failure = nil

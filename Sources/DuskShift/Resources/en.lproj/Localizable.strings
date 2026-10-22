@@ -125,3 +125,4 @@
 "appearance.auto.help" = "Switch automatically at local sunrise and sunset";
 "transition.sunrise" = "Sunrise · Light appearance";
 "transition.sunset" = "Sunset · Dark appearance";
+"transition.enabled" = "Sunrise and sunset animation";
