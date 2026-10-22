@@ -48,6 +48,8 @@ final class ScheduleTests {
                 #expect(beforeSet.appearance == .light)
                 #expect(beforeSet.nextTransition?.date == set)
                 #expect(atSet.appearance == .dark)
+                #expect(atRise.todayLightTime == rise)
+                #expect(atRise.todayDarkTime == set)
             }
         }
     }
@@ -146,5 +148,6 @@ final class ScheduleTests {
         let state = engine.evaluate(now: sunset.addingTimeInterval(30*60), city: city, sunsetOffset: 120)
         #expect(state.offsetWasClipped)
         #expect(state.appearance == .light)
+        #expect(state.todayDarkTime == nil)
     }
 }

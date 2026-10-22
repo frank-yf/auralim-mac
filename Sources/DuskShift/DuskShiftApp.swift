@@ -13,8 +13,9 @@ struct DuskShiftApp: App {
     }
 }
 
-private struct MenuContent: View {
+struct MenuContent: View {
     @ObservedObject var model: AppModel
+    var quit: () -> Void = { NSApplication.shared.terminate(nil) }
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
@@ -37,7 +38,11 @@ private struct MenuContent: View {
                 Divider()
                 if let state = model.schedule {
                     LabeledContent("日出", value: model.time(state.today.sunrise))
+                    LabeledContent("日出转亮", value: state.today.sunrise == nil ? "无日出" : state.todayLightTime.map { model.time($0) } ?? "本次已跳过")
+                        .accessibilityIdentifier("sunrise-switch-time")
                     LabeledContent("日落", value: model.time(state.today.sunset))
+                    LabeledContent("日落转暗", value: state.today.sunset == nil ? "无日落" : state.todayDarkTime.map { model.time($0) } ?? "本次已跳过")
+                        .accessibilityIdentifier("sunset-switch-time")
                     if state.today.condition != .normal {
                         Text(state.today.condition == .polarDay ? "当地处于极昼" : "当地处于极夜")
                     }
@@ -61,7 +66,7 @@ private struct MenuContent: View {
                 HStack {
                     Button("立即检查") { model.retry() }.disabled(model.isApplying)
                     Spacer()
-                    Button("退出") { NSApplication.shared.terminate(nil) }
+                    Button("退出", action: quit)
                 }
             }
             .padding(18)

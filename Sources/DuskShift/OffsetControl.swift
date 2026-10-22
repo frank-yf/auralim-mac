@@ -31,6 +31,7 @@ struct OffsetControl: View {
                         if !editing { commit() }
                     })
                     .accessibilityLabel("\(title)偏移，左侧\(leftLabel)，右侧\(rightLabel)")
+                    .accessibilityIdentifier("\(title)-slider")
                     .accessibilityValue(draft == 0 ? "准时" : "\(draft < 0 ? "提前" : "延后")\(abs(draft))分钟")
                 }
                 TextField("分钟", text: $text)
@@ -39,8 +40,13 @@ struct OffsetControl: View {
                     .frame(width: 62)
                     .focused($inputFocused)
                     .onSubmit { commitText() }
+                    .onChange(of: text) { value in
+                        // Preview valid text immediately without applying half-entered values.
+                        if let parsed = SolarOffset.parse(value) { draft = parsed; inputError = false }
+                    }
                     .onChange(of: inputFocused) { focused in if !focused { commitText() } }
                     .accessibilityLabel("\(title)偏移分钟，负数提前，正数延后")
+                    .accessibilityIdentifier("\(title)-input")
                 Text("分").font(.caption)
             }
             HStack {
