@@ -93,8 +93,8 @@ final class AppearanceSliderCell: NSSliderCell {
     }
     static let night = NSColor(name: "OffsetNight") { appearance in
         appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
-            ? NSColor(srgbRed: 0.58, green: 0.66, blue: 0.76, alpha: 1)
-            : NSColor(srgbRed: 0.42, green: 0.49, blue: 0.59, alpha: 1)
+            ? NSColor(srgbRed: 0.44, green: 0.60, blue: 0.88, alpha: 1)
+            : NSColor(srgbRed: 0.34, green: 0.47, blue: 0.73, alpha: 1)
     }
     static let day = NSColor(srgbRed: 1, green: 0.84, blue: 0.52, alpha: 1)
 
@@ -102,10 +102,7 @@ final class AppearanceSliderCell: NSSliderCell {
     private var selectionColor: NSColor {
         let towardLight = sunrise ? fraction > 0.5 : fraction < 0.5
         let endpoint = towardLight ? Self.day : Self.night
-        // A small nonzero offset needs a readable tint rather than near-gray.
-        // Zero remains neutral; intensity then grows toward the endpoint.
-        let distance = abs(fraction - 0.5) * 2
-        let strength = distance == 0 ? 0 : 0.72 + 0.28 * sqrt(distance)
+        let strength = sqrt(abs(fraction - 0.5) * 2)
         return Self.trackColor.blended(withFraction: strength, of: endpoint) ?? endpoint
     }
 
@@ -132,8 +129,7 @@ final class AppearanceSliderCell: NSSliderCell {
                                   width: abs(position - center), height: bar.height)
             NSGraphicsContext.saveGraphicsState()
             NSBezierPath(rect: selected).addClip()
-            NSGradient(colors: [Self.trackColor, selectionColor, selectionColor],
-                       atLocations: [0, 0.24, 1], colorSpace: .sRGB)?
+            NSGradient(starting: Self.trackColor, ending: selectionColor)?
                 .draw(in: selected, angle: position < center ? 180 : 0)
             NSGraphicsContext.restoreGraphicsState()
         }

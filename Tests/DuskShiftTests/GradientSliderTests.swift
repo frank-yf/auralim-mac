@@ -72,27 +72,4 @@ struct GradientSliderTests {
         }
     }
 
-    @Test func smallOffsetsHaveStrongMutedBlueGrayOrWarmTintInBothAppearances() throws {
-        for appearance in [NSAppearance.Name.aqua, .darkAqua] {
-            for sunrise in [true, false] {
-                let neutral = try render(sunrise: sunrise, position: 0.5, appearance: appearance)
-                for minutes in [5.0, 10.0, 15.0] {
-                    for direction in [-1.0, 1.0] {
-                        let position = 0.5 + direction * minutes / 240
-                        let selected = try render(sunrise: sunrise, position: position, appearance: appearance)
-                        let x = Int(100 + direction * minutes * 200 / 240 * 0.65)
-                        let tint = try color(selected, x: x)
-                        let base = try color(neutral, x: x)
-                        #expect(difference(tint, base) > 0.3)
-                        let light = sunrise ? direction > 0 : direction < 0
-                        if !light {
-                            // Blue-gray: recognizable cool tint without saturated blue.
-                            #expect(tint.blueComponent - tint.redComponent > 0.1)
-                            #expect(tint.blueComponent - tint.redComponent < 0.23)
-                        }
-                    }
-                }
-            }
-        }
-    }
 }

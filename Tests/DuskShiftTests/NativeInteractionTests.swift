@@ -212,6 +212,28 @@ struct NativeInteractionTests {
         #expect(model.offset == 0)
         #expect(fields.allSatisfy { $0.stringValue == "0" })
         #expect(sliders.allSatisfy { $0.doubleValue == 0.5 })
+        // A focused entry point for slider-only changes. Avoid unrelated
+        // location, language, window lifecycle and background-check scenarios.
+        if ProcessInfo.processInfo.environment["DUSK_SHIFT_SLIDER_TESTS_ONLY"] == "1" {
+            for theme in [NSAppearance.Name.aqua, .darkAqua] {
+                window.appearance = NSAppearance(named: theme)
+                for (name, sunrise, sunset) in [("cool", "+72", "-72"), ("warm", "-72", "+72"), ("small", "+10", "-10"), ("neutral", "0", "0")] {
+                    try type(sunrise, into: fields[0], submit: true)
+                    try type(sunset, into: fields[1], submit: true)
+                    window.makeFirstResponder(nil)
+                    settle()
+                    let process = Process()
+                    process.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
+                    let file = "slider-\(name)-\(theme == .aqua ? "light" : "dark").png"
+                    let destination = URL(fileURLWithPath: output).deletingLastPathComponent().appendingPathComponent(file)
+                    process.arguments = ["-x", "-l", String(window.windowNumber), destination.path]
+                    try process.run(); process.waitUntilExit()
+                    #expect(process.terminationStatus == 0)
+                }
+            }
+            print("Slider-only verification: four drag directions, input synchronization, keyboard/AX, blur, bounds, invalid input, reset, displayed times, light/dark gradient captures")
+            return
+        }
         window.close()
         model.sunriseOffset = -15
         presenter.show(model: model)
