@@ -17,6 +17,7 @@ rm -rf "$app/Contents/Resources/DuskShift_DuskShift.bundle" "$app/Contents/Resou
 mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
 cp "$bin_dir/Auralim" "$app/Contents/MacOS/Auralim"
 cp Resources/Info.plist "$app/Contents/Info.plist"
+cp Resources/Auralim.icns "$app/Contents/Resources/Auralim.icns"
 cp -R "$bin_dir/Auralim_Auralim.bundle" "$app/Contents/Resources/"
 cp -R "$bin_dir/Auralim_AuralimCore.bundle" "$app/Contents/Resources/"
 for language in en zh-Hans zh-Hant; do

@@ -79,6 +79,8 @@ make run
 
 Quit the running app before building. `make build` creates and signs `dist/Auralim.app` for the host architecture by default. `make run` opens that app bundle. Run the packaged `.app` so macOS can read its permission usage descriptions and resources.
 
+After changing the icon artwork in `Resources/Icons/Auralim.png`, run `make icon` to regenerate `Resources/Auralim.icns` using macOS `sips` and `iconutil`. The PNG source and ICNS resource are both tracked in Git; `make build` copies the ICNS into the app bundle.
+
 Builds use ad-hoc signing by default. To specify a Developer ID identity:
 
 ```sh

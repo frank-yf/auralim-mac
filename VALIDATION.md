@@ -1,5 +1,16 @@
 # 首版验证记录
 
+## 0.2.2 应用图标（2026-10-22）
+
+- 接入已确认的暖金日轮 / 蓝灰月弧图标，保留生成的 PNG 原稿 `Resources/Icons/Auralim.png`，提供 `Resources/Auralim.icns`。版本升级为 0.2.2（build 21）。
+- 新增 `make icon` 与 `scripts/generate-app-icon.sh`，使用 macOS 自带 sips / iconutil 生成 16、32、128、256、512 点各自的 1x / 2x 图标。临时 iconset 自动清理；原稿与正式 ICNS 作为应用资源纳入 Git。
+- `CFBundleIconFile` 指向 Auralim.icns，构建脚本将其复制到应用包 Contents/Resources 后统一签名；中英文开发说明和现有品牌校验脚本的版本期望同步更新。
+- `make icon` 成功；反解 ICNS 核对十个标准条目的 RGBA 尺寸（16～1024 像素）。纳入仓库的 PNG 原稿与用户确认的生成文件逐字节一致。
+- `make build` 成功，应用版本 / build / 图标配置、包内 ICNS 与资源文件一致性、严格签名校验均通过。macOS NSWorkspace 实际解析到的新应用图标与直接读取 ICNS 的 256 像素渲染完全一致，平均通道差为 0；深浅背景预览人工检查通过。
+- 本次仅验证图标生成、资源配置和打包结果；未启动应用或执行语言切换 / 外观切换 / 定位等功能交互，也未执行全量回归。核查时已有 0.2.1 发布包进程在运行，本次未操作该进程；新版应用包位于 dist/Auralim.app。
+
+证据：[构建](artifacts/icon-0.2.2-build.log)、[包与系统图标解析](artifacts/icon-0.2.2-verify.log)、[浅色背景](artifacts/icon-0.2.2/icon-light.png)、[深色背景](artifacts/icon-0.2.2/icon-dark.png)。
+
 ## 本地目录迁移到 auralim-mac（2026-10-22）
 
 - 将实际项目目录移动为 `/Users/frank/Code/my_proj/auralim-mac`，旧目录不再存在；Git 仓库、历史和版本标签完整保留，`git rev-parse --show-toplevel` / `git worktree list --porcelain` 均指向新位置。仅整理目录和开发配置，应用版本保持 0.2.1（build 20）。
