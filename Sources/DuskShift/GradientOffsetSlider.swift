@@ -86,15 +86,25 @@ final class AppearanceSlider: NSSlider {
 
 final class AppearanceSliderCell: NSSliderCell {
     var sunrise = true
-    static let trackColor = NSColor(srgbRed: 0.29, green: 0.30, blue: 0.33, alpha: 1)
-    static let night = NSColor(srgbRed: 0.18, green: 0.24, blue: 0.38, alpha: 1)
-    static let day = NSColor(srgbRed: 1, green: 0.87, blue: 0.61, alpha: 1)
+    static let trackColor = NSColor(name: "OffsetTrack") { appearance in
+        appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
+            ? NSColor(srgbRed: 0.25, green: 0.27, blue: 0.32, alpha: 1)
+            : NSColor(srgbRed: 0.87, green: 0.88, blue: 0.90, alpha: 1)
+    }
+    static let night = NSColor(name: "OffsetNight") { appearance in
+        appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
+            ? NSColor(srgbRed: 0.44, green: 0.60, blue: 0.88, alpha: 1)
+            : NSColor(srgbRed: 0.34, green: 0.47, blue: 0.73, alpha: 1)
+    }
+    static let day = NSColor(srgbRed: 1, green: 0.84, blue: 0.52, alpha: 1)
 
     private var fraction: CGFloat { CGFloat(min(1, max(0, doubleValue))) }
     private var selectionColor: NSColor {
         let towardLight = sunrise ? fraction > 0.5 : fraction < 0.5
         let endpoint = towardLight ? Self.day : Self.night
-        return Self.trackColor.blended(withFraction: abs(fraction - 0.5) * 2, of: endpoint) ?? endpoint
+        // Make modest offsets visible too; zero still resolves to the neutral track.
+        let strength = sqrt(abs(fraction - 0.5) * 2)
+        return Self.trackColor.blended(withFraction: strength, of: endpoint) ?? endpoint
     }
 
     private func track(in rect: NSRect) -> NSRect {
