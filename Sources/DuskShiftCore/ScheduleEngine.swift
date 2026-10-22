@@ -15,23 +15,25 @@ public struct Schedule: Sendable {
 
 public struct ScheduleEngine: Sendable {
     public init() {}
-    public func evaluate(now: Date, city: City, sunsetOffset: Int) -> Schedule {
-        let offset = Double(min(120, max(-120, sunsetOffset))) * 60
+    public func evaluate(now: Date, city: City, sunriseOffset: Int = 0, sunsetOffset: Int) -> Schedule {
+        let offset = Double(SolarOffset.clamp(sunsetOffset)) * 60
+        let riseOffset = Double(SolarOffset.clamp(sunriseOffset)) * 60
         let solar = SolarCalculator()
         var calendar = Calendar(identifier: .gregorian); calendar.timeZone = city.timeZone
         let start = calendar.startOfDay(for: now)
         let days = (-3...3).map { solar.day(containing: calendar.date(byAdding: .day, value: $0, to: start)!, city: city) }
-        let rises = days.compactMap(\.sunrise).sorted()
+        let rawRises = days.compactMap(\.sunrise).sorted()
+        let rises = rawRises.map { $0.addingTimeInterval(riseOffset) }
         let sets = days.compactMap(\.sunset).sorted()
         var events = rises.map { Transition(date: $0, appearance: .light) }
         var clipped = false
         for sunset in sets {
             var effective = sunset.addingTimeInterval(offset)
-            if let nextRise = rises.first(where: { $0 > sunset }), effective >= nextRise {
+            if let nextIndex = rawRises.firstIndex(where: { $0 > sunset }), effective >= rises[nextIndex] {
                 clipped = true; continue
             }
-            if let previousRise = rises.last(where: { $0 < sunset }), effective < previousRise {
-                effective = previousRise; clipped = true
+            if let previousIndex = rawRises.lastIndex(where: { $0 < sunset }), effective < rises[previousIndex] {
+                effective = rises[previousIndex]; clipped = true
             }
             events.append(Transition(date: effective, appearance: .dark))
         }

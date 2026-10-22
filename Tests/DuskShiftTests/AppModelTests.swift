@@ -114,4 +114,26 @@ final class AppModelTests {
         #expect(store.string(forKey: "city") == "beijing")
         #expect(store.integer(forKey: "offset") == -30)
     }
+
+    @MainActor
+    @Test
+    func testSunriseOffsetPersistsWithoutChangingLegacySunsetOffset() throws {
+        let store = UserDefaults(suiteName: UUID().uuidString)!
+        store.set(-30, forKey: "offset")
+        let rise = try #require(SolarCalculator().day(containing: date("2026-10-22T04:00:00Z"), city: City.all[0]).sunrise)
+        let controller = FakeAppearance()
+        let model = AppModel(defaults: store, controller: controller, clock: { rise }, enableTimers: false)
+        defer { model.shutdown() }
+        #expect(model.sunriseOffset == 0)
+        #expect(model.offset == -30)
+        model.enabled = true
+        #expect(controller.requests.last == .light)
+        model.sunriseOffset = 37
+        #expect(controller.requests.last == .dark)
+        #expect(model.schedule?.nextTransition?.date == rise.addingTimeInterval(37 * 60))
+        let restored = AppModel(defaults: store, controller: FakeAppearance(), clock: { rise }, enableTimers: false)
+        defer { restored.shutdown() }
+        #expect(restored.sunriseOffset == 37)
+        #expect(restored.offset == -30)
+    }
 }

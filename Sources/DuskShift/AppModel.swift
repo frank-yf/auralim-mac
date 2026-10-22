@@ -5,6 +5,7 @@ import SwiftUI
 @MainActor
 final class AppModel: ObservableObject {
     @Published var cityID: String { didSet { defaults.set(cityID, forKey: "city"); configurationChanged() } }
+    @Published var sunriseOffset: Int { didSet { defaults.set(sunriseOffset, forKey: "sunriseOffset"); configurationChanged() } }
     @Published var offset: Int { didSet { defaults.set(offset, forKey: "offset"); configurationChanged() } }
     @Published var enabled: Bool { didSet { defaults.set(enabled, forKey: "enabled"); configurationChanged() } }
     @Published private(set) var schedule: Schedule?
@@ -30,7 +31,8 @@ final class AppModel: ObservableObject {
          systemNotifications: NotificationCenter = .default) {
         self.defaults = defaults; self.controller = controller; self.clock = clock; self.enableTimers = enableTimers
         cityID = defaults.string(forKey: "city") ?? City.all[0].id
-        offset = min(120, max(-120, defaults.integer(forKey: "offset")))
+        offset = SolarOffset.clamp(defaults.integer(forKey: "offset"))
+        sunriseOffset = SolarOffset.clamp(defaults.integer(forKey: "sunriseOffset"))
         enabled = defaults.bool(forKey: "enabled")
         observe(NSWorkspace.didWakeNotification, center: workspaceNotifications)
         observe(NSWorkspace.sessionDidBecomeActiveNotification, center: workspaceNotifications)
@@ -55,7 +57,7 @@ final class AppModel: ObservableObject {
 
     func reconcile() {
         timer?.invalidate(); timer = nil; scheduledCheck = nil
-        let state = ScheduleEngine().evaluate(now: clock(), city: city, sunsetOffset: offset)
+        let state = ScheduleEngine().evaluate(now: clock(), city: city, sunriseOffset: sunriseOffset, sunsetOffset: offset)
         schedule = state
         guard enabled else {
             status = "已暂停，当前系统外观保持不变"
@@ -71,7 +73,7 @@ final class AppModel: ObservableObject {
             guard self.enabled else { return }
             guard requestGeneration == self.generation else { self.reconcile(); return }
             // A request may span a clock change or solar boundary while waiting for consent.
-            let fresh = ScheduleEngine().evaluate(now: self.clock(), city: self.city, sunsetOffset: self.offset)
+            let fresh = ScheduleEngine().evaluate(now: self.clock(), city: self.city, sunriseOffset: self.sunriseOffset, sunsetOffset: self.offset)
             if fresh.appearance != state.appearance { self.reconcile(); return }
             self.schedule = fresh
             switch result {
