@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+    <key>CFBundleExecutable</key><string>DuskShift</string>
+    <key>CFBundleIdentifier</key><string>app.duskshift.mac</string>
+    <key>CFBundleName</key><string>Dusk Shift</string>
+    <key>CFBundleDisplayName</key><string>Dusk Shift</string>
+    <key>CFBundlePackageType</key><string>APPL</string>
+    <key>CFBundleShortVersionString</key><string>0.1.0</string>
+    <key>CFBundleVersion</key><string>1</string>
+    <key>LSMinimumSystemVersion</key><string>13.0</string>
+    <key>LSUIElement</key><true/>
+    <key>NSHighResolutionCapable</key><true/>
+    <key>NSAppleEventsUsageDescription</key><string>Dusk Shift 需要控制 System Events，根据本地计算的日出日落时间切换系统浅色与深色外观。</string>
+</dict></plist>
