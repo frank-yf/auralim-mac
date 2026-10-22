@@ -18,7 +18,13 @@ Auralim is a native macOS menu bar app built with Swift and SwiftUI. It switches
 - **Travel support**: automatic location uses your current coordinates and local time zone. You can also choose a built-in city; failed refreshes keep the cached location, using the saved manual city only when no valid cache exists.
 - **Wake recovery**: checks appearance and the schedule on launch, wake, session restore, and system time changes.
 - **Menu bar app**: no Dock icon or WebView. Scheduling uses events and one-shot timers, with no continuous background polling.
-- **Preferences**: launch at login, Simplified Chinese / Traditional Chinese / English, and an optional sun-and-moon transition animation that is off by default.
+- **Preferences**: launch at login, 12 interface languages, and an optional sun-and-moon transition animation that is off by default.
+
+### Languages
+
+English is the development baseline. Settings offers Follow System and 12 languages: English (`en`), Simplified Chinese (`zh-Hans`), Japanese (`ja`), Traditional Chinese (`zh-Hant`), German (`de`), French (`fr`), Spanish (`es`), Brazilian Portuguese (`pt-BR`), Korean (`ko`), Italian (`it`), Russian (`ru`), and Dutch (`nl`).
+
+Language changes apply immediately and are saved locally. Follow System uses the first supported language in macOS preferences, with English as the fallback. Chinese script takes precedence over region; Portuguese variants use Brazilian Portuguese. Interface text, help, city names, date formatting, update messages, and system permission descriptions use shared localization resources. macOS chooses the language of its own permission dialogs.
 
 ### Download and install
 
@@ -144,6 +150,7 @@ make test FILTER=LocalizationTests
 | `make test-update-signature` | Reject a tampered signed feed without installation |
 | `make test-sliders` | Slider gradient rendering |
 | `make test-ui` | Slider and input interactions, synchronization, and displayed switch times |
+| `make test-localization-ui` | Twelve-language native picker, persistence, settings/menu labels, light/dark screenshots |
 | `make test-ui-layout` | Settings and menu bar layout, languages, light/dark appearance, and scrolling |
 | `make test-appearance-mode` | Appearance modes, system state reads, and request coordination |
 | `make test-ui-mode` | Appearance mode switching and synchronization between both panels |

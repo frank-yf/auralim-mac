@@ -1,0 +1,5 @@
+"CFBundleName" = "Auralim";
+"CFBundleDisplayName" = "Auralim";
+"NSAppleEventsUsageDescription" = "Auralim deve controllare System Events per cambiare aspetto agli orari di alba e tramonto calcolati su questo Mac.";
+"NSLocationUsageDescription" = "Auralim usa la posizione e dati offline dei fusi per calcolare alba e tramonto locali. Le coordinate restano solo su questo Mac e non vengono caricate. In caso di errore mantiene la cache; senza cache valida usa la città manuale.";
+"NSLocationWhenInUseUsageDescription" = "Auralim usa la posizione e dati offline dei fusi per calcolare alba e tramonto locali. Le coordinate restano solo su questo Mac e non vengono caricate. In caso di errore mantiene la cache; senza cache valida usa la città manuale.";

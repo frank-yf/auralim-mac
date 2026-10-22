@@ -1,0 +1,5 @@
+"CFBundleName" = "Auralim";
+"CFBundleDisplayName" = "Auralim";
+"NSAppleEventsUsageDescription" = "Auralimは、このMacで計算した日の出・日の入りに合わせて外観を切り替えるため、System Eventsを制御する必要があります。";
+"NSLocationUsageDescription" = "Auralimは位置情報とオフラインのタイムゾーンデータから現地の日の出・日の入りを計算します。座標はこのMac内にのみ保存し、送信しません。更新失敗時はキャッシュを維持し、有効なキャッシュがなければ手動設定の都市を使用します。";
+"NSLocationWhenInUseUsageDescription" = "Auralimは位置情報とオフラインのタイムゾーンデータから現地の日の出・日の入りを計算します。座標はこのMac内にのみ保存し、送信しません。更新失敗時はキャッシュを維持し、有効なキャッシュがなければ手動設定の都市を使用します。";

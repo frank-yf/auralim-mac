@@ -1,0 +1,5 @@
+"CFBundleName" = "Auralim";
+"CFBundleDisplayName" = "Auralim";
+"NSAppleEventsUsageDescription" = "Auralim은 이 Mac에서 계산한 일출 및 일몰 시각에 화면 모드를 전환하기 위해 System Events를 제어해야 합니다.";
+"NSLocationUsageDescription" = "Auralim은 위치와 오프라인 시간대 데이터로 현지 일출과 일몰을 계산합니다. 좌표는 이 Mac에만 저장하며 업로드하지 않습니다. 갱신 실패 시 캐시를 유지하고 유효한 캐시가 없으면 수동 도시를 사용합니다.";
+"NSLocationWhenInUseUsageDescription" = "Auralim은 위치와 오프라인 시간대 데이터로 현지 일출과 일몰을 계산합니다. 좌표는 이 Mac에만 저장하며 업로드하지 않습니다. 갱신 실패 시 캐시를 유지하고 유효한 캐시가 없으면 수동 도시를 사용합니다.";

@@ -1,0 +1,5 @@
+"CFBundleName" = "Auralim";
+"CFBundleDisplayName" = "Auralim";
+"NSAppleEventsUsageDescription" = "Auralim benötigt Zugriff auf System Events, um das Erscheinungsbild zu lokal berechneten Sonnenaufgangs- und Sonnenuntergangszeiten zu wechseln.";
+"NSLocationUsageDescription" = "Auralim berechnet lokale Sonnenzeiten mit deinem Standort und Offline-Zeitzonendaten. Koordinaten bleiben im Cache auf diesem Mac und werden nie hochgeladen. Bei Fehlern bleibt der Cache erhalten; ohne gültigen Cache wird die manuelle Stadt verwendet.";
+"NSLocationWhenInUseUsageDescription" = "Auralim berechnet lokale Sonnenzeiten mit deinem Standort und Offline-Zeitzonendaten. Koordinaten bleiben im Cache auf diesem Mac und werden nie hochgeladen. Bei Fehlern bleibt der Cache erhalten; ohne gültigen Cache wird die manuelle Stadt verwendet.";

@@ -39,7 +39,7 @@ struct MenuContent: View {
                 }.frame(maxWidth: .infinity, alignment: .leading)
                 AppearanceModePicker(selection: Binding(get: { model.appearanceMode }, set: { model.selectAppearanceMode($0) }),
                                      localizer: model.localizer, identifier: "menu-appearance-mode")
-                    .frame(width: 158, alignment: .trailing)
+                    .frame(width: 180, alignment: .trailing)
             }
             VStack(alignment: .leading, spacing: 10) {
                 HStack(spacing: 5) {

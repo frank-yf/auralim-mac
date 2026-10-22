@@ -2,14 +2,28 @@ import Foundation
 import AuralimCore
 
 enum AppLanguage: String, CaseIterable, Identifiable {
-    case system, simplifiedChinese = "zh-Hans", traditionalChinese = "zh-Hant", english = "en"
+    // English is the development baseline; this order also drives the picker.
+    case system, english = "en", simplifiedChinese = "zh-Hans", japanese = "ja"
+    case traditionalChinese = "zh-Hant", german = "de", french = "fr"
+    case spanish = "es", brazilianPortuguese = "pt-BR", korean = "ko"
+    case italian = "it", russian = "ru", dutch = "nl"
+
     var id: String { rawValue }
     var nativeName: String {
         switch self {
         case .system: return ""
-        case .simplifiedChinese: return "简体中文"
-        case .traditionalChinese: return "繁體中文"
         case .english: return "English"
+        case .simplifiedChinese: return "简体中文"
+        case .japanese: return "日本語"
+        case .traditionalChinese: return "繁體中文"
+        case .german: return "Deutsch"
+        case .french: return "Français"
+        case .spanish: return "Español"
+        case .brazilianPortuguese: return "Português (Brasil)"
+        case .korean: return "한국어"
+        case .italian: return "Italiano"
+        case .russian: return "Русский"
+        case .dutch: return "Nederlands"
         }
     }
 
@@ -17,12 +31,24 @@ enum AppLanguage: String, CaseIterable, Identifiable {
         guard self == .system else { return self }
         for preference in preferredLanguages {
             let parts = preference.replacingOccurrences(of: "_", with: "-").lowercased().split(separator: "-")
-            if parts.first == "en" { return .english }
-            if parts.first == "zh" {
+            switch parts.first {
+            case "en": return .english
+            case "zh":
+                // An explicit script takes precedence over a regional default.
                 if parts.contains("hant") { return .traditionalChinese }
                 if parts.contains("hans") { return .simplifiedChinese }
-                return parts.contains(where: { ["hant", "tw", "hk", "mo"].contains(String($0)) })
+                return parts.contains(where: { ["tw", "hk", "mo"].contains(String($0)) })
                     ? .traditionalChinese : .simplifiedChinese
+            case "ja": return .japanese
+            case "de": return .german
+            case "fr": return .french
+            case "es": return .spanish
+            case "pt": return .brazilianPortuguese
+            case "ko": return .korean
+            case "it": return .italian
+            case "ru": return .russian
+            case "nl": return .dutch
+            default: continue
             }
         }
         return .english

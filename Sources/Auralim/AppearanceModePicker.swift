@@ -28,6 +28,10 @@ struct AppearanceModePicker: NSViewRepresentable {
 
     func updateNSView(_ control: NSSegmentedControl, context: Context) {
         context.coordinator.parent = self
+        if identifier == "menu-appearance-mode" {
+            control.controlSize = .small
+            control.font = .systemFont(ofSize: 11)
+        }
         for (index, mode) in AppearanceMode.allCases.enumerated() {
             control.setLabel(localizer.text(mode.localizationKey), forSegment: index)
         }

@@ -1,0 +1,5 @@
+"CFBundleName" = "Auralim";
+"CFBundleDisplayName" = "Auralim";
+"NSAppleEventsUsageDescription" = "O Auralim precisa controlar System Events para trocar a aparência nos horários de nascer e pôr do sol calculados neste Mac.";
+"NSLocationUsageDescription" = "O Auralim usa sua localização e dados offline de fuso para calcular o nascer e o pôr do sol locais. As coordenadas ficam apenas neste Mac e nunca são enviadas. Se a atualização falhar, mantém o cache; sem cache válido, usa sua cidade manual.";
+"NSLocationWhenInUseUsageDescription" = "O Auralim usa sua localização e dados offline de fuso para calcular o nascer e o pôr do sol locais. As coordenadas ficam apenas neste Mac e nunca são enviadas. Se a atualização falhar, mantém o cache; sem cache válido, usa sua cidade manual.";

@@ -1,0 +1,5 @@
+"CFBundleName" = "Auralim";
+"CFBundleDisplayName" = "Auralim";
+"NSAppleEventsUsageDescription" = "Auralim doit contrôler System Events pour changer l’apparence aux heures de lever et de coucher du soleil calculées sur ce Mac.";
+"NSLocationUsageDescription" = "Auralim utilise votre position et des fuseaux hors ligne pour calculer les horaires solaires locaux. Les coordonnées restent sur ce Mac, sans envoi. En cas d’échec, le cache est conservé ; sans cache valide, la ville manuelle est utilisée.";
+"NSLocationWhenInUseUsageDescription" = "Auralim utilise votre position et des fuseaux hors ligne pour calculer les horaires solaires locaux. Les coordonnées restent sur ce Mac, sans envoi. En cas d’échec, le cache est conservé ; sans cache valide, la ville manuelle est utilisée.";

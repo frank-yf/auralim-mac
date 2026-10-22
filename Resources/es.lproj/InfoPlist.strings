@@ -1,0 +1,5 @@
+"CFBundleName" = "Auralim";
+"CFBundleDisplayName" = "Auralim";
+"NSAppleEventsUsageDescription" = "Auralim necesita controlar System Events para cambiar el aspecto a las horas de amanecer y atardecer calculadas en este Mac.";
+"NSLocationUsageDescription" = "Auralim usa tu ubicación y datos de zona horaria sin conexión para calcular el amanecer y el atardecer locales. Las coordenadas solo se guardan en este Mac y nunca se suben. Si falla la actualización, conserva la caché; sin caché válida, usa tu ciudad manual.";
+"NSLocationWhenInUseUsageDescription" = "Auralim usa tu ubicación y datos de zona horaria sin conexión para calcular el amanecer y el atardecer locales. Las coordenadas solo se guardan en este Mac y nunca se suben. Si falla la actualización, conserva la caché; sin caché válida, usa tu ciudad manual.";

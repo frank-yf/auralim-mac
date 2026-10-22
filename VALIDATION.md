@@ -1,5 +1,17 @@
 # 首版验证记录
 
+## 0.3.1 十二语本地化（2026-10-22）
+
+- 版本为 0.3.1（build 26）。英语为开发基准；支持 en、zh-Hans、ja、zh-Hant、de、fr、es、pt-BR、ko、it、ru、nl。设置中的语言以母语名称显示，保持已有语言偏好；跟随系统按偏好顺序匹配地区变体，中文显式脚本优先，葡萄牙语使用巴西版本，不支持的语言回退英语。
+- 每种语言包含完整的 143 条界面、城市、帮助、状态和更新文案，统一使用 Localizable.strings。补齐对应 macOS 自动化与定位权限说明；打包脚本自动收集语言目录。权限弹窗的实际语言由 macOS 决定。
+- `make test FILTER='LocalizationTests|MenuLayoutTests|UpdateControllerTests/distributionConfigUsesSignedGitHubFeedAndDailyAutomaticDownloads|SettingsPresentationTests/languageAndLocationStillUpdateTheSettings'`：8 项通过（0.186 秒）。覆盖实际资源目录、键集合、格式占位符、系统语言与地区匹配、原有偏好标识、权限目录、设置发布、菜单尺寸及版本配置。
+- `make test-localization-ui`：1 项通过（26.041 秒），用隔离偏好与外观/定位/登录替身，逐个通过原生菜单项选择 12 种语言，验证偏好持久化、设置窗口标题、菜单与设置三段标签同步、控件宽度，以及跟随系统恢复。保存 48 张深浅色设置/菜单截图；人工检查日语、韩语、德语、法语、巴西葡萄牙语、俄语及荷兰语代表布局。俄语菜单使用较宽的原生分段控件和简洁模式标题，避免重叠与省略。
+- `AURALIM_UNIVERSAL=1 make build` 构建通过。最终包为 0.3.1（build 26），同时包含 arm64/x86_64；12 套界面目录与 12 套顶层权限目录全部存在。`codesign --verify --deep --strict`、25 个源 plist/strings 及 24 个打包 strings 语法检查通过。
+- 未执行全量回归、真实系统权限弹窗或更新安装回归；原生语言测试未修改用户真实偏好及系统外观。本次未发布 GitHub Release，现有 v0.3 发布内容不变。
+
+证据：[十二语界面截图](artifacts/localization-0.3.1/)。
+
+
 ## 0.3 Sparkle 后台更新与设置底部重启入口（2026-10-22）
 
 - 版本为 0.3（build 25），固定 Sparkle 2.10.0，并提交 Package.resolved。应用启动时创建唯一更新器，默认每天检查并后台下载；更新器独立于设置窗口存活，不依赖打开菜单或设置才启动。

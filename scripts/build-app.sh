@@ -29,9 +29,10 @@ cp Resources/Info.plist "$app/Contents/Info.plist"
 cp Resources/Auralim.icns "$app/Contents/Resources/Auralim.icns"
 cp -R "$bin_dir/Auralim_Auralim.bundle" "$app/Contents/Resources/"
 cp -R "$bin_dir/Auralim_AuralimCore.bundle" "$app/Contents/Resources/"
-for language in en zh-Hans zh-Hant; do
+for localization in Resources/*.lproj; do
+    language=$(basename "$localization" .lproj)
     mkdir -p "$app/Contents/Resources/$language.lproj"
-    cp "Resources/$language.lproj/InfoPlist.strings" "$app/Contents/Resources/$language.lproj/"
+    cp "$localization/InfoPlist.strings" "$app/Contents/Resources/$language.lproj/"
 done
 # Frameworks contain version symlinks and signed helpers: preserve their layout.
 framework="$app/Contents/Frameworks/Sparkle.framework"
