@@ -19,10 +19,10 @@ func describe(_ element: AXUIElement, depth: Int = 0) {
 }
 guard AXIsProcessTrusted() else { fatalError("Menu-bar verification requires Accessibility permission") }
 guard let running = NSRunningApplication.runningApplications(withBundleIdentifier: "app.duskshift.mac").first else {
-    fatalError("DuskShift is not running")
+    fatalError("Auralim is not running")
 }
 let app = AXUIElementCreateApplication(running.processIdentifier)
-print("DuskShift pid:", running.processIdentifier)
+print("Auralim pid:", running.processIdentifier)
 let verify = CommandLine.arguments.contains("--verify")
 let settingsMode = CommandLine.arguments.contains("--settings")
 let brandOnly = CommandLine.arguments.contains("--brand-only")
@@ -31,7 +31,7 @@ func appWindows() -> [AXUIElement] {
 }
 func pressStatusItem() {
     guard let extra = read(app, kAXExtrasMenuBarAttribute as CFString),
-          let item = children(extra as! AXUIElement).first else { fatalError("No DuskShift status item") }
+          let item = children(extra as! AXUIElement).first else { fatalError("No Auralim status item") }
     precondition(AXUIElementPerformAction(item, kAXPressAction as CFString) == .success)
     Thread.sleep(forTimeInterval: 0.5)
 }
@@ -63,7 +63,7 @@ func openSettings() -> AXUIElement {
         fatalError("No settings entry in menu panel")
     }
     press(button)
-    guard let settings = appWindows().first(where: { ["日暮设置", "日暮設定", "DuskShift Settings"].contains(label($0)) }) else {
+    guard let settings = appWindows().first(where: { ["晨昏设置", "晨昏設定", "Auralim Settings"].contains(label($0)) }) else {
         fatalError("Settings window did not open")
     }
     precondition(panelWindows().isEmpty, "Menu panel should dismiss when opening settings")
@@ -112,16 +112,21 @@ func screenshot(_ path: String, width: Double) throws {
 do {
     if brandOnly {
         guard let url = running.bundleURL, let bundle = Bundle(url: url) else { throw VerificationError(message: "No running app bundle") }
-        try require(url.lastPathComponent == "DuskShift.app", "Unexpected app package name")
-        try require(bundle.infoDictionary?["CFBundleShortVersionString"] as? String == "0.2", "Wrong app version")
-        try require(bundle.infoDictionary?["CFBundleVersion"] as? String == "19", "Wrong build number")
-        try require(bundle.infoDictionary?["CFBundleName"] as? String == "DuskShift", "Wrong fallback name")
-        for (language, expected) in [("en", "DuskShift"), ("zh-Hans", "日暮"), ("zh-Hant", "日暮")] {
+        try require(url.lastPathComponent == "Auralim.app", "Unexpected app package name")
+        try require(bundle.infoDictionary?["CFBundleShortVersionString"] as? String == "0.2.1", "Wrong app version")
+        try require(bundle.infoDictionary?["CFBundleVersion"] as? String == "20", "Wrong build number")
+        try require(bundle.infoDictionary?["CFBundleName"] as? String == "Auralim", "Wrong fallback name")
+        for (language, expected) in [("en", "Auralim"), ("zh-Hans", "晨昏"), ("zh-Hant", "晨昏")] {
             let file = url.appendingPathComponent("Contents/Resources/\(language).lproj/InfoPlist.strings")
             let values = try PropertyListSerialization.propertyList(from: Data(contentsOf: file), format: nil) as? [String: String]
             try require(values?["CFBundleName"] == expected && values?["CFBundleDisplayName"] == expected, "Wrong localized bundle name: \(language)")
             print("Verified packaged names:", language, expected)
         }
+        try require(bundle.executableURL?.lastPathComponent == "Auralim", "Wrong executable name")
+        for name in ["Auralim_Auralim", "Auralim_AuralimCore"] {
+            try require(bundle.url(forResource: name, withExtension: "bundle") != nil, "Missing renamed resources: \(name)")
+        }
+        try require(!FileManager.default.fileExists(atPath: url.appendingPathComponent("Contents/MacOS/DuskShift").path), "Obsolete executable remains")
         print("System process name:", running.localizedName ?? "", "; file display name:", FileManager.default.displayName(atPath: url.path))
     }
     let original = read(try languagePicker(), kAXValueAttribute as CFString) as? String ?? ""
@@ -133,28 +138,30 @@ do {
         catch { print("Could not restore language:", error) }
     }
     for (option, expectedTitle, nextLabel) in [
-        ("English", "DuskShift Settings", "Schedule preview"),
-        ("繁體中文", "日暮設定", "計畫預覽"),
-        ("简体中文", "日暮设置", "计划预览")
+        ("English", "Auralim Settings", "Schedule preview"),
+        ("繁體中文", "晨昏設定", "計畫預覽"),
+        ("简体中文", "晨昏设置", "计划预览")
     ] {
         try choose(option)
         try require(label(settings) == expectedTitle, "Window title did not update: \(label(settings))")
         if brandOnly {
-            let name = option == "English" ? "DuskShift" : "日暮"
+            let name = option == "English" ? "Auralim" : "晨昏"
             func identifiedText(_ window: AXUIElement, _ id: String) -> String? {
                 descendants(window).first { read($0, kAXIdentifierAttribute as CFString) as? String == id }.map(label)
             }
             try require(identifiedText(settings, "settings-app-name") == name, "Settings app name did not update")
-            try require(identifiedText(settings, "app-version") == name + " 0.2", "Settings version did not update")
+            try require(identifiedText(settings, "app-version") == name + " 0.2.1", "Settings version did not update")
+            let slogan = option == "English" ? "Between light and dark." : "日升而明，日落而暗"
+            try require(identifiedText(settings, "app-slogan") == slogan, "Settings slogan did not update")
             let filename = option == "English" ? "en" : option == "繁體中文" ? "zh-Hant" : "zh-Hans"
-            try FileManager.default.createDirectory(atPath: "artifacts/branding-0.2", withIntermediateDirectories: true)
-            try screenshot("artifacts/branding-0.2/settings-\(filename).png", width: 600)
+            try FileManager.default.createDirectory(atPath: "artifacts/branding-0.2.1", withIntermediateDirectories: true)
+            try screenshot("artifacts/branding-0.2.1/settings-\(filename).png", width: 600)
             pressStatusItem()
             guard let panel = panelWindows().first else { throw VerificationError(message: "No compact menu") }
             try require(identifiedText(panel, "menu-app-name") == name, "Menu app name did not update")
-            try screenshot("artifacts/branding-0.2/menu-\(filename).png", width: 320)
+            try screenshot("artifacts/branding-0.2.1/menu-\(filename).png", width: 320)
             pressStatusItem()
-            print("Verified app name and 0.2 version:", option, name, expectedTitle)
+            print("Verified app name and 0.2.1 version:", option, name, expectedTitle)
             continue
         }
         let generalElements = descendants(settings)

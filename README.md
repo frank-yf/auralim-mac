@@ -1,6 +1,10 @@
-# 日暮 · DuskShift
+# 晨昏 · Auralim
 
-随日升日落，自在切换明暗。
+日升而明，日落而暗
+
+Between light and dark.
+
+仓库名称：`auralim-mac`；Swift 模块：`Auralim`（离线计算模块为 `AuralimCore`）。构建产物：`dist/Auralim.app`。当前为本地 Git 仓库，尚未配置远程仓库。
 
 Swift + SwiftUI 原生 macOS 菜单栏应用，支持 macOS 13 及以上。提供浅色 / 自动 / 深色模式、自动定位 / 手动城市、离线日出日落和时区查询、日出/日落独立 ±120 分钟偏移、系统外观切换、唤醒恢复和登录时启动。自动定位使用 macOS 系统服务；不调用在线地址或时区 API，不做持续高精度定位。
 
@@ -27,7 +31,7 @@ make run
 
 请在 macOS 系统设置 → 外观中选择「浅色」或「深色」，关闭系统「自动」外观，避免两个调度器相互覆盖。选择浅色或深色会暂停自动计划并立即切换；退出应用后保留最后的系统外观。应用退出后不能继续执行计划；可在设置中打开「登录时启动」，在下次登录 macOS 后自动运行。
 
-构建脚本默认使用本地 ad-hoc 签名，只适合本机测试。重新构建可能需要重新授予自动化权限。正式分发需设置 `DUSK_SHIFT_SIGN_IDENTITY` 为 Developer ID 签名身份并另行公证。脚本生成当前主机架构的程序。
+构建脚本默认使用本地 ad-hoc 签名，只适合本机测试。重新构建可能需要重新授予自动化权限。正式分发需设置 `AURALIM_SIGN_IDENTITY`（兼容原 `DUSK_SHIFT_SIGN_IDENTITY`） 为 Developer ID 签名身份并另行公证。脚本生成当前主机架构的程序。
 
 ## 行为
 
@@ -139,11 +143,11 @@ CLANG_MODULE_CACHE_PATH="$PWD/.build/clang-cache" swift scripts/verify-login-ite
 
 使用 `CLLocationManager.requestLocation()` 请求一次公里级定位；设备支持时订阅系统显著位置变化。网络变化、唤醒、用户会话恢复、系统时区变化和应用重新激活也会请求定位。网络事件最多每分钟触发一次请求，正在请求时合并，超时是单次定时器；没有后台定时轮询，也不调用持续定位 `startUpdatingLocation()`。不支持显著位置变化的设备依靠其他事件或手动刷新。真实通知频率由系统决定，不承诺移动后瞬时更新。
 
-天文计算和坐标到时区的查询全部离线，时区不依赖 Mac 当前系统时区。macOS 定位服务自身可能需要 Wi-Fi 或网络，断网取得位置的能力取决于系统；获取失败后仍可用手动城市完全离线运行。日暮不上传坐标，未实现网络地址查询或云端存储。
+天文计算和坐标到时区的查询全部离线，时区不依赖 Mac 当前系统时区。macOS 定位服务自身可能需要 Wi-Fi 或网络，断网取得位置的能力取决于系统；获取失败后仍可用手动城市完全离线运行。晨昏不上传坐标，未实现网络地址查询或云端存储。
 
 时区查询采用随源码打包的 ZoneDetect C 解析器（BSD-3-Clause）及约 4.7 MB 的 `timezone21.bin`，通过内存映射读取，不需要构建时下载依赖。坐标量化约 20 米；定位样本允许最大 20 km 的不确定范围，不能保证位于边界附近时的时区精度。超过 5 分钟、超过 20 km 误差、非法坐标或明显未来的定位样本会丢弃。内置时区边界数据版本为 2024a，不自动更新；时区偏移和夏令时规则由 macOS Foundation 提供。
 
-包含 [timezone-boundary-builder](https://github.com/evansiroky/timezone-boundary-builder) 的信息，以 Open Database License 1.0 提供；数据库来自 [SwiftTimeZoneLookup 固定版本](https://github.com/patrick-zippenfenig/SwiftTimeZoneLookup/tree/7227bdc00daf0b833a8215c05d4aca05b7c0a484)，未作修改。[ZoneDetect](https://github.com/BertoldVdb/ZoneDetect/tree/81ede727f8771eda507150a95237cc8c518666d6) 的代码同样固定版本，完整许可和数据来源随 `.app` 中的 `DuskShift_DuskShiftCore.bundle` 分发，源码见 `Sources/DuskShiftCore/Resources/*-LICENSE.txt` 和 `TimezoneData-NOTICE.txt`。数据库 SHA-256：`678ab5e795975ff3f6226d3103833d984d83861b45ac7a472da9bf97de5d5e79`。
+包含 [timezone-boundary-builder](https://github.com/evansiroky/timezone-boundary-builder) 的信息，以 Open Database License 1.0 提供；数据库来自 [SwiftTimeZoneLookup 固定版本](https://github.com/patrick-zippenfenig/SwiftTimeZoneLookup/tree/7227bdc00daf0b833a8215c05d4aca05b7c0a484)，未作修改。[ZoneDetect](https://github.com/BertoldVdb/ZoneDetect/tree/81ede727f8771eda507150a95237cc8c518666d6) 的代码同样固定版本，完整许可和数据来源随 `.app` 中的 `Auralim_AuralimCore.bundle` 分发，源码见 `Sources/AuralimCore/Resources/*-LICENSE.txt` 和 `TimezoneData-NOTICE.txt`。数据库 SHA-256：`678ab5e795975ff3f6226d3103833d984d83861b45ac7a472da9bf97de5d5e79`。
 
 验收时先保留一个手动城市，再选择自动定位并授权，核对当前位置坐标、当地时区和计划；在系统中撤销权限后回到应用，应显示原因并回退手动城市。恢复权限并更新位置后应恢复自动计划。真实跨时区旅行、授权拒绝/恢复和长期功耗不能由替身测试代替。
 
@@ -234,3 +238,12 @@ CLANG_MODULE_CACHE_PATH="$PWD/.build/clang-cache" swift scripts/verify-login-ite
 简体和繁体中文显示「日暮」，英文及其他语言回退显示「DuskShift」。托盘标题、设置标题 / 窗口名、版本文字和用途说明使用相同命名；应用内切换语言时同步更新。macOS 应用显示名由本地化 InfoPlist.strings 提供，跟随系统的应用语言设置。
 
 版本为 0.2（build 19），构建产物改为 `dist/DuskShift.app`。首次构建会将原有 `dist/Dusk Shift.app` 目录移动为新名称，保留同一 bundle identifier、可执行文件名和偏好域。历史验证记录中的旧包名保留。
+
+
+## 晨昏 / Auralim（0.2.1）
+
+中文显示「晨昏」，英文及其他语言回退显示「Auralim」；应用内切换语言时同步更新托盘、设置和窗口标题。中文 Slogan 为「日升而明，日落而暗」，英文为「Between light and dark.」。
+
+Swift package / 可执行模块为 `Auralim`，计算模块为 `AuralimCore`，资源包与测试目标同步更名。版本 0.2.1（build 20），`make build` 输出 `dist/Auralim.app`，迁移现有旧名称应用目录并清除旧可执行文件和资源包。保留 `app.duskshift.mac` Bundle ID、偏好域以及原测试环境变量，以沿用设置、授权身份与测试入口。macOS 系统权限是否继续有效仍由系统的签名与授权策略决定。
+
+仓库建议名称为 `auralim-mac`；本地目录暂保留原路径，未创建或重命名 GitHub 远程仓库。

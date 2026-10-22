@@ -38,7 +38,7 @@ func verify() throws {
     try require(AXIsProcessTrusted(), "Accessibility permission required")
     let running = try { () throws -> NSRunningApplication in
         guard let app = NSRunningApplication.runningApplications(withBundleIdentifier: "app.duskshift.mac").first else {
-            throw VerificationFailure(message: "DuskShift is not running")
+            throw VerificationFailure(message: "Auralim is not running")
         }
         return app
     }()

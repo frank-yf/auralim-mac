@@ -1,5 +1,16 @@
 # 首版验证记录
 
+## 0.2.1 晨昏 / Auralim 更名与模块迁移（2026-10-22）
+
+- 中文名称改为「晨昏」，英文及其他语言回退为「Auralim」。中文 Slogan 为「日升而明，日落而暗」（末尾无句号），英文为「Between light and dark.」。托盘、设置抬头 / 窗口名、版本文字、帮助 / 用途说明和 macOS 本地化显示名同步更新。
+- Swift package / 可执行模块改为 `Auralim`，计算模块为 `AuralimCore`；源码 / 测试目录、导入、安装包资源查找与许可入口一起迁移。Makefile 构建 / 运行入口使用 `dist/Auralim.app`，构建脚本迁移旧包目录并删除旧可执行文件和旧资源包。保留 Bundle ID `app.duskshift.mac`、偏好域与原测试环境变量；签名身份新增 `AURALIM_SIGN_IDENTITY`，兼容旧变量。
+- `make test FILTER='LocalizationTests|OfflineTimeZoneTests/builtInCitiesMatchOfflineBoundaries'`：4 项通过（0.089 秒），验证三语目录 / 回退与改名后的离线数据库读取。随后按最终文案去掉中文句号，仅复验 `make test FILTER=LocalizationTests`：3 项通过（0.023 秒）。测试目标均完成编译，未执行全量回归。
+- 最终 `swift scripts/verify-languages.swift --brand-only`：实际运行应用的英文 / 繁体 / 简体名称、Slogan、窗口标题、托盘与设置抬头、0.2.1 版本文字同步通过；校验包名、可执行名、两个资源包与三语 CFBundleName / CFBundleDisplayName，输出 6 张截图。验证后恢复原来的「跟随系统」，未操作外观模式、动画、登录启动、定位或偏移控件。
+- 最终 Release 0.2.1（build 20）构建、严格签名、Info.plist / 三语 strings 与 bash 语法检查通过；数据库 SHA-256 与原版一致：`678ab5e795975ff3f6226d3103833d984d83861b45ac7a472da9bf97de5d5e79`。本次未重新验证系统授权弹窗或登录后启动；保留身份不代表已验证系统授权策略。
+- 当前无 Git remote；`auralim-mac` 记录为仓库名称，未创建 / 改名 GitHub 远程仓库，本地工作目录保持原路径。
+
+证据：[定向测试](artifacts/branding-0.2.1-tests.log)、[最终 Slogan 测试](artifacts/branding-0.2.1-slogan-tests.log)、[实际三语展示](artifacts/branding-0.2.1-actual.log)、[中文设置](artifacts/branding-0.2.1/settings-zh-Hans.png)、[英文托盘](artifacts/branding-0.2.1/menu-en.png)、[最终构建](artifacts/build-0.2.1.log)。
+
 ## 0.2 中文名称「日暮」、其他语言 DuskShift（2026-10-22）
 
 - 简体 / 繁体中文统一「日暮」，英文与不支持语言的回退为「DuskShift」。托盘名称、设置抬头 / 窗口标题、版本行及权限 / 帮助文案同步替换；新增 app.name 本地化键。macOS 包的 CFBundleName 和 CFBundleDisplayName 同时提供三语值，默认 plist / development region 使用英文回退。

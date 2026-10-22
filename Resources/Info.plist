@@ -1,19 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
-    <key>CFBundleExecutable</key><string>DuskShift</string>
+    <key>CFBundleExecutable</key><string>Auralim</string>
     <key>CFBundleIdentifier</key><string>app.duskshift.mac</string>
-    <key>CFBundleName</key><string>DuskShift</string>
-    <key>CFBundleDisplayName</key><string>DuskShift</string>
+    <key>CFBundleName</key><string>Auralim</string>
+    <key>CFBundleDisplayName</key><string>Auralim</string>
     <key>CFBundlePackageType</key><string>APPL</string>
-    <key>CFBundleShortVersionString</key><string>0.2</string>
-    <key>CFBundleVersion</key><string>19</string>
+    <key>CFBundleShortVersionString</key><string>0.2.1</string>
+    <key>CFBundleVersion</key><string>20</string>
     <key>CFBundleDevelopmentRegion</key><string>en</string>
     <key>CFBundleLocalizations</key><array><string>en</string><string>zh-Hans</string><string>zh-Hant</string></array>
     <key>LSMinimumSystemVersion</key><string>13.0</string>
     <key>LSUIElement</key><true/>
     <key>NSHighResolutionCapable</key><true/>
-    <key>NSLocationUsageDescription</key><string>DuskShift uses your location and bundled offline time-zone boundaries to calculate local sunrise and sunset while traveling. If location is unavailable, it uses your saved manual city.</string>
-    <key>NSLocationWhenInUseUsageDescription</key><string>DuskShift uses your location and bundled offline time-zone boundaries to calculate local sunrise and sunset while traveling. If location is unavailable, it uses your saved manual city.</string>
-    <key>NSAppleEventsUsageDescription</key><string>DuskShift needs to control System Events to switch system appearance at locally calculated sunrise and sunset times.</string>
+    <key>NSLocationUsageDescription</key><string>Auralim uses your location and bundled offline time-zone boundaries to calculate local sunrise and sunset while traveling. If location is unavailable, it uses your saved manual city.</string>
+    <key>NSLocationWhenInUseUsageDescription</key><string>Auralim uses your location and bundled offline time-zone boundaries to calculate local sunrise and sunset while traveling. If location is unavailable, it uses your saved manual city.</string>
+    <key>NSAppleEventsUsageDescription</key><string>Auralim needs to control System Events to switch system appearance at locally calculated sunrise and sunset times.</string>
 </dict></plist>

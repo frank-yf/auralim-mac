@@ -2,15 +2,15 @@
 import PackageDescription
 
 let package = Package(
-    name: "DuskShift",
+    name: "Auralim",
     defaultLocalization: "en",
     platforms: [.macOS(.v13)],
-    products: [.executable(name: "DuskShift", targets: ["DuskShift"])],
+    products: [.executable(name: "Auralim", targets: ["Auralim"])],
     targets: [
         .target(name: "CZoneDetect"),
-        .target(name: "DuskShiftCore", dependencies: ["CZoneDetect"], resources: [.process("Resources")]),
-        .executableTarget(name: "DuskShift", dependencies: ["DuskShiftCore"], resources: [.process("Resources")]),
-        .testTarget(name: "DuskShiftCoreTests", dependencies: ["DuskShiftCore"]),
-        .testTarget(name: "DuskShiftTests", dependencies: ["DuskShift"])
+        .target(name: "AuralimCore", dependencies: ["CZoneDetect"], resources: [.process("Resources")]),
+        .executableTarget(name: "Auralim", dependencies: ["AuralimCore"], resources: [.process("Resources")]),
+        .testTarget(name: "AuralimCoreTests", dependencies: ["AuralimCore"]),
+        .testTarget(name: "AuralimTests", dependencies: ["Auralim"])
     ]
 )
