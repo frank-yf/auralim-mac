@@ -1,5 +1,17 @@
 # 首版验证记录
 
+## 本地目录迁移到 auralim-mac（2026-10-22）
+
+- 将实际项目目录移动为 `/Users/frank/Code/my_proj/auralim-mac`，旧目录不再存在；Git 仓库、历史和版本标签完整保留，`git rev-parse --show-toplevel` / `git worktree list --porcelain` 均指向新位置。仅整理目录和开发配置，应用版本保持 0.2.1（build 20）。
+- README 构建入口与路径说明更新，4 个原生交互测试的默认临时输出路径改用 `auralim-`。Makefile / 构建 / 测试脚本原本使用相对根目录，不含旧项目绝对路径。历史验证记录和原截图保留。
+- 旧 `.build` 先隔离到 `/private/tmp/auralim-directory-migration-8rtqscz6/previous-build`，从新路径重新生成 SwiftPM 配置、编译缓存和资源访问器。Debug 生成的两个资源访问器已确认指向新目录。
+- `make test FILTER='LocalizationTests/catalogsAreCompleteAndFormatsMatch|OfflineTimeZoneTests/builtInCitiesMatchOfflineBoundaries'`：2 项通过（0.080 秒），验证移动后的三语资源和离线数据库读取。编译了测试目标，未执行全量回归或其他功能套件。
+- `make build` 从干净缓存完成 Release 构建（141.08 秒），Debug / Release 生成的资源访问器均使用新路径；严格签名校验及打包 Info.plist 校验通过。离线数据库 SHA-256 仍为 `678ab5e795975ff3f6226d3103833d984d83861b45ac7a472da9bf97de5d5e79`。
+- `make run` 从新目录启动成功。仅在临时验证脚本中补充运行包路径 / 可执行路径 / 两个资源包断言，再使用已有 `verify-menu-bar.swift --settings` 检查实际托盘打开设置、关闭和重新打开，全部通过；截图确认名称、Slogan、时间和设置控件正常显示。未操作外观模式、动画、语言、定位、登录启动或偏移开关。
+- Codex 用户配置中的项目路径信任条目已迁移，校验其余 TOML 内容与备份一致。尝试更新桌面端保存的项目根目录后，运行中的窗口会回写旧值；现有工具不提供修改该项目根目录的入口，因此桌面项目关联仍需在 Codex 中重新关联新目录。未将外部文件的临时改写报告为完成；全局配置不提交 Git。
+
+证据：[定向资源测试](artifacts/directory-rename-tests.log)、[干净 Release 构建](artifacts/directory-rename-build.log)、[新路径实际运行](artifacts/directory-rename-actual.log)、[设置截图](artifacts/directory-rename-settings.png)。
+
 ## 0.2.1 晨昏 / Auralim 更名与模块迁移（2026-10-22）
 
 - 中文名称改为「晨昏」，英文及其他语言回退为「Auralim」。中文 Slogan 为「日升而明，日落而暗」（末尾无句号），英文为「Between light and dark.」。托盘、设置抬头 / 窗口名、版本文字、帮助 / 用途说明和 macOS 本地化显示名同步更新。

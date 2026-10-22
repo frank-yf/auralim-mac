@@ -172,7 +172,7 @@ struct NativeInteractionTests {
         try type("+42", into: fields[1], submit: true)
         let capture = Process()
         capture.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
-        let output = ProcessInfo.processInfo.environment["DUSK_SHIFT_UI_OUTPUT"] ?? "/private/tmp/dusk-shift-window.png"
+        let output = ProcessInfo.processInfo.environment["DUSK_SHIFT_UI_OUTPUT"] ?? "/private/tmp/auralim-window.png"
         capture.arguments = ["-x", "-l", String(window.windowNumber), output]
         try capture.run(); capture.waitUntilExit()
         #expect(capture.terminationStatus == 0)

@@ -27,7 +27,7 @@ struct UIAppearanceTests {
             clock: { ISO8601DateFormatter().date(from: "2026-10-22T04:00:00Z")! },
             enableTimers: false, loginItemController: login, locationController: location)
         defer { model.shutdown(); defaults.removePersistentDomain(forName: suite) }
-        let output = URL(fileURLWithPath: ProcessInfo.processInfo.environment["DUSK_SHIFT_VISUAL_OUTPUT"] ?? "/private/tmp/dusk-shift-visual")
+        let output = URL(fileURLWithPath: ProcessInfo.processInfo.environment["DUSK_SHIFT_VISUAL_OUTPUT"] ?? "/private/tmp/auralim-visual")
         try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
         func settle() {
             let end = Date(timeIntervalSinceNow: 0.25)

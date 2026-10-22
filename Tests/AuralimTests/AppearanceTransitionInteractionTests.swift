@@ -32,7 +32,7 @@ struct AppearanceTransitionInteractionTests {
             loginItemController: FakeLoginItem(), locationController: FakeLocation(),
             systemSettings: { .init(mode: .light, appearance: .light) }, transitionPlayer: player)
         defer { model.shutdown(); defaults.removePersistentDomain(forName: suite) }
-        let output = URL(fileURLWithPath: ProcessInfo.processInfo.environment["DUSK_SHIFT_TRANSITION_UI_OUTPUT"] ?? "/private/tmp/dusk-shift-transition-ui")
+        let output = URL(fileURLWithPath: ProcessInfo.processInfo.environment["DUSK_SHIFT_TRANSITION_UI_OUTPUT"] ?? "/private/tmp/auralim-transition-ui")
         try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
         func settle(_ duration: TimeInterval = 0.18) {
             let end = Date(timeIntervalSinceNow: duration)

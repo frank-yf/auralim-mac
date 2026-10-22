@@ -30,7 +30,7 @@ struct AppearanceModeInteractionTests {
             workspaceNotifications: NotificationCenter(), systemNotifications: NotificationCenter(),
             loginItemController: FakeLoginItem(), locationController: FakeLocation(), systemSettings: { system })
         defer { model.shutdown(); defaults.removePersistentDomain(forName: suite) }
-        let output = URL(fileURLWithPath: ProcessInfo.processInfo.environment["DUSK_SHIFT_MODE_UI_OUTPUT"] ?? "/private/tmp/dusk-shift-mode-ui")
+        let output = URL(fileURLWithPath: ProcessInfo.processInfo.environment["DUSK_SHIFT_MODE_UI_OUTPUT"] ?? "/private/tmp/auralim-mode-ui")
         try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
         func settle() {
             let end = Date(timeIntervalSinceNow: 0.18)

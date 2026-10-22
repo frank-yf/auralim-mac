@@ -4,7 +4,7 @@
 
 Between light and dark.
 
-仓库名称：`auralim-mac`；Swift 模块：`Auralim`（离线计算模块为 `AuralimCore`）。构建产物：`dist/Auralim.app`。当前为本地 Git 仓库，尚未配置远程仓库。
+本地目录：`auralim-mac`；仓库名称：`auralim-mac`；Swift 模块：`Auralim`（离线计算模块为 `AuralimCore`）。构建产物：`dist/Auralim.app`。当前为本地 Git 仓库，尚未配置远程仓库。
 
 Swift + SwiftUI 原生 macOS 菜单栏应用，支持 macOS 13 及以上。提供浅色 / 自动 / 深色模式、自动定位 / 手动城市、离线日出日落和时区查询、日出/日落独立 ±120 分钟偏移、系统外观切换、唤醒恢复和登录时启动。自动定位使用 macOS 系统服务；不调用在线地址或时区 API，不做持续高精度定位。
 
@@ -19,6 +19,7 @@ Swift + SwiftUI 原生 macOS 菜单栏应用，支持 macOS 13 及以上。提�
 需要带 macOS SDK 的 Swift 6 工具链（Xcode 或 Command Line Tools），测试使用 Swift Testing。
 
 ```sh
+cd /Users/frank/Code/my_proj/auralim-mac
 make help
 make test-sliders # 示例：只运行当前渐变变更涉及的测试
 make build
@@ -91,7 +92,7 @@ make test-ui
 菜单栏保持明确的尺寸约束，避免压缩尺寸建议导致高度塌缩。当前精简面板为 320 × 264，设置窗口为 600 宽、最高 720 高的内容区域，并适配较小屏幕保留滚动。实际菜单栏验证可在应用运行且验证进程具有辅助功能权限时执行：
 
 ```sh
-CLANG_MODULE_CACHE_PATH="$PWD/.build/clang-cache" swift scripts/verify-menu-bar.swift --verify --capture /private/tmp/dusk-shift-menu.png
+CLANG_MODULE_CACHE_PATH="$PWD/.build/clang-cache" swift scripts/verify-menu-bar.swift --verify --capture /private/tmp/auralim-menu.png
 ```
 
 脚本直接操作本应用的菜单栏项目，重复打开三次，验证真实弹出窗口尺寸与控件，最后保留面板打开并截取该窗口。
@@ -117,8 +118,8 @@ CLANG_MODULE_CACHE_PATH="$PWD/.build/clang-cache" swift scripts/verify-languages
 真实菜单栏与设置入口验证：
 
 ```sh
-CLANG_MODULE_CACHE_PATH="$PWD/.build/clang-cache" swift scripts/verify-menu-bar.swift --verify --capture /private/tmp/dusk-shift-compact.png
-CLANG_MODULE_CACHE_PATH="$PWD/.build/clang-cache" swift scripts/verify-menu-bar.swift --settings --capture /private/tmp/dusk-shift-settings.png
+CLANG_MODULE_CACHE_PATH="$PWD/.build/clang-cache" swift scripts/verify-menu-bar.swift --verify --capture /private/tmp/auralim-compact.png
+CLANG_MODULE_CACHE_PATH="$PWD/.build/clang-cache" swift scripts/verify-menu-bar.swift --settings --capture /private/tmp/auralim-settings.png
 ```
 
 ## 登录时启动（0.1.6）
@@ -130,7 +131,7 @@ CLANG_MODULE_CACHE_PATH="$PWD/.build/clang-cache" swift scripts/verify-menu-bar.
 普通测试使用替身验证注册/取消、等待批准、错误回读、语言更新及系统设置返回后的刷新，且不改变外观调度。真实注册与取消可在已授权辅助功能的会话中运行以下脚本（临时切换一次，结束恢复原开关）：
 
 ```sh
-CLANG_MODULE_CACHE_PATH="$PWD/.build/clang-cache" swift scripts/verify-login-item.swift --capture /private/tmp/dusk-shift-login.png
+CLANG_MODULE_CACHE_PATH="$PWD/.build/clang-cache" swift scripts/verify-login-item.swift --capture /private/tmp/auralim-login.png
 ```
 
 实际注销并重新登录后，应确认菜单栏图标自动出现，并恢复之前的自动切换开关。自动化注册测试不代表这个登录流程已经验收。
@@ -246,4 +247,11 @@ CLANG_MODULE_CACHE_PATH="$PWD/.build/clang-cache" swift scripts/verify-login-ite
 
 Swift package / 可执行模块为 `Auralim`，计算模块为 `AuralimCore`，资源包与测试目标同步更名。版本 0.2.1（build 20），`make build` 输出 `dist/Auralim.app`，迁移现有旧名称应用目录并清除旧可执行文件和资源包。保留 `app.duskshift.mac` Bundle ID、偏好域以及原测试环境变量，以沿用设置、授权身份与测试入口。macOS 系统权限是否继续有效仍由系统的签名与授权策略决定。
 
-仓库建议名称为 `auralim-mac`；本地目录暂保留原路径，未创建或重命名 GitHub 远程仓库。
+仓库及本地目录名称为 `auralim-mac`；本地路径为 `/Users/frank/Code/my_proj/auralim-mac`，未创建或重命名 GitHub 远程仓库。
+
+
+## 本地目录迁移
+
+项目目录现为 `/Users/frank/Code/my_proj/auralim-mac`。构建 / 测试脚本相对脚本位置寻找项目根目录，Makefile 的输出路径由当前目录生成，无需固定旧路径。移动目录后先隔离原 `.build` 缓存，再从新路径执行 `make build` 和相关定向测试，避免 Swift 编译缓存及资源访问器保留旧绝对路径。运行应用使用 `make run` 或 `open dist/Auralim.app`。
+
+本次只整理项目目录、开发输出路径和本地项目配置，应用版本保持 0.2.1（build 20）。Git 历史、标签和 Bundle ID 保留；历史验证记录与旧截图中的路径不重写。Codex 用户级项目配置不纳入 Git；信任条目已迁移至新路径。运行中的 Codex 会回写其项目列表，当前工具没有更新项目根目录的入口；需在 Codex 中重新关联新目录。
