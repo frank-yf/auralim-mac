@@ -1,3 +1,5 @@
+[简体中文](README.md) | [English](README.en.md)
+
 # 晨昏 · Auralim
 
 **日升而明，日落而暗**
