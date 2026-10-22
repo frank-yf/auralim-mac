@@ -129,7 +129,7 @@ do {
         let expectedSwitch = option == "English" ? "Switch to light" : option == "繁體中文" ? "日出轉亮" : "日出转亮"
         try require(values.contains(expectedSwitch), "Settings labels did not update")
         let filename = option == "English" ? "en" : option == "繁體中文" ? "zh-Hant" : "zh-Hans"
-        try screenshot("artifacts/settings-\(filename).png", width: 560)
+        try screenshot("artifacts/settings-\(filename).png", width: 600)
         pressStatusItem()
         let panel = try { () throws -> AXUIElement in
             guard let panel = panelWindows().first else { throw VerificationError(message: "No compact menu") }

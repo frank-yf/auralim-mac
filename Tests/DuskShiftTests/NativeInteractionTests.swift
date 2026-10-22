@@ -32,7 +32,8 @@ struct NativeInteractionTests {
         defer { if let point = previousCursor { CGWarpMouseCursorPosition(point) } }
         let appearance = NativeAppearanceSpy()
         let location = FakeLocation()
-        let model = AppModel(defaults: defaults, controller: appearance, enableTimers: false, locationController: location)
+        let login = FakeLoginItem()
+        let model = AppModel(defaults: defaults, controller: appearance, enableTimers: false, loginItemController: login, locationController: location)
         defer { model.shutdown() }
         let presenter = SettingsWindowController()
         presenter.show(model: model)

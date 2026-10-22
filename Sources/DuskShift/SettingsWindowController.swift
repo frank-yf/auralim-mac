@@ -11,8 +11,10 @@ final class SettingsWindowController: ObservableObject {
         model.refreshLoginItemStatus()
         model.reconcile()
         if let window {
+            let wasVisible = window.isVisible
             NSApplication.shared.activate(ignoringOtherApps: true)
             window.makeKeyAndOrderFront(nil)
+            if !wasVisible { clearInitialFocus(in: window) }
             return
         }
         let screen = NSApplication.shared.keyWindow?.screen ?? NSScreen.main
@@ -37,11 +39,20 @@ final class SettingsWindowController: ObservableObject {
         }
         NSApplication.shared.activate(ignoringOtherApps: true)
         window.makeKeyAndOrderFront(nil)
+        clearInitialFocus(in: window)
+    }
+
+    private func clearInitialFocus(in window: NSWindow) {
+        // AppKit chooses a text field after SwiftUI lays out a newly shown window.
+        // Clear only that initial choice; normal editing never uses this path.
+        RunLoop.main.perform(inModes: [.common]) { [weak window] in
+            MainActor.assumeIsolated { _ = window?.makeFirstResponder(nil) }
+        }
     }
 }
 
 enum SettingsPanelLayout {
-    static let width: CGFloat = 560
+    static let width: CGFloat = 600
     static func height(availableHeight: CGFloat) -> CGFloat {
         min(720, max(400, availableHeight - 80))
     }

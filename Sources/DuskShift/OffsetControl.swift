@@ -15,13 +15,16 @@ struct OffsetControl: View {
     @FocusState private var inputFocused: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Label(localizer.text("offset.title", title), systemImage: sunrise ? "sunrise.fill" : "sunset.fill").font(.headline)
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 9) {
+                DuskSymbol(name: sunrise ? "sunrise.fill" : "sunset.fill", tint: sunrise ? DuskStyle.gold : DuskStyle.blue)
+                Text(localizer.text("offset.title", title)).font(.system(size: 13, weight: .semibold))
                 Spacer()
                 Text(summary)
                     .font(.caption).foregroundStyle(.secondary)
-                Button(localizer.text("offset.reset")) { updateDraft(0); commit() }.font(.caption)
+                    .padding(.horizontal, 8).padding(.vertical, 4)
+                    .background(Color.primary.opacity(0.04), in: Capsule())
+                Button(localizer.text("offset.reset")) { updateDraft(0); commit() }.font(.caption).controlSize(.small)
                     .accessibilityIdentifier("\(identifier)-reset")
             }
             HStack(spacing: 12) {
@@ -60,8 +63,7 @@ struct OffsetControl: View {
                 Text(localizer.text("offset.invalid")).font(.caption2).foregroundStyle(.red)
             }
         }
-        .padding(14)
-        .background(Color.primary.opacity(0.035), in: RoundedRectangle(cornerRadius: 12))
+        .duskCard()
         .onAppear { updateDraft(minutes) }
         .onChange(of: minutes) { updateDraft($0) }
     }

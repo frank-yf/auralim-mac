@@ -22,42 +22,67 @@ struct MenuContent: View {
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack {
-                Text("Dusk Shift").font(.headline)
-                Spacer()
-                Text(model.enabled ? model.t("auto") : model.t("paused"))
-                    .font(.caption).foregroundStyle(.secondary)
-            }
-            Toggle(model.t("auto.switch"), isOn: $model.enabled).disabled(model.isApplying)
-            VStack(alignment: .leading, spacing: 5) {
-                Text(model.cityName() + " · " + (model.enabled ? model.t("next") : model.t("preview")))
-                    .font(.caption).foregroundStyle(.secondary)
-                if let next = model.schedule?.nextTransition {
-                    Label("\(model.time(next.date)) · \(next.appearance == .dark ? model.t("dark") : model.t("light"))",
-                          systemImage: next.appearance == .dark ? "moon.fill" : "sun.max.fill")
-                } else {
-                    Text(model.t("no.schedule")).font(.callout)
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 10) {
+                DuskMark(size: 34)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Dusk Shift").font(.system(size: 15, weight: .semibold))
+                    Text(model.enabled ? model.t("auto") : model.t("paused"))
+                        .font(.caption).foregroundStyle(.secondary)
                 }
+                Spacer()
+                Toggle(model.t("auto.switch"), isOn: $model.enabled)
+                    .toggleStyle(.switch).controlSize(.small).labelsHidden()
+                    .accessibilityIdentifier("menu-auto-switch")
             }
-            Text(model.isApplying ? model.t("checking") : model.status)
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(spacing: 5) {
+                    Image(systemName: "mappin.and.ellipse")
+                    Text(model.cityName()).lineLimit(1)
+                    Spacer(minLength: 4)
+                    Text(model.t(model.enabled ? "next" : "preview"))
+                }.font(.caption).foregroundStyle(.secondary)
+                if let next = model.schedule?.nextTransition {
+                    HStack(spacing: 10) {
+                        DuskSymbol(name: next.appearance == .dark ? "moon.fill" : "sun.max.fill",
+                                   tint: next.appearance == .dark ? DuskStyle.blue : DuskStyle.gold)
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(model.time(next.date))
+                                .font(.system(size: 18, weight: .semibold, design: .rounded))
+                                .monospacedDigit().lineLimit(1).minimumScaleFactor(0.8)
+                            Text(model.t(next.appearance == .dark ? "dark" : "light"))
+                                .font(.caption).foregroundStyle(.secondary)
+                        }
+                        Spacer(minLength: 0)
+                    }
+                } else {
+                    Label(model.t("no.schedule"), systemImage: "sun.horizon")
+                        .font(.callout).foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }.duskCard(padding: 12)
+            Label(model.settingsStatus, systemImage: model.errorMessage != nil ? "exclamationmark.circle" : model.enabled ? "checkmark.circle" : "pause.circle")
                 .font(.caption).foregroundStyle(model.errorMessage == nil ? Color.secondary : .orange)
-                .fixedSize(horizontal: false, vertical: true)
+                .lineLimit(2).frame(maxWidth: .infinity, minHeight: 28, alignment: .leading)
+                .help(model.errorMessage ?? model.settingsStatus)
             Divider()
             HStack {
-                Button(model.t("settings.open")) {
+                Button {
                     dismiss()
                     openSettings()
+                } label: {
+                    Label(model.t("settings.open"), systemImage: "gearshape")
                 }
                 .keyboardShortcut(",", modifiers: .command)
                 .accessibilityIdentifier("open-settings")
                 Spacer()
-                Button(model.t("quit"), action: quit)
-            }
+                Button(action: quit) { Label(model.t("quit"), systemImage: "power") }
+            }.buttonStyle(.borderless).controlSize(.small)
         }
-        .padding(18)
+        .padding(16)
         // Keep an explicit viewport: MenuBarExtra can propose a near-zero height.
         .frame(width: MenuPanelLayout.width, height: MenuPanelLayout.height)
+        .background(DuskStyle.background)
         .environment(\.locale, model.localizer.locale)
         .onAppear { model.reconcile() }
     }
@@ -65,5 +90,5 @@ struct MenuContent: View {
 
 enum MenuPanelLayout {
     static let width: CGFloat = 320
-    static let height: CGFloat = 240
+    static let height: CGFloat = 264
 }

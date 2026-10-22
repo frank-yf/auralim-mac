@@ -14,78 +14,90 @@ struct SettingsContent: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Dusk Shift").font(.title2.bold())
-                Text(model.t("slogan")).foregroundStyle(.secondary)
-            }.padding(.horizontal, 24).padding(.top, 20)
+        VStack(spacing: 0) {
+            HStack(spacing: 12) {
+                DuskMark(size: 40)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Dusk Shift").font(.system(size: 23, weight: .semibold, design: .rounded))
+                    Text(model.t("slogan")).font(.callout).foregroundStyle(.secondary)
+                }
+                Spacer()
+            }.padding(.horizontal, 24).padding(.top, 20).padding(.bottom, 16)
             ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
+                VStack(alignment: .leading, spacing: 10) {
                     appearance
-                    Divider()
+                    times
                     location
                     offset(sunrise: true)
                     offset(sunrise: false)
-                    times
-                    Divider()
-                    login
                 }
-                .padding(18)
+                .padding(.horizontal, 24).padding(.bottom, 18).padding(.top, 1)
                 .frame(maxWidth: .infinity, alignment: .leading)
-            }.padding(.horizontal, 16)
-            HStack {
-                Picker(model.t("language"), selection: Binding(get: { model.language }, set: { model.language = $0 })) {
-                    ForEach(AppLanguage.allCases) { language in
-                        Text(language == .system ? model.t("language.system") : language.nativeName).tag(language)
-                    }
-                }.accessibilityIdentifier("language-picker").frame(maxWidth: 270)
-                Spacer()
-                Button(model.t("licenses.open")) { openNotices() }
-                    .buttonStyle(.link).font(.caption2)
-            }.padding(.horizontal, 34).padding(.bottom, 20)
+            }
+            footer
         }
         .frame(width: SettingsPanelLayout.width, height: height)
+        .background(DuskStyle.background)
         .environment(\.locale, state.localizer.locale)
         .onAppear { model.refreshLoginItemStatus(); model.reconcile() }
     }
 
     private var appearance: some View {
         SettingsSectionView(section: state.appearance) { value in
-            VStack(alignment: .leading, spacing: 8) {
-                Toggle(model.t("auto.system"), isOn: Binding(get: { model.enabled }, set: { model.enabled = $0 }))
-                HStack {
-                    Text(value.status).font(.caption).foregroundStyle(.secondary)
-                    Spacer()
-                    Button(model.t("check.now")) { model.retry() }.font(.caption)
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(spacing: 12) {
+                    DuskSymbol(name: "circle.lefthalf.filled")
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(model.t("auto.system")).font(.system(size: 13, weight: .semibold))
+                        Text(value.status).font(.caption).foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    Spacer(minLength: 4)
+                    Button { model.retry() } label: { Image(systemName: "arrow.clockwise") }
+                        .buttonStyle(.borderless).help(model.t("check.now"))
+                        .accessibilityLabel(model.t("check.now")).accessibilityIdentifier("check-appearance")
+                    Toggle(model.t("auto.system"), isOn: Binding(get: { model.enabled }, set: { model.enabled = $0 }))
+                        .toggleStyle(.switch).labelsHidden()
+                        .accessibilityIdentifier("settings-auto-switch")
                 }
-                if let error = value.error {
-                    Text(error).font(.caption).foregroundStyle(.red)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-            }
+                if let error = value.error { DuskNotice(text: error, warning: true) }
+            }.duskCard()
         }
     }
 
     private var location: some View {
         SettingsSectionView(section: state.location) { value in
-            VStack(alignment: .leading, spacing: 6) {
-                Picker(model.t("location.mode"), selection: Binding(get: { model.locationMode }, set: { model.locationMode = $0 })) {
-                    Text(model.t("location.manual")).tag(LocationMode.manual)
-                    Text(model.t("location.automatic")).tag(LocationMode.automatic)
-                }.pickerStyle(.segmented).accessibilityIdentifier("location-mode")
-                Picker(model.t(value.mode == .automatic ? "location.fallbackCity" : "city.picker"),
-                       selection: Binding(get: { model.cityID }, set: { model.cityID = $0 })) {
-                    ForEach(City.all) { Text(model.cityName($0)).tag($0.id) }
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 12) {
+                    DuskSymbol(name: "location")
+                    Text(model.t("location.mode")).font(.system(size: 13, weight: .semibold))
+                    Spacer(minLength: 8)
+                    Picker(model.t("location.mode"), selection: Binding(get: { model.locationMode }, set: { model.locationMode = $0 })) {
+                        Text(model.t("location.manual")).tag(LocationMode.manual)
+                        Text(model.t("location.automatic")).tag(LocationMode.automatic)
+                    }.pickerStyle(.segmented).labelsHidden()
+                        .frame(width: 240).accessibilityIdentifier("location-mode")
                 }
-                Text(model.t("city.timeZone", value.timeZoneID)).font(.caption).foregroundStyle(.secondary)
+                HStack(alignment: .center, spacing: 16) {
+                    Picker(model.t(value.mode == .automatic ? "location.fallbackCity" : "city.picker"),
+                           selection: Binding(get: { model.cityID }, set: { model.cityID = $0 })) {
+                        ForEach(City.all) { Text(model.cityName($0)).tag($0.id) }
+                    }.frame(maxWidth: 260).accessibilityIdentifier("city-picker")
+                    Spacer(minLength: 0)
+                    Text(value.timeZoneID).font(.caption.monospaced()).foregroundStyle(.secondary)
+                        .lineLimit(1).minimumScaleFactor(0.8)
+                        .help(model.t("city.timeZone", value.timeZoneID))
+                }
                 if let status = value.status {
-                    Text(status).font(.caption)
-                        .foregroundStyle(value.failed ? Color.orange : .secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .accessibilityIdentifier("location-status")
-                    Button(model.t("location.refresh")) { model.refreshLocation() }.disabled(value.isLocating)
+                    HStack(alignment: .top, spacing: 12) {
+                        DuskNotice(text: status, warning: value.failed)
+                            .accessibilityIdentifier("location-status")
+                        Spacer(minLength: 0)
+                        Button(model.t("location.refresh")) { model.refreshLocation() }
+                            .controlSize(.small).disabled(value.isLocating)
+                    }
                 }
-            }
+            }.duskCard()
         }
     }
 
@@ -102,37 +114,63 @@ struct SettingsContent: View {
 
     private var times: some View {
         SettingsSectionView(section: state.times) { value in
-            VStack(alignment: .leading, spacing: 8) {
-                Text(value.title).font(.headline)
-                LabeledContent(model.t("sunrise.switch"), value: value.lightTime)
-                    .accessibilityIdentifier("sunrise-switch-time").help(value.sunriseHelp)
-                LabeledContent(model.t("sunset.switch"), value: value.darkTime)
-                    .accessibilityIdentifier("sunset-switch-time").help(value.sunsetHelp)
-                if let notice = value.polarNotice {
-                    Text(notice).font(.caption).foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 10) {
+                Text(value.title).font(.caption.weight(.medium)).foregroundStyle(.secondary)
+                HStack(spacing: 12) {
+                    timeTile(label: model.t("sunrise.switch"), value: value.lightTime, symbol: "sunrise.fill", tint: DuskStyle.gold)
+                        .accessibilityIdentifier("sunrise-switch-time").help(value.sunriseHelp)
+                    timeTile(label: model.t("sunset.switch"), value: value.darkTime, symbol: "sunset.fill", tint: DuskStyle.blue)
+                        .accessibilityIdentifier("sunset-switch-time").help(value.sunsetHelp)
                 }
-                if value.clipped {
-                    Text(model.t("clipped")).font(.caption).foregroundStyle(.orange)
-                }
+                if let notice = value.polarNotice { DuskNotice(text: notice) }
+                if value.clipped { DuskNotice(text: model.t("clipped"), warning: true) }
             }
         }
+    }
+
+    private func timeTile(label: String, value: String, symbol: String, tint: Color) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Label(label, systemImage: symbol).font(.system(size: 13, weight: .medium)).foregroundStyle(tint)
+            Text(value).font(.system(size: 19, weight: .semibold, design: .rounded)).monospacedDigit()
+                .lineLimit(1).minimumScaleFactor(0.75)
+        }.frame(maxWidth: .infinity, alignment: .leading).duskCard()
+    }
+
+    private var footer: some View {
+        VStack(spacing: 12) {
+            Divider()
+            HStack(alignment: .top, spacing: 20) {
+                login.frame(maxWidth: .infinity, alignment: .leading)
+                Picker(model.t("language"), selection: Binding(get: { model.language }, set: { model.language = $0 })) {
+                    ForEach(AppLanguage.allCases) { language in
+                        Text(language == .system ? model.t("language.system") : language.nativeName).tag(language)
+                    }
+                }.accessibilityIdentifier("language-picker").frame(width: 235)
+            }
+            HStack {
+                if let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String {
+                    Text("Dusk Shift \(version)").font(.caption2).foregroundStyle(.tertiary)
+                }
+                Spacer()
+                Button(model.t("licenses.open")) { openNotices() }
+                    .buttonStyle(.link).font(.caption2).foregroundStyle(.secondary)
+            }
+        }.padding(.horizontal, 24).padding(.bottom, 16)
     }
 
     private var login: some View {
         SettingsSectionView(section: state.login) { value in
             VStack(alignment: .leading, spacing: 6) {
                 Toggle(model.t("login.title"), isOn: Binding(get: { model.loginItemStatus.isRegistered }, set: { model.setLaunchAtLogin($0) }))
+                    .toggleStyle(.switch).controlSize(.small)
                     .accessibilityIdentifier("launch-at-login")
-                if value.status != .notRegistered && value.status != .enabled {
-                    Text(model.t(value.status.localizationKey)).font(.caption).foregroundStyle(.secondary)
+                if value.status == .requiresApproval || value.status == .unknown {
+                    DuskNotice(text: model.t(value.status.localizationKey))
                         .accessibilityIdentifier("login-item-status")
                 }
-                if let error = value.error {
-                    Text(error).font(.caption).foregroundStyle(.red)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
+                if let error = value.error { DuskNotice(text: error, warning: true) }
                 if value.status == .requiresApproval || value.error != nil {
-                    Button(model.t("login.settings")) { model.openLoginItemSettings() }
+                    Button(model.t("login.settings")) { model.openLoginItemSettings() }.font(.caption)
                 }
             }
         }

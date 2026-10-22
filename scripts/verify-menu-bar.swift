@@ -71,7 +71,7 @@ func openSettings() -> AXUIElement {
 if settingsMode {
     let settings = openSettings()
     let measured = size(settings)
-    precondition((550...600).contains(measured.width) && measured.height >= 400)
+    precondition(measured.width == 600 && measured.height >= 400)
     let elements = descendants(settings)
     precondition(elements.filter { read($0, kAXRoleAttribute as CFString) as? String == "AXSlider" }.count == 2)
     precondition(elements.filter { read($0, kAXRoleAttribute as CFString) as? String == "AXTextField" }.count == 2)
@@ -92,7 +92,7 @@ if settingsMode {
         pressStatusItem()
         guard let panel = panelWindows().first else { fatalError("Panel did not open") }
         let measured = size(panel)
-        precondition((310...330).contains(measured.width) && (230...250).contains(measured.height), "Unexpected panel: \(measured)")
+        precondition((310...330).contains(measured.width) && (260...270).contains(measured.height), "Unexpected panel: \(measured)")
         let elements = descendants(panel)
         let sliders = elements.filter { read($0, kAXRoleAttribute as CFString) as? String == "AXSlider" }
         let inputs = elements.filter { read($0, kAXRoleAttribute as CFString) as? String == "AXTextField" }

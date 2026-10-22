@@ -16,12 +16,12 @@ struct MenuLayoutTests {
         let size = host.fittingSize
         print("Unconstrained menu fitting size:", size)
         #expect(size.width == 320)
-        #expect(size.height == 240)
+        #expect(size.height == 264)
         #expect(size.height <= 300)
         let controller = NSHostingController(rootView: MenuContent(model: model))
         let compressed = controller.sizeThatFits(in: NSSize(width: 320, height: 1))
         print("Compressed menu fitting size:", compressed)
-        #expect(compressed.height == 240)
+        #expect(compressed.height == 264)
     }
 
     @Test
