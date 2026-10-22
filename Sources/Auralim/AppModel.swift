@@ -24,6 +24,7 @@ final class AppModel: ObservableObject {
     }
     @Published private(set) var manualAppearance: Appearance?
     @Published private var systemSettings: SystemAppearanceSettings
+    var currentSystemAppearance: Appearance { systemSettings.appearance }
     var appearanceMode: AppearanceMode? {
         if enabled { return .automatic }
         if let manualAppearance { return manualAppearance == .dark ? .dark : .light }
@@ -273,11 +274,10 @@ final class AppModel: ObservableObject {
         timer?.invalidate(); timer = nil; scheduledCheck = nil
         let state = ScheduleEngine().evaluate(now: clock(), city: city, sunriseOffset: sunriseOffset, sunsetOffset: offset)
         schedule = state
-        // Until an explicit app selection, refresh the system-managed display
-        // when panels open or the Mac wakes, without applying any appearance.
+        // The tray always reflects the observed system appearance, including
+        // App Auto/manual mode and requests that are still pending or failed.
+        refreshSystemAppearance()
         guard let target = enabled ? state.appearance : manualAppearance else {
-            let actual = readSystemSettings()
-            if systemSettings != actual { systemSettings = actual }
             statusState = .paused
             return
         }
@@ -288,6 +288,7 @@ final class AppModel: ObservableObject {
         controller.apply(target) { [weak self] result in
             guard let self else { return }
             self.isApplying = false
+            self.refreshSystemAppearance()
             guard self.enabled || self.manualAppearance != nil else { return }
             guard requestGeneration == self.generation else { self.reconcile(); return }
             // Requests can span a clock/solar boundary or a manual/auto change.
@@ -314,6 +315,11 @@ final class AppModel: ObservableObject {
                 }
             }
         }
+    }
+
+    private func refreshSystemAppearance() {
+        let actual = readSystemSettings()
+        if systemSettings != actual { systemSettings = actual }
     }
 
     private func arm(at date: Date) {

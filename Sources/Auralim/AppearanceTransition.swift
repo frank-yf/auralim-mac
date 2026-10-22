@@ -172,11 +172,8 @@ struct SolarTransitionScene: View, Animatable {
             disk.fill(Path(ellipseIn: moonRect.insetBy(dx: -moonRadius, dy: -moonRadius)),
                       with: .radialGradient(Gradient(colors: [Color(red: 0.78, green: 0.85, blue: 1).opacity(0.12), .clear]),
                                             center: moon, startRadius: moonRadius * 0.8, endRadius: moonRadius * 2))
-            var crescent = Path(ellipseIn: moonRect)
-            crescent.addEllipse(in: moonRect.offsetBy(dx: moonRadius * 0.54, dy: -moonRadius * 0.30))
-            var moonDisk = disk
-            moonDisk.clip(to: Path(ellipseIn: moonRect))
-            moonDisk.fill(crescent, with: .color(Color(red: 0.88, green: 0.92, blue: 1).opacity(0.82)), style: FillStyle(eoFill: true))
+            disk.fill(CrescentMoon().path(in: moonRect),
+                      with: .color(Color(red: 0.88, green: 0.92, blue: 1).opacity(0.82)))
             context.fill(bounds, with: .linearGradient(Gradient(stops: [
                 .init(color: warmth.opacity(0), location: 0),
                 .init(color: warmth.opacity(0), location: 0.64),
@@ -200,5 +197,25 @@ struct SolarTransitionScene: View, Animatable {
             ], startPoint: .leading, endPoint: .trailing))
         }
         .accessibilityHidden(true)
+    }
+}
+
+/// A single contour avoids the antialiased full-circle seam produced by an
+/// even-odd pair of disks clipped against the outer disk.
+struct CrescentMoon: Shape {
+    func path(in rect: CGRect) -> Path {
+        let radius = min(rect.width, rect.height) / 2
+        guard radius > 0 else { return Path() }
+        let center = CGPoint(x: rect.midX, y: rect.midY)
+        let offset = CGPoint(x: radius * 0.54, y: -radius * 0.30)
+        let direction = atan2(offset.y, offset.x)
+        let angle = acos(hypot(offset.x, offset.y) / (2 * radius))
+        var path = Path()
+        path.addArc(center: center, radius: radius,
+                    startAngle: .radians(direction - angle), endAngle: .radians(direction + angle), clockwise: true)
+        path.addArc(center: CGPoint(x: center.x + offset.x, y: center.y + offset.y), radius: radius,
+                    startAngle: .radians(direction + .pi - angle), endAngle: .radians(direction + .pi + angle), clockwise: false)
+        path.closeSubpath()
+        return path
     }
 }

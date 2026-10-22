@@ -17,7 +17,7 @@ Auralim is a native macOS menu bar app built with Swift and SwiftUI. It switches
 - **Three appearance modes**: Light, Auto, and Dark stay synchronized between the menu bar panel and settings. System Auto and App Auto are clearly distinguished.
 - **Travel support**: automatic location uses your current coordinates and local time zone. You can also choose a built-in city; failed refreshes keep the cached location, using the saved manual city only when no valid cache exists.
 - **Wake recovery**: checks appearance and the schedule on launch, wake, session restore, and system time changes.
-- **Menu bar app**: no Dock icon or WebView. Scheduling uses events and one-shot timers, with no continuous background polling.
+- **Menu bar app**: a warm gold sun in light mode and a pale blue-purple moon in dark mode follow the actual system appearance. No Dock icon or WebView. Scheduling uses events and one-shot timers, with no continuous background polling.
 - **Preferences**: launch at login, 12 interface languages, and an optional sun-and-moon transition animation that is off by default.
 
 ### Languages

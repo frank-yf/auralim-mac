@@ -43,10 +43,12 @@ struct AppearanceSyncTests {
 
     @Test func systemAppearanceChangesSynchronizeOpenPresentationsAndStopAfterShutdown() async {
         await withModel { model, spy, notifications, _, setSystem in
+            #expect(model.currentSystemAppearance == .light)
             let settings = SettingsPresentation(model: model), menu = SettingsPresentation(model: model)
             setSystem(.init(mode: .dark, appearance: .dark))
             notifications.post(name: Notification.Name("AppleInterfaceThemeChangedNotification"), object: nil)
             await flush()
+            #expect(model.currentSystemAppearance == .dark)
             #expect(settings.appearance.value.mode == .dark && menu.appearance.value.mode == .dark)
             #expect(settings.appearance.value.status == "System managed · Currently Dark")
             #expect(spy.requests.isEmpty)
@@ -56,6 +58,23 @@ struct AppearanceSyncTests {
             await flush()
             #expect(model.appearanceMode == .dark)
             #expect(spy.requests.isEmpty)
+        }
+    }
+
+    @Test func trayFollowsObservedAppearanceWhileManualRequestIsPendingAndAfterCompletion() async {
+        await withModel { model, spy, notifications, _, setSystem in
+            spy.hold = true
+            model.selectAppearanceMode(.dark)
+            #expect(model.currentSystemAppearance == .light)
+            setSystem(.init(mode: .dark, appearance: .dark))
+            spy.pending?(.success(.init(changed: true)))
+            await flush()
+            #expect(model.currentSystemAppearance == .dark)
+            setSystem(.init(mode: .light, appearance: .light))
+            notifications.post(name: Notification.Name("AppleInterfaceThemeChangedNotification"), object: nil)
+            await flush()
+            #expect(model.currentSystemAppearance == .light)
+            #expect(model.appearanceMode == .dark)
         }
     }
 
@@ -79,6 +98,7 @@ struct AppearanceSyncTests {
             #expect(spy.requests == [.light, .light])
             spy.result = .failure(.init(message: "", permissionDenied: true, reason: .authorization))
             model.selectAppearanceMode(.dark)
+            #expect(model.currentSystemAppearance == .light) // Failed requests must not change the tray icon.
             let count = spy.requests.count
             notifications.post(name: Notification.Name("AppleInterfaceThemeChangedNotification"), object: nil)
             application.post(name: NSApplication.didBecomeActiveNotification, object: nil)

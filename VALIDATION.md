@@ -1,5 +1,14 @@
 # 首版验证记录
 
+## 0.3.2 彩色托盘与月亮残边修复（2026-10-22）
+
+- 版本 0.3.2（build 27）。托盘改用无外圈的 SF Symbols：浅色 `sun.max.fill`、#F5A623；深色 `moon.fill`、#A7B7F5。生成 18pt 的 1x/2x 非模板位图并保留原始颜色。
+- 自动、手动与暂停模式均从系统实际外观读取图标状态；系统通知、唤醒与请求完成时同步，等待及失败不会提前显示目标外观。
+- 动画月亮由两圆奇偶填充再裁切改为两段相交圆弧组成的连续轮廓，消除镂空一侧的整圆抗锯齿残边，保留柔和光晕。
+- `make test FILTER='MenuBarIconTests|AppearanceSyncTests|AppearanceTransitionTests|SettingsPresentationTests/offsetOnlyPublishesEditedSectionAndTimeTextDuringAndAfterVerification|UpdateControllerTests/distributionConfigUsesSignedGitHubFeedAndDailyAutomaticDownloads'`：23 项通过。覆盖 1x/2x 图标的实际颜色、月亮镂空像素透明度、待完成/失败及系统通知的外观同步、原有动画协调与版本配置。
+- 人工查看渲染输出 `artifacts/menu-bar-0.3.2/` 的太阳、月亮与弯月轮廓，镂空处没有整圆细线。
+- `make build`、`codesign --verify --deep --strict dist/Auralim.app`、打包 Info.plist 的 `plutil -lint` 均通过。本次构建为本机 x86_64；没有执行全量回归或重新发布 GitHub Release，也未替换当前运行的应用。
+
 ## 0.3.1 十二语本地化（2026-10-22）
 
 - 版本为 0.3.1（build 26）。英语为开发基准；支持 en、zh-Hans、ja、zh-Hant、de、fr、es、pt-BR、ko、it、ru、nl。设置中的语言以母语名称显示，保持已有语言偏好；跟随系统按偏好顺序匹配地区变体，中文显式脚本优先，葡萄牙语使用巴西版本，不支持的语言回退英语。

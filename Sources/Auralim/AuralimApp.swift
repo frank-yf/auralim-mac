@@ -15,8 +15,13 @@ struct AuralimApp: App {
     }
 
     var body: some Scene {
-        MenuBarExtra(model.t("app.name"), systemImage: model.enabled ? "sun.max.circle.fill" : model.appearanceMode == nil ? "circle.lefthalf.filled" : model.appearanceMode == .dark ? "moon.circle" : "sun.max.circle") {
+        MenuBarExtra {
             MenuContent(model: model, openSettings: { settings.show(model: model, updater: updater) })
+        }
+        label: {
+            Image(nsImage: MenuBarIcon.image(for: model.currentSystemAppearance))
+                .renderingMode(.original)
+                .accessibilityLabel(model.t("app.name"))
         }
         .menuBarExtraStyle(.window)
     }
