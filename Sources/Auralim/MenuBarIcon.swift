@@ -8,7 +8,7 @@ enum MenuBarIcon {
     }
 
     static func color(for appearance: Appearance) -> NSColor {
-        let rgb = appearance == .dark ? (0xA7, 0xB7, 0xF5) : (0xF5, 0xA6, 0x23)
+        let rgb = appearance == .dark ? (0xA7, 0xB7, 0xF5) : (0xE6, 0xB4, 0x50)
         return NSColor(srgbRed: Double(rgb.0) / 255, green: Double(rgb.1) / 255,
                        blue: Double(rgb.2) / 255, alpha: 1)
     }
