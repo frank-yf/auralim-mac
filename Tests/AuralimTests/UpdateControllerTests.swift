@@ -108,6 +108,6 @@ struct UpdateControllerTests {
         #expect(info["SUScheduledCheckInterval"] as? Int == 86400)
         let key = try #require(info["SUPublicEDKey"] as? String)
         #expect(Data(base64Encoded: key)?.count == 32)
-        #expect(info["CFBundleShortVersionString"] as? String == "0.3.3")
+        #expect(info["CFBundleShortVersionString"] as? String == "0.4.1")
     }
 }

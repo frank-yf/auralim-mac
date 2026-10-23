@@ -63,7 +63,7 @@ func openSettings() -> AXUIElement {
         fatalError("No settings entry in menu panel")
     }
     press(button)
-    guard let settings = appWindows().first(where: { ["晨昏设置", "晨昏設定", "Auralim Settings"].contains(label($0)) }) else {
+    guard let settings = appWindows().first(where: { ["晦明设置", "晦明設定", "Auralim Settings"].contains(label($0)) }) else {
         fatalError("Settings window did not open")
     }
     precondition(panelWindows().isEmpty, "Menu panel should dismiss when opening settings")

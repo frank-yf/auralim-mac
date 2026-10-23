@@ -1,10 +1,10 @@
 [English](README.md) | [简体中文](README.zh-CN.md) | [Website](https://frank-yf.github.io/auralim-site/en/)
 
-# Auralim · 晨昏
+# Auralim · 晦明
 
 **Between light and dark.**
 
-*日升而明，日落而暗*
+*晦明变化，循日而行。*
 
 Auralim is a native macOS menu bar app built with Swift and SwiftUI. It switches between light and dark appearance at local sunrise and sunset. Sunrise, sunset, and time-zone lookup are calculated on your Mac, without online APIs or macOS's automatic appearance schedule.
 

@@ -1,5 +1,14 @@
 # 首版验证记录
 
+## 0.4.1 中文品牌更新为晦明（2026-10-23）
+
+- 版本 0.4.1（build 29）。简体与繁体中文应用名统一为「晦明」；设置标题、菜单栏辅助功能名称、权限说明、帮助文案和原生交互验证脚本同步更新。英文及其他语言继续使用 Auralim，Bundle ID 与偏好标识保持不变。
+- 简体 slogan 为「晦明变化，循日而行。」，繁体为「晦明變化，循日而行。」；英文仍为 “Between light and dark.”。中文 README 加入欧阳修《醉翁亭记》「晦明变化者，山间之朝暮也。」的出处引用。
+- `make test FILTER='LocalizationTests/translationsFormatNumbersCitiesAndFallback|LocalizationTests/supportedLanguagesAndPermissionCatalogs|UpdateControllerTests/distributionConfigUsesSignedGitHubFeedAndDailyAutomaticDownloads'`：3 项通过，仅检查受影响的品牌、本地化权限目录与版本配置。日志：`artifacts/branding-0.4.1/tests.log`。
+- `make build` 与构建脚本的严格签名校验通过。打包版本为 0.4.1 / build 29，中文 InfoPlist.strings 显示「晦明」。日志：`artifacts/branding-0.4.1/build.log`。
+- 从当前源码构建隔离截图工具，使用临时偏好、固定示例时间与外观/定位/登录替身；未启动更新检查。验证简体、繁体、英文的设置窗口标题、名称与 slogan，生成 12 张菜单/设置深浅截图，设置页包含真实打包版本号；人工检查简体浅色及繁体深色的名称、slogan 与版本展示。截图位于 `artifacts/branding-0.4.1/captures/`，其中 8 张中英文截图用于官网。
+- 未执行全量回归，未修改系统外观、真实权限、用户偏好或已安装应用；未发布 0.4.1 Release。
+
 ## 0.3.3 唤醒动画延后播放（2026-10-23）
 
 - 同版本太阳图标微调：使用亮度收敛的暖金色 `#E6B450`，保留 0.3.3 / build 28。只执行 `make test FILTER=MenuBarIconTests/symbolsKeepTheirColorsAtStandardAndRetinaScale`，1 项通过，验证 1x/2x 位图颜色；`make build` 及构建脚本签名检查通过。日志位于 `artifacts/tray-gold-0.3.3/`。

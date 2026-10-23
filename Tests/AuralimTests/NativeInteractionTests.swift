@@ -255,12 +255,12 @@ struct NativeInteractionTests {
         #expect(appearance.requests == appearanceRequests)
         model.language = .traditionalChinese
         settle()
-        #expect(window.title == "晨昏設定")
+        #expect(window.title == "晦明設定")
         #expect(model.t("tab.help") == "使用說明")
         #expect(appearance.requests == appearanceRequests)
         model.language = .simplifiedChinese
         settle()
-        #expect(window.title == "晨昏设置")
+        #expect(window.title == "晦明设置")
         window.makeFirstResponder(fields[0])
         settle()
         let editorBeforeOffset = window.firstResponder

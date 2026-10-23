@@ -1,6 +1,6 @@
-"CFBundleName" = "晨昏";
-"CFBundleDisplayName" = "晨昏";
-"NSAppleEventsUsageDescription" = "晨昏 需要控制 System Events，根据本地计算的日出日落时间切换系统浅色与深色外观。";
+"CFBundleName" = "晦明";
+"CFBundleDisplayName" = "晦明";
+"NSAppleEventsUsageDescription" = "晦明 需要控制 System Events，根据本地计算的日出日落时间切换系统浅色与深色外观。";
 
-"NSLocationUsageDescription" = "晨昏 使用当前位置和离线时区数据计算当地日出日落。经纬度仅缓存在本机，不上传；刷新失败时沿用缓存位置，无有效缓存时使用手动城市。";
-"NSLocationWhenInUseUsageDescription" = "晨昏 使用当前位置和离线时区数据计算当地日出日落。经纬度仅缓存在本机，不上传；刷新失败时沿用缓存位置，无有效缓存时使用手动城市。";
+"NSLocationUsageDescription" = "晦明 使用当前位置和离线时区数据计算当地日出日落。经纬度仅缓存在本机，不上传；刷新失败时沿用缓存位置，无有效缓存时使用手动城市。";
+"NSLocationWhenInUseUsageDescription" = "晦明 使用当前位置和离线时区数据计算当地日出日落。经纬度仅缓存在本机，不上传；刷新失败时沿用缓存位置，无有效缓存时使用手动城市。";

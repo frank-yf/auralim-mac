@@ -59,13 +59,13 @@ struct LocalizationTests {
         #expect(hant.text("offset.later", 42) == "延後 42 分鐘")
         #expect(en.text("app.name") == "Auralim")
         #expect(en.text("slogan") == "Between light and dark.")
-        #expect(hans.text("slogan") == "日升而明，日落而暗")
-        #expect(hant.text("slogan") == "日升而明，日落而暗")
-        #expect(hans.text("app.name") == "晨昏")
-        #expect(hant.text("app.name") == "晨昏")
+        #expect(hans.text("slogan") == "晦明变化，循日而行。")
+        #expect(hant.text("slogan") == "晦明變化，循日而行。")
+        #expect(hans.text("app.name") == "晦明")
+        #expect(hant.text("app.name") == "晦明")
         #expect(Localizer(language: .system, preferredLanguages: ["fr-FR"]).text("app.name") == "Auralim")
         #expect(en.text("settings.title") == "Auralim Settings")
-        #expect(hant.text("settings.title") == "晨昏設定")
+        #expect(hant.text("settings.title") == "晦明設定")
         #expect(en.text("missing.key") == "missing.key")
         for city in City.all {
             for localizer in AppLanguage.allCases.filter({ $0 != .system }).map({ Localizer(language: $0) }) { #expect(localizer.cityName(city) != "city." + city.id) }

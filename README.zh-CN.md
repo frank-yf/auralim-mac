@@ -1,12 +1,16 @@
 [English](README.md) | [简体中文](README.zh-CN.md) | [官网](https://frank-yf.github.io/auralim-site/)
 
-# 晨昏 · Auralim
+# 晦明 · Auralim
 
-**日升而明，日落而暗**
+**晦明变化，循日而行。**
 
 *Between light and dark.*
 
-晨昏是一款 Swift + SwiftUI 原生 macOS 菜单栏应用，根据当地日出、日落切换系统浅色与深色外观。日出日落和时区查询均在本地完成，不依赖在线 API 或 macOS 自动外观计划。
+名称出自**欧阳修《醉翁亭记》**：
+
+> “**晦明**变化者，山间之朝暮也。”
+
+晦明是一款 Swift + SwiftUI 原生 macOS 菜单栏应用，根据当地日出、日落切换系统浅色与深色外观。日出日落和时区查询均在本地完成，不依赖在线 API 或 macOS 自动外观计划。
 
 ## 产品说明
 

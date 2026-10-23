@@ -1,9 +1,9 @@
-"app.name" = "晨昏";
-"settings.title" = "晨昏设置";
+"app.name" = "晦明";
+"settings.title" = "晦明设置";
 "language" = "语言";
 "language.system" = "跟随系统";
 "language.hint" = "语言选择立即生效，并保存在本机。";
-"slogan" = "日升而明，日落而暗";
+"slogan" = "晦明变化，循日而行。";
 "auto" = "自动";
 "paused" = "已暂停";
 "auto.switch" = "自动切换";
@@ -53,12 +53,12 @@
 "status.confirmed" = "已确认系统为%@外观";
 "status.attention" = "外观切换需要处理";
 "none" = "无";
-"error.permission" = "需要自动化权限：请在系统设置 → 隐私与安全性 → 自动化中允许 晨昏 控制 System Events，然后点击重试。";
+"error.permission" = "需要自动化权限：请在系统设置 → 隐私与安全性 → 自动化中允许 晦明 控制 System Events，然后点击重试。";
 "error.script" = "外观切换失败（%d）：%@";
 "error.verification" = "系统外观未达到预期，请重试。";
 "error.unknown" = "未知错误";
 "help.start.title" = "开始使用";
-"help.start.body" = "先在 macOS 系统设置 → 外观中选择浅色或深色，关闭系统自带的自动外观。选择城市和偏移，再启用自动切换。首次使用请允许 晨昏 控制 System Events。";
+"help.start.body" = "先在 macOS 系统设置 → 外观中选择浅色或深色，关闭系统自带的自动外观。选择城市和偏移，再启用自动切换。首次使用请允许 晦明 控制 System Events。";
 "help.offset.title" = "日出与日落偏移";
 "help.offset.body" = "日出和日落分别支持前后 120 分钟，精确到 1 分钟。滑块中点为准时；日出左侧延后转亮、右侧提前转亮，日落左侧延后转暗、右侧提前转暗。输入框负数提前、正数延后。有效输入立即预览，松开滑块、按回车或离开输入框后生效；归零可恢复准时切换。";
 "help.city.title" = "城市、时区与离线使用";
@@ -68,7 +68,7 @@
 "help.polar.title" = "特殊日期与计算精度";
 "help.polar.body" = "极昼默认保持浅色，极夜默认保持深色。偏移越过相邻切换边界时会裁剪或跳过对应时段，并在设置中提示。时间采用标准天文条件计算，山体遮挡、海拔和实际天气可能影响肉眼观察结果。";
 "help.privacy.title" = "权限与隐私";
-"help.privacy.body" = "如果切换失败，请在系统设置 → 隐私与安全性 → 自动化中允许 晨昏 控制 System Events，然后回到自动切换页重试。城市、偏移、语言与启用状态保存在本机；本应用不上传这些信息。";
+"help.privacy.body" = "如果切换失败，请在系统设置 → 隐私与安全性 → 自动化中允许 晦明 控制 System Events，然后回到自动切换页重试。城市、偏移、语言与启用状态保存在本机；本应用不上传这些信息。";
 "city.Asia/Shanghai" = "上海";
 "city.beijing" = "北京";
 "city.shenzhen" = "深圳";
@@ -94,7 +94,7 @@
 "login.error" = "无法更改登录时启动：%@";
 "login.settings" = "打开登录项设置…";
 "help.login.title" = "登录时启动";
-"help.login.body" = "在「自动切换」页启用「登录时启动」，即可在登录 macOS 后启动 晨昏，恢复已保存的城市、偏移和自动切换开关。若提示等待批准，请打开登录项设置并允许 晨昏。等待批准时开关保持打开，状态文字说明是否生效。关闭此开关会停止以后的登录启动，当前应用继续运行。";
+"help.login.body" = "在「自动切换」页启用「登录时启动」，即可在登录 macOS 后启动 晦明，恢复已保存的城市、偏移和自动切换开关。若提示等待批准，请打开登录项设置并允许 晦明。等待批准时开关保持打开，状态文字说明是否生效。关闭此开关会停止以后的登录启动，当前应用继续运行。";
 
 "location.mode" = "位置模式";
 "location.manual" = "手动城市";
@@ -106,7 +106,7 @@
 "location.using" = "当前坐标：%@";
 "location.manual.hint" = "使用已保存的手动城市。";
 "location.fallback" = "%@ 已使用手动城市：%@。";
-"location.error.denied" = "定位权限被拒绝，请在系统设置 → 隐私与安全性 → 定位服务中允许 晨昏。";
+"location.error.denied" = "定位权限被拒绝，请在系统设置 → 隐私与安全性 → 定位服务中允许 晦明。";
 "location.error.servicesDisabled" = "系统定位服务已关闭。";
 "location.error.unavailable" = "暂时无法获取位置。";
 "location.error.timeout" = "定位请求超时。";
