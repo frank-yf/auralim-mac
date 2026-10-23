@@ -39,7 +39,7 @@
 2. 将 `Auralim.app` 拖入「应用程序」，然后打开。应用入口位于菜单栏。
 3. 点击菜单栏图标，再打开「设置…」。
 
-v0.2.1 使用 ad-hoc 签名，未经 Apple 公证。首次打开可能被系统拦截；确认下载来源后，可按 [Apple 官方说明](https://support.apple.com/zh-cn/102445) 处理。下载校验文件随 Release 提供。
+当前安装包采用 ad-hoc 签名，未经 Apple 公证。首次打开可能被系统拦截；确认下载来源后，可按 [Apple 官方说明](https://support.apple.com/zh-cn/102445) 处理。下载校验文件随 Release 提供。
 
 ### 应用内更新
 

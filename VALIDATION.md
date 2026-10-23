@@ -1,5 +1,13 @@
 # 首版验证记录
 
+## v0.4.1 Release 发布（2026-10-23）
+
+- 应用代码与 `v0.4.1` 标签已推送，标签对应 `e259bc3b84c86f01c935afd49b45b151d5a38600`，版本 0.4.1 / build 29。Release 已公开并设为 Latest：https://github.com/frank-yf/auralim-mac/releases/tag/v0.4.1。
+- `AURALIM_UNIVERSAL=1 make build`、`make prepare-update` 通过。主程序同时包含 x86_64 / arm64，两者 Mach-O 最低系统版本均为 13.0；应用严格签名验证与简体/繁体「晦明」、英文 Auralim 打包显示名验证通过。
+- ZIP 7,720,121 字节，DMG 7,790,487 字节。DMG 完成 `hdiutil verify`、只读挂载与签名验证，挂载后的应用文件哈希/符号链接与 ZIP 解压内容一致，包含指向 /Applications 的安装链接。截图与旧版本安装副本未进入发布包。
+- 已上传 DMG、通用 ZIP、签名 `appcast.xml`、`SHA256SUMS.txt`。既有 Sparkle 公钥匹配，更新包与清单 EdDSA 验证通过；四个文件均以匿名公开 URL 下载并核对 SHA-256，`releases/latest/download/appcast.xml` 对应 0.4.1 / build 29。
+- 证据位于 `artifacts/release-0.4.1/`（build.log、update.log、dmg.log、upload.log、published.json、public-downloads.log）。本次只验证发布产物、签名与下载；未重新执行全量功能回归。Apple 芯片和 macOS 13 真机运行、真实升级安装与 Developer ID 公证不在本轮验证范围，安装包仍为 ad-hoc 签名。
+
 ## 0.4.1 中文品牌更新为晦明（2026-10-23）
 
 - 版本 0.4.1（build 29）。简体与繁体中文应用名统一为「晦明」；设置标题、菜单栏辅助功能名称、权限说明、帮助文案和原生交互验证脚本同步更新。英文及其他语言继续使用 Auralim，Bundle ID 与偏好标识保持不变。

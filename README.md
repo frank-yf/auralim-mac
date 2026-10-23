@@ -34,7 +34,7 @@ Requires **macOS 13 or later**. Release packages include both Intel and Apple si
 2. Drag `Auralim.app` into Applications, then open it. The app appears in the menu bar.
 3. Click the menu bar icon, then choose **Settings…**.
 
-v0.2.1 is ad-hoc signed and has not been notarized by Apple. macOS may block the first launch. After confirming the download source, follow [Apple's official instructions](https://support.apple.com/en-us/102445). Checksum files are included with the release.
+The current packages are ad-hoc signed and have not been notarized by Apple. macOS may block the first launch. After confirming the download source, follow [Apple's official instructions](https://support.apple.com/en-us/102445). Checksum files are included with the release.
 
 ### In-app updates
 
