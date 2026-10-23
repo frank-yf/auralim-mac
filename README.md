@@ -75,7 +75,7 @@ The automatic schedule keeps light appearance during polar day and dark appearan
 
 Manual city mode works entirely offline. Enabling automatic location for the first time requests macOS location permission. Automatic location uses macOS Location Services, which may require Wi-Fi or a network connection. Coordinates, the local time zone, and the fix timestamp are cached only on your Mac; Auralim never uploads location data. It requests a one-time fix every 3 hours without continuous tracking or a configurable refresh interval. Launch and wake reuse fresh cached data; manual refresh and system time-zone changes request a new fix immediately. Failed refreshes keep the cached location. Your saved manual city is used only when no valid cache exists. City, offset, and language settings are also stored locally.
 
-Closing settings keeps the app running. Choose Quit from the menu bar panel to stop future scheduling while keeping the current system appearance. Launch at login can be enabled in settings. The sun-and-moon animation is off by default and respects the system's Reduce Motion setting when enabled.
+Closing settings keeps the app running. Choose Quit from the menu bar panel to stop future scheduling while keeping the current system appearance. Launch at login can be enabled in settings. The sun-and-moon animation is off by default and respects the system's Reduce Motion setting when enabled. After wake, Auralim corrects the appearance immediately. If it differs from the appearance before sleep, the animation waits for the desktop to return or unlock and plays once.
 
 ## Development guide
 

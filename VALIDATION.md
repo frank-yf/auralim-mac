@@ -1,5 +1,15 @@
 # 首版验证记录
 
+## 0.3.3 唤醒动画延后播放（2026-10-23）
+
+- 版本 0.3.3（build 28）。收到睡眠通知时同步记录系统外观，唤醒时立即重新计算并校正主题；动画等待桌面恢复或解锁后，经一次性 0.6 秒稳定延迟再播放。
+- 只保存本轮唤醒的最新成功校验结果。即使 macOS 已先完成切换，也按睡眠前后外观决定是否播放；外观相同、系统托管而非应用控制、校正失败不会播放。重复唤醒、显示器与会话通知合并为一次效果。
+- 重新锁屏、显示器休眠、再次睡眠、退出应用、关闭动画及过期请求均不会播放旧效果。延后播放仍遵循「减少动态效果」，没有持续轮询。
+- `make test FILTER='WakeAppearanceTransitionTests|AppearanceTransitionTests|UpdateControllerTests/distributionConfigUsesSignedGitHubFeedAndDailyAutomaticDownloads'`：32 项定向测试通过。覆盖立即校正与显示就绪分离、锁屏解锁、系统提前切换、日出和日落方向、无变化、重复事件、动画开关、目标变更、失败与重试、慢请求与过期回调、退出/再次睡眠、就绪状态延迟更新以及减少动态效果。日志：`artifacts/wake-0.3.3/tests.log`。
+- `AURALIM_WAKE_UI_TESTS=1 make test FILTER=WakeTransitionPresenterTests`：1 项通过。在真实登录桌面创建日出和日落动画面板，验证就绪前不创建、就绪后可见且不抢焦点、重复事件不替换面板，以及结束后释放面板与视图。使用注入的唤醒状态，未修改系统深浅模式。日志：`artifacts/wake-0.3.3/presenter.log`。
+- `make build` 成功，构建脚本中的 `codesign --verify --deep --strict` 通过。本次产物为本机 x86_64 的 `dist/Auralim.app`，Info.plist 版本与构建号检查通过。日志：`artifacts/wake-0.3.3/build.log`。
+- 未执行全量回归，未实际触发系统睡眠、合盖或锁屏；真实休眠跨日及解锁的端到端时序仍需实机验收。未替换正在运行的已安装应用，未推送或发布 Release。
+
 ## 0.3.2 彩色托盘与月亮残边修复（2026-10-22）
 
 - 版本 0.3.2（build 27）。托盘改用无外圈的 SF Symbols：浅色 `sun.max.fill`、#F5A623；深色 `moon.fill`、#A7B7F5。生成 18pt 的 1x/2x 非模板位图并保留原始颜色。

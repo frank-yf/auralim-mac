@@ -19,7 +19,7 @@ final class AppModel: ObservableObject {
         didSet {
             guard transitionAnimationEnabled != oldValue else { return }
             defaults.set(transitionAnimationEnabled, forKey: "transitionAnimationEnabled")
-            if !transitionAnimationEnabled { transitionPlayer.stop() }
+            if !transitionAnimationEnabled { wakeTransition.suppressAnimation(); transitionPlayer.stop() }
         }
     }
     @Published private(set) var manualAppearance: Appearance?
@@ -98,6 +98,7 @@ final class AppModel: ObservableObject {
     private let defaults: UserDefaults
     private let controller: AppearanceApplying
     private let transitionPlayer: AppearanceTransitionPlaying
+    private var wakeTransition: WakeAppearanceTransition!
     private let loginItemController: LoginItemControlling
     private let locationController: LocationProviding
     private let clock: () -> Date
@@ -110,6 +111,7 @@ final class AppModel: ObservableObject {
     private var generation = 0
     private var failures = 0
     private var permissionBlocked = false
+    private var isShutdown = false
     var manualCity: City { City.all.first(where: { $0.id == cityID }) ?? City.all[0] }
     var city: City { locationMode == .automatic ? locatedCity ?? manualCity : manualCity }
 
@@ -123,7 +125,9 @@ final class AppModel: ObservableObject {
          loginItemController: LoginItemControlling? = nil,
          locationController: LocationProviding? = nil,
          systemSettings: @escaping @MainActor () -> SystemAppearanceSettings = { .current() },
-         transitionPlayer: AppearanceTransitionPlaying? = nil) {
+         transitionPlayer: AppearanceTransitionPlaying? = nil,
+         desktopReady: @escaping @MainActor () -> Bool = { WakeAppearanceTransition.desktopIsReady() },
+         wakeAnimationDelay: TimeInterval = 0.6) {
         self.defaults = defaults; self.controller = controller; self.clock = clock; self.enableTimers = enableTimers
         self.transitionPlayer = transitionPlayer ?? AppearanceTransitionController()
         self.loginItemController = loginItemController ?? LoginItemController()
@@ -149,8 +153,19 @@ final class AppModel: ObservableObject {
         transitionAnimationEnabled = defaults.bool(forKey: "transitionAnimationEnabled")
         locationMode = LocationMode(rawValue: defaults.string(forKey: "locationMode") ?? "manual") ?? .manual
         defaults.removeObject(forKey: "locationRefreshInterval")
-        observe(NSWorkspace.didWakeNotification, center: workspaceNotifications, refreshLocation: true)
-        observe(NSWorkspace.sessionDidBecomeActiveNotification, center: workspaceNotifications, refreshLocation: true)
+        wakeTransition = WakeAppearanceTransition(desktopReady: desktopReady, delay: wakeAnimationDelay) { [weak self] target in
+            guard let self, self.transitionAnimationEnabled else { return }
+            self.playTransition(target)
+        }
+        observeLifecycle(NSWorkspace.willSleepNotification, center: workspaceNotifications)
+        observeLifecycle(NSWorkspace.didWakeNotification, center: workspaceNotifications)
+        observeLifecycle(NSWorkspace.screensDidSleepNotification, center: workspaceNotifications)
+        observeLifecycle(NSWorkspace.screensDidWakeNotification, center: workspaceNotifications)
+        observeLifecycle(NSWorkspace.sessionDidResignActiveNotification, center: workspaceNotifications)
+        observeLifecycle(NSWorkspace.sessionDidBecomeActiveNotification, center: workspaceNotifications)
+        // Screen locking does not necessarily deactivate the workspace session.
+        observeLifecycle(Notification.Name("com.apple.screenIsLocked"), center: appearanceNotifications)
+        observeLifecycle(Notification.Name("com.apple.screenIsUnlocked"), center: appearanceNotifications)
         observe(.NSSystemClockDidChange, center: systemNotifications)
         observe(Notification.Name("AppleInterfaceThemeChangedNotification"), center: appearanceNotifications)
         observe(.NSSystemTimeZoneDidChange, center: systemNotifications, refreshLocation: true)
@@ -242,6 +257,39 @@ final class AppModel: ObservableObject {
         observers.append((center, token))
     }
 
+    private func observeLifecycle(_ name: Notification.Name, center: NotificationCenter) {
+        let token = center.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated {
+                guard let self, !self.isShutdown else { return }
+                switch name {
+                case NSWorkspace.willSleepNotification:
+                    self.refreshSystemAppearance()
+                    self.wakeTransition.willSleep(appearance: self.currentSystemAppearance)
+                    self.transitionPlayer.stop()
+                    return
+                case NSWorkspace.screensDidSleepNotification, NSWorkspace.sessionDidResignActiveNotification,
+                     Notification.Name("com.apple.screenIsLocked"):
+                    self.wakeTransition.desktopUnavailable()
+                    self.transitionPlayer.stop()
+                    return
+                case NSWorkspace.didWakeNotification:
+                    self.wakeTransition.didWake(fallback: self.currentSystemAppearance)
+                default:
+                    self.wakeTransition.desktopChanged()
+                }
+                self.reconcile()
+                if name == NSWorkspace.didWakeNotification || name == NSWorkspace.sessionDidBecomeActiveNotification {
+                    self.refreshLocation(force: false)
+                }
+            }
+        }
+        observers.append((center, token))
+    }
+
+    private func playTransition(_ target: Appearance) {
+        transitionPlayer.play(target, title: t(target == .light ? "transition.sunrise" : "transition.sunset"))
+    }
+
     private func configurationChanged() {
         generation += 1; failures = 0; permissionBlocked = false; failure = nil
         reconcile()
@@ -271,6 +319,8 @@ final class AppModel: ObservableObject {
     func retry() { configurationChanged() }
 
     func reconcile() {
+        guard !isShutdown else { return }
+        wakeTransition.invalidateVerification()
         timer?.invalidate(); timer = nil; scheduledCheck = nil
         let state = ScheduleEngine().evaluate(now: clock(), city: city, sunriseOffset: sunriseOffset, sunsetOffset: offset)
         schedule = state
@@ -279,6 +329,7 @@ final class AppModel: ObservableObject {
         refreshSystemAppearance()
         guard let target = enabled ? state.appearance : manualAppearance else {
             statusState = .paused
+            wakeTransition.cancelWake()
             return
         }
         if enabled { arm(at: state.nextCheck) }
@@ -288,6 +339,7 @@ final class AppModel: ObservableObject {
         controller.apply(target) { [weak self] result in
             guard let self else { return }
             self.isApplying = false
+            guard !self.isShutdown else { return }
             self.refreshSystemAppearance()
             guard self.enabled || self.manualAppearance != nil else { return }
             guard requestGeneration == self.generation else { self.reconcile(); return }
@@ -298,8 +350,8 @@ final class AppModel: ObservableObject {
             self.schedule = fresh
             switch result {
             case .success(let application):
-                if application.changed && self.transitionAnimationEnabled {
-                    self.transitionPlayer.play(target, title: self.t(target == .light ? "transition.sunrise" : "transition.sunset"))
+                if self.wakeTransition.verified(target, changed: application.changed) && self.transitionAnimationEnabled {
+                    self.playTransition(target)
                 }
                 self.failures = 0; self.failure = nil
                 self.statusState = .confirmed(target)
@@ -335,6 +387,8 @@ final class AppModel: ObservableObject {
     }
 
     func shutdown() {
+        isShutdown = true
+        wakeTransition.cancelWake()
         transitionPlayer.stop()
         locationController.onEvent = nil
         locationController.stop()
