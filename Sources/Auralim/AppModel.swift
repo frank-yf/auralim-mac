@@ -19,9 +19,36 @@ final class AppModel: ObservableObject {
         didSet {
             guard transitionAnimationEnabled != oldValue else { return }
             defaults.set(transitionAnimationEnabled, forKey: "transitionAnimationEnabled")
-            if !transitionAnimationEnabled { wakeTransition.suppressAnimation(); transitionPlayer.stop() }
+            if !transitionAnimationEnabled {
+                wakeTransition.suppressAnimation()
+                let hadPending = pendingTransition != nil && cancelPendingTransition()
+                if !hadPending { transitionPlayer.stop() }
+                if hadPending { reconcile(allowAnimation: false, allowCountdown: false) }
+            }
         }
     }
+    @Published var countdownEnabled: Bool {
+        didSet {
+            guard countdownEnabled != oldValue else { return }
+            defaults.set(countdownEnabled, forKey: "countdownEnabled")
+            if !countdownEnabled, pendingCountdown != nil {
+                cancelCountdown()
+                reconcile(allowCountdown: false)
+            }
+        }
+    }
+    @Published var countdownSeconds: Int {
+        didSet {
+            let clamped = min(120, max(1, countdownSeconds))
+            if clamped != countdownSeconds { countdownSeconds = clamped }
+            defaults.set(countdownSeconds, forKey: "countdownSeconds")
+            if countdownSeconds != oldValue, pendingCountdown != nil {
+                cancelCountdown()
+                reconcile()
+            }
+        }
+    }
+    @Published private(set) var countdownRemaining: Int?
     @Published private(set) var manualAppearance: Appearance?
     @Published private var systemSettings: SystemAppearanceSettings
     var currentSystemAppearance: Appearance { systemSettings.appearance }
@@ -68,6 +95,10 @@ final class AppModel: ObservableObject {
         }
     }
     var settingsStatus: String {
+        if cancelledCountdownTarget != nil { return t("countdown.cancelled") }
+        if let countdownRemaining, let target = pendingCountdown?.target {
+            return t("countdown.remaining", t(target == .light ? "light" : "dark"), countdownRemaining)
+        }
         if enabled || manualAppearance != nil {
             switch statusState {
             case .disabled, .paused: return t("checking")
@@ -95,10 +126,17 @@ final class AppModel: ObservableObject {
     @Published private var loginItemFailure: String?
     var loginItemError: String? { loginItemFailure.map { t("login.error", $0) } }
 
+    let debugPreview: DebugPreviewController
     private let defaults: UserDefaults
     private let controller: AppearanceApplying
     private let transitionPlayer: AppearanceTransitionPlaying
     private var wakeTransition: WakeAppearanceTransition!
+    private let countdownPresenter: CountdownPresenting
+    private var pendingCountdown: (id: UUID, target: Appearance)?
+    private var cancelledCountdownTarget: Appearance?
+    private var applyingDebugPreview = false
+    private var pendingTransition: (id: UUID, target: Appearance)?
+    private let desktopReady: @MainActor () -> Bool
     private let loginItemController: LoginItemControlling
     private let locationController: LocationProviding
     private let clock: () -> Date
@@ -127,9 +165,14 @@ final class AppModel: ObservableObject {
          systemSettings: @escaping @MainActor () -> SystemAppearanceSettings = { .current() },
          transitionPlayer: AppearanceTransitionPlaying? = nil,
          desktopReady: @escaping @MainActor () -> Bool = { WakeAppearanceTransition.desktopIsReady() },
-         wakeAnimationDelay: TimeInterval = 0.6) {
+         wakeAnimationDelay: TimeInterval = 0.6,
+         countdownPresenter: CountdownPresenting? = nil,
+         debugPreview: DebugPreviewController? = nil) {
         self.defaults = defaults; self.controller = controller; self.clock = clock; self.enableTimers = enableTimers
         self.transitionPlayer = transitionPlayer ?? AppearanceTransitionController()
+        self.debugPreview = debugPreview ?? DebugPreviewController(defaults: defaults)
+        self.desktopReady = desktopReady
+        self.countdownPresenter = countdownPresenter ?? CountdownController()
         self.loginItemController = loginItemController ?? LoginItemController()
         self.locationController = locationController ?? LocationController(defaults: defaults)
         self.preferredLanguages = preferredLanguages
@@ -150,6 +193,8 @@ final class AppModel: ObservableObject {
         // Solar Auto remains an explicit app preference. Otherwise each launch
         // starts from macOS, rather than reapplying a stale saved manual theme.
         manualAppearance = nil
+        countdownEnabled = defaults.bool(forKey: "countdownEnabled")
+        countdownSeconds = min(120, max(1, (defaults.object(forKey: "countdownSeconds") as? Int) ?? 10))
         transitionAnimationEnabled = defaults.bool(forKey: "transitionAnimationEnabled")
         locationMode = LocationMode(rawValue: defaults.string(forKey: "locationMode") ?? "manual") ?? .manual
         defaults.removeObject(forKey: "locationRefreshInterval")
@@ -261,18 +306,24 @@ final class AppModel: ObservableObject {
         let token = center.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated {
                 guard let self, !self.isShutdown else { return }
+                self.debugPreview.stop()
                 switch name {
                 case NSWorkspace.willSleepNotification:
+                    self.cancelPendingTransition()
                     self.refreshSystemAppearance()
                     self.wakeTransition.willSleep(appearance: self.currentSystemAppearance)
                     self.transitionPlayer.stop()
                     return
                 case NSWorkspace.screensDidSleepNotification, NSWorkspace.sessionDidResignActiveNotification,
                      Notification.Name("com.apple.screenIsLocked"):
+                    let hadPending = self.cancelPendingTransition()
                     self.wakeTransition.desktopUnavailable()
                     self.transitionPlayer.stop()
+                    if hadPending { self.reconcile(allowAnimation: false) }
                     return
                 case NSWorkspace.didWakeNotification:
+                    self.cancelPendingTransition()
+                    self.cancelledCountdownTarget = nil
                     self.wakeTransition.didWake(fallback: self.currentSystemAppearance)
                 default:
                     self.wakeTransition.desktopChanged()
@@ -287,7 +338,57 @@ final class AppModel: ObservableObject {
     }
 
     private func playTransition(_ target: Appearance) {
+        debugPreview.stop()
         transitionPlayer.play(target, title: t(target == .light ? "transition.sunrise" : "transition.sunset"))
+    }
+
+    @discardableResult
+    private func cancelPendingTransition() -> Bool {
+        let hadCountdown = pendingCountdown != nil
+        cancelCountdown()
+        guard pendingTransition != nil else { return hadCountdown }
+        pendingTransition = nil // Invalidate even a completion already queued by the player.
+        transitionPlayer.stop()
+        return true
+    }
+
+    private func cancelCountdown() {
+        pendingCountdown = nil
+        countdownRemaining = nil
+        countdownPresenter.stop()
+    }
+
+    private func startCountdown(_ target: Appearance) {
+        debugPreview.stop()
+        let id = UUID()
+        pendingCountdown = (id, target)
+        countdownRemaining = countdownSeconds
+        countdownPresenter.start(seconds: countdownSeconds, target: target, localizer: localizer,
+            tick: { [weak self] seconds in
+                guard let self, self.pendingCountdown?.id == id else { return }
+                self.countdownRemaining = seconds
+            }, finish: { [weak self] in
+                guard let self, !self.isShutdown, self.pendingCountdown?.id == id else { return }
+                self.cancelCountdown() // Release the small panel before the celestial animation.
+                self.reconcile(allowCountdown: false)
+            }, cancel: { [weak self] in
+                guard let self, self.pendingCountdown?.id == id else { return }
+                self.cancelledCountdownTarget = target
+                self.cancelCountdown()
+            })
+    }
+
+    private func animateBeforeApplying(_ target: Appearance) {
+        debugPreview.stop()
+        let id = UUID()
+        pendingTransition = (id, target)
+        transitionPlayer.play(target, title: t(target == .light ? "transition.sunrise" : "transition.sunset")) { [weak self] in
+            guard let self, !self.isShutdown, self.pendingTransition?.id == id else { return }
+            self.pendingTransition = nil
+            // Re-evaluate time, city, settings and actual appearance after the
+            // effect. Never apply a captured target that has become obsolete.
+            self.reconcile(allowAnimation: false, allowCountdown: false)
+        }
     }
 
     private func configurationChanged() {
@@ -304,7 +405,8 @@ final class AppModel: ObservableObject {
 
     func selectAppearanceMode(_ selection: AppearanceMode?) {
         guard let mode = selection else { return }
-        guard mode != appearanceMode || (!enabled && manualAppearance == nil) else { return }
+        guard mode != appearanceMode || cancelledCountdownTarget != nil || (!enabled && manualAppearance == nil) else { return }
+        cancelledCountdownTarget = nil
         statusState = .disabled
         if mode == .automatic {
             enabled = true
@@ -316,9 +418,33 @@ final class AppModel: ObservableObject {
         }
     }
 
-    func retry() { configurationChanged() }
+    var canPreviewDebug: Bool {
+        BuildFeatures.debugToolsEnabled && !isShutdown && !isApplying && pendingCountdown == nil && pendingTransition == nil
+            && !wakeTransition.requiresImmediateCorrection && desktopReady()
+    }
 
-    func reconcile() {
+    func previewDebug(_ action: DebugPreviewController.Action, target: Appearance) {
+        guard canPreviewDebug, debugPreview.enabled else { return }
+        // A wake effect may still be playing after its immediate correction.
+        // Release it before showing the independent preview presenters.
+        transitionPlayer.stop()
+        debugPreview.preview(action, target: target, seconds: countdownSeconds, localizer: localizer) { [weak self] target in
+            guard let self, self.canPreviewDebug, self.debugPreview.enabled else { return }
+            // Enter manual mode through normal verification/error handling, but
+            // do not repeat the countdown or animation that just finished.
+            self.applyingDebugPreview = true
+            defer { self.applyingDebugPreview = false }
+            self.manualAppearance = target
+            self.defaults.set(target.rawValue, forKey: "manualAppearance")
+            self.cancelledCountdownTarget = nil
+            if self.enabled { self.enabled = false }
+            else { self.configurationChanged() }
+        }
+    }
+
+    func retry() { cancelledCountdownTarget = nil; configurationChanged() }
+
+    func reconcile(allowAnimation: Bool = true, allowCountdown: Bool = true) {
         guard !isShutdown else { return }
         wakeTransition.invalidateVerification()
         timer?.invalidate(); timer = nil; scheduledCheck = nil
@@ -329,11 +455,36 @@ final class AppModel: ObservableObject {
         refreshSystemAppearance()
         guard let target = enabled ? state.appearance : manualAppearance else {
             statusState = .paused
+            cancelPendingTransition()
             wakeTransition.cancelWake()
             return
         }
         if enabled { arm(at: state.nextCheck) }
+        if cancelledCountdownTarget != target { cancelledCountdownTarget = nil }
+        if cancelledCountdownTarget == target && !wakeTransition.requiresImmediateCorrection { return }
+        let canCountdown = !applyingDebugPreview && allowCountdown && countdownEnabled && failures == 0
+            && !wakeTransition.requiresImmediateCorrection && desktopReady() && target != currentSystemAppearance
+        if let pendingCountdown {
+            if pendingCountdown.target == target && canCountdown { return }
+            cancelCountdown()
+        }
+        let canAnimate = !applyingDebugPreview && allowAnimation && transitionAnimationEnabled && failures == 0
+            && !wakeTransition.requiresImmediateCorrection && desktopReady()
+            && target != currentSystemAppearance
+        if let pendingTransition {
+            if pendingTransition.target == target && canAnimate { return }
+            cancelPendingTransition()
+        }
         guard !permissionBlocked, !isApplying else { return }
+        if canCountdown {
+            startCountdown(target)
+            return
+        }
+        if canAnimate {
+            animateBeforeApplying(target)
+            return
+        }
+        if target != currentSystemAppearance { debugPreview.stop() }
         isApplying = true
         let requestGeneration = generation
         controller.apply(target) { [weak self] result in
@@ -350,9 +501,9 @@ final class AppModel: ObservableObject {
             self.schedule = fresh
             switch result {
             case .success(let application):
-                if self.wakeTransition.verified(target, changed: application.changed) && self.transitionAnimationEnabled {
-                    self.playTransition(target)
-                }
+                // Ordinary switches have already animated. Only wake recovery
+                // can schedule a post-correction effect after the desktop returns.
+                _ = self.wakeTransition.verified(target, changed: application.changed)
                 self.failures = 0; self.failure = nil
                 self.statusState = .confirmed(target)
                 if self.enabled { self.arm(at: fresh.nextCheck) }
@@ -388,6 +539,8 @@ final class AppModel: ObservableObject {
 
     func shutdown() {
         isShutdown = true
+        debugPreview.stop()
+        cancelPendingTransition()
         wakeTransition.cancelWake()
         transitionPlayer.stop()
         locationController.onEvent = nil

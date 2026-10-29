@@ -141,3 +141,23 @@
 "update.error.network" = "업데이트 확인 또는 다운로드에 실패했습니다. 다시 시도하세요.";
 "update.error.validation" = "업데이트 검증에 실패했습니다. 업데이트는 설치되지 않았습니다.";
 "update.error.installation" = "업데이트를 설치할 수 없습니다. 다시 시도하거나 GitHub에서 다운로드하세요.";
+
+"countdown.enabled" = "전환 전 카운트다운";
+"countdown.seconds" = "초";
+"countdown.remaining" = "%@ 모드로 전환까지 %d초";
+"countdown.now" = "지금 전환";
+"countdown.cancel" = "이번 전환 건너뛰기";
+"countdown.cancelled" = "이번 전환이 취소되었습니다";
+
+"debug.enabled" = "디버그 모드";
+"debug.hint" = "미리보기만 실행하며 시스템 모드는 변경하지 않습니다.";
+"debug.target" = "미리보기 대상";
+"debug.countdown" = "카운트다운";
+"debug.animation" = "애니메이션";
+"debug.sequence" = "전체 미리보기";
+"debug.stop" = "중지";
+"debug.remaining" = "%@ 미리보기까지 %d초";
+"debug.continue" = "지금 계속";
+"debug.apply" = "미리보기 종료 후 시스템 모드 전환";
+"debug.applyHint" = "미리보기 후 선택한 시스템 모드로 전환하고 수동 모드를 사용합니다.";
+"countdown.acknowledge" = "확인";

@@ -141,3 +141,23 @@
 "update.error.network" = "Не удалось проверить или загрузить обновление. Повторите попытку.";
 "update.error.validation" = "Проверка обновления не пройдена. Обновление не установлено.";
 "update.error.installation" = "Не удалось установить обновление. Повторите попытку или скачайте с GitHub.";
+
+"countdown.enabled" = "Обратный отсчёт перед переключением";
+"countdown.seconds" = "секунд";
+"countdown.remaining" = "Переход на %@ через %d секунд";
+"countdown.now" = "Переключить сейчас";
+"countdown.cancel" = "Пропустить";
+"countdown.cancelled" = "Это переключение отменено";
+
+"debug.enabled" = "Режим отладки";
+"debug.hint" = "Только предпросмотр. Оформление системы не изменяется.";
+"debug.target" = "Цель предпросмотра";
+"debug.countdown" = "Отсчёт";
+"debug.animation" = "Анимация";
+"debug.sequence" = "Весь процесс";
+"debug.stop" = "Остановить";
+"debug.remaining" = "Предпросмотр %@ через %d секунд";
+"debug.continue" = "Продолжить";
+"debug.apply" = "Менять оформление системы после предпросмотра";
+"debug.applyHint" = "После предпросмотра включить выбранное оформление в ручном режиме.";
+"countdown.acknowledge" = "Понятно";

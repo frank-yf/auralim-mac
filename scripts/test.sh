@@ -9,4 +9,7 @@ frameworks="$(xcode-select -p)/Library/Developer/Frameworks"
 if [ -d "$frameworks/Testing.framework" ]; then
     flags=(-Xswiftc -F -Xswiftc "$frameworks" -Xlinker -F -Xlinker "$frameworks" -Xlinker -rpath -Xlinker "$frameworks" -Xlinker -rpath -Xlinker "$(xcode-select -p)/Library/Developer/usr/lib")
 fi
+if [ "${AURALIM_DEBUG_TOOLS:-0}" = 1 ]; then
+    flags+=(-Xswiftc -DAURALIM_DEBUG_TOOLS)
+fi
 swift test --disable-sandbox --disable-xctest --enable-swift-testing --cache-path "$PWD/.build/cache" "${flags[@]}" "$@"

@@ -147,3 +147,23 @@
 "update.error.network" = "Could not check or download the update. Please retry.";
 "update.error.validation" = "Update verification failed. The update was not installed.";
 "update.error.installation" = "Could not install the update. Please retry or download from GitHub.";
+
+"countdown.enabled" = "Switch countdown";
+"countdown.seconds" = "seconds";
+"countdown.remaining" = "Switching to %@ in %d seconds";
+"countdown.now" = "Switch now";
+"countdown.cancel" = "Skip this switch";
+"countdown.cancelled" = "This switch was cancelled";
+
+"debug.enabled" = "Debug mode";
+"debug.hint" = "Preview only. System appearance stays unchanged.";
+"debug.target" = "Preview target";
+"debug.countdown" = "Countdown";
+"debug.animation" = "Animation";
+"debug.sequence" = "Full preview";
+"debug.stop" = "Stop preview";
+"debug.remaining" = "Preview %@ in %d seconds";
+"debug.continue" = "Continue now";
+"debug.apply" = "Switch system appearance after preview";
+"debug.applyHint" = "After preview, switch to the selected appearance in manual mode.";
+"countdown.acknowledge" = "Got it";

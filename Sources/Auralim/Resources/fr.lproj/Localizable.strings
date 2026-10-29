@@ -141,3 +141,23 @@
 "update.error.network" = "Impossible de rechercher ou de télécharger la mise à jour. Réessayez.";
 "update.error.validation" = "La vérification a échoué. La mise à jour n’a pas été installée.";
 "update.error.installation" = "Impossible d’installer la mise à jour. Réessayez ou téléchargez depuis GitHub.";
+
+"countdown.enabled" = "Compte à rebours avant changement";
+"countdown.seconds" = "secondes";
+"countdown.remaining" = "Passage à %@ dans %d secondes";
+"countdown.now" = "Changer maintenant";
+"countdown.cancel" = "Passer";
+"countdown.cancelled" = "Ce changement a été annulé";
+
+"debug.enabled" = "Mode débogage";
+"debug.hint" = "Aperçu uniquement. L’apparence du système reste inchangée.";
+"debug.target" = "Cible de l’aperçu";
+"debug.countdown" = "Compte à rebours";
+"debug.animation" = "Animation";
+"debug.sequence" = "Aperçu complet";
+"debug.stop" = "Arrêter";
+"debug.remaining" = "Aperçu %@ dans %d secondes";
+"debug.continue" = "Continuer";
+"debug.apply" = "Changer l’apparence du système après l’aperçu";
+"debug.applyHint" = "Après l’aperçu, activer l’apparence choisie en mode manuel.";
+"countdown.acknowledge" = "Compris";

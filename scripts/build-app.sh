@@ -2,7 +2,16 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 export CLANG_MODULE_CACHE_PATH="$PWD/.build/clang-cache"
-flags=(-c release --disable-sandbox --cache-path "$PWD/.build/cache")
+build_root="$PWD/.build"
+app="$PWD/dist/Auralim.app"
+if [ "${AURALIM_DEBUG_TOOLS:-0}" = 1 ]; then
+    build_root="$PWD/.build/debug-tools"
+    app="$PWD/dist/debug/Auralim Debug.app"
+fi
+flags=(-c release --disable-sandbox --scratch-path "$build_root" --cache-path "$PWD/.build/cache")
+if [ "${AURALIM_DEBUG_TOOLS:-0}" = 1 ]; then
+    flags+=(-Xswiftc -DAURALIM_DEBUG_TOOLS)
+fi
 if [ "${AURALIM_UNIVERSAL:-0}" = 1 ]; then
     swift build "${flags[@]}" --arch x86_64
     intel_bin=$(swift build "${flags[@]}" --arch x86_64 --show-bin-path)
@@ -13,7 +22,6 @@ else
     swift build "${flags[@]}"
     bin_dir=$(swift build "${flags[@]}" --show-bin-path)
 fi
-app="$PWD/dist/Auralim.app"
 for previous in "$PWD/dist/DuskShift.app" "$PWD/dist/Dusk Shift.app"; do
     if [ ! -e "$app" ] && [ -d "$previous" ]; then mv "$previous" "$app"; fi
 done
@@ -26,6 +34,15 @@ else
     cp "$bin_dir/Auralim" "$app/Contents/MacOS/Auralim"
 fi
 cp Resources/Info.plist "$app/Contents/Info.plist"
+/usr/libexec/PlistBuddy -c 'Add :AuralimDebugBuild bool false' "$app/Contents/Info.plist"
+if [ "${AURALIM_DEBUG_TOOLS:-0}" = 1 ]; then
+    /usr/libexec/PlistBuddy -c 'Set :AuralimDebugBuild true' "$app/Contents/Info.plist"
+    /usr/libexec/PlistBuddy -c 'Set :CFBundleIdentifier app.duskshift.mac.debug' "$app/Contents/Info.plist"
+    /usr/libexec/PlistBuddy -c 'Set :CFBundleName Auralim Debug' "$app/Contents/Info.plist"
+    /usr/libexec/PlistBuddy -c 'Set :CFBundleDisplayName Auralim Debug' "$app/Contents/Info.plist"
+    /usr/libexec/PlistBuddy -c 'Set :SUEnableAutomaticChecks false' "$app/Contents/Info.plist"
+    /usr/libexec/PlistBuddy -c 'Set :SUAutomaticallyUpdate false' "$app/Contents/Info.plist"
+fi
 cp Resources/Auralim.icns "$app/Contents/Resources/Auralim.icns"
 cp -R "$bin_dir/Auralim_Auralim.bundle" "$app/Contents/Resources/"
 cp -R "$bin_dir/Auralim_AuralimCore.bundle" "$app/Contents/Resources/"
@@ -33,11 +50,18 @@ for localization in Resources/*.lproj; do
     language=$(basename "$localization" .lproj)
     mkdir -p "$app/Contents/Resources/$language.lproj"
     cp "$localization/InfoPlist.strings" "$app/Contents/Resources/$language.lproj/"
+    if [ "${AURALIM_DEBUG_TOOLS:-0}" = 1 ]; then
+        display_name="Auralim Debug"
+        if [ "$language" = zh-Hans ]; then display_name="晦明 调试版"; fi
+        if [ "$language" = zh-Hant ]; then display_name="晦明 除錯版"; fi
+        /usr/libexec/PlistBuddy -c "Set :CFBundleName $display_name" "$app/Contents/Resources/$language.lproj/InfoPlist.strings"
+        /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName $display_name" "$app/Contents/Resources/$language.lproj/InfoPlist.strings"
+    fi
 done
 # Frameworks contain version symlinks and signed helpers: preserve their layout.
 framework="$app/Contents/Frameworks/Sparkle.framework"
 rm -rf "$framework"
-ditto .build/artifacts/sparkle/Sparkle/Sparkle.xcframework/macos-arm64_x86_64/Sparkle.framework "$framework"
+ditto "$build_root"/artifacts/sparkle/Sparkle/Sparkle.xcframework/macos-arm64_x86_64/Sparkle.framework "$framework"
 identity="${AURALIM_SIGN_IDENTITY:-${DUSK_SHIFT_SIGN_IDENTITY:--}}"
 entitlements=Resources/Auralim.entitlements
 if [ "$identity" = - ]; then

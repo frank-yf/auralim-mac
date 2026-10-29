@@ -1,8 +1,8 @@
 .DEFAULT_GOAL := help
-.PHONY: help build icon run clean test test-sliders test-ui test-ui-layout test-appearance-mode test-ui-mode test-transitions test-ui-transitions prepare-update test-updates test-update-install test-update-ui test-update-quit test-update-signature test-localization-ui
+.PHONY: help build icon run clean test test-sliders test-ui test-ui-layout test-appearance-mode test-ui-mode test-transitions test-ui-transitions prepare-update test-updates test-update-install test-update-ui test-update-quit test-update-signature test-localization-ui test-countdown test-ui-countdown test-debug test-ui-debug build-debug run-debug prepare-debug-release prepare-release test-ui-sky prepare-dmg
 
 help:
-	@printf '%s\n' 'make build                     构建并签名 dist/Auralim.app（请先退出运行中的旧版）' 'make prepare-update            为通用版应用生成 GitHub Release 更新包和签名 appcast' 'make test-updates              只验证更新状态、重启入口和多语文案' 'make test-update-ui            验证设置底部真实点击并截图' 'make test-update-install       使用隔离应用验证真实安装与重启' 'make test-update-quit          验证正常退出时安装且不重启' 'make test-update-signature     验证篡改签名清单被拒绝' 'make icon                      从 Resources/Icons/Auralim.png 重新生成应用图标' 'make run                       打开已构建的应用' 'make clean                     删除 dist/、artifacts/ 内的 .app 副本，保留安装包和其他文件' 'make test FILTER=SuiteOrTest    只运行指定套件或测试；必须提供 FILTER' 'make test-sliders              只验证滑块渐变渲染（深浅模式）' 'make test-ui                   只验证滑块与输入框交互并截图（需要辅助功能及屏幕录制权限）' 'make test-localization-ui      验证十二语原生选择、持久化、设置与菜单并截图' 'make test-ui-layout            只验证菜单栏和设置的深浅外观、语言与滚动布局并截图' 'make test-appearance-mode      只验证外观模式、请求协调及相关布局' 'make test-ui-mode              只验证托盘与设置三段切换及同步' 'make test-transitions          只验证切换动画触发、实际外观结果与请求协调' 'make test-ui-transitions       只验证居中半屏日月过渡、动画开关及释放'
+	@printf '%s\n' 'make build-debug               构建含调试入口的独立应用' 'make run-debug                 打开本地调试版' 'make prepare-debug-release     构建通用调试版及 GitHub Release ZIP' 'make prepare-release           准备正式版更新及通用调试版 Release 附件' 'make build                     构建并签名 dist/Auralim.app（请先退出运行中的旧版）' 'make prepare-update            为通用版应用生成 GitHub Release 更新包和签名 appcast' 'make test-updates              只验证更新状态、重启入口和多语文案' 'make test-update-ui            验证设置底部真实点击并截图' 'make test-update-install       使用隔离应用验证真实安装与重启' 'make test-update-quit          验证正常退出时安装且不重启' 'make test-update-signature     验证篡改签名清单被拒绝' 'make icon                      从 Resources/Icons/Auralim.png 重新生成应用图标' 'make run                       打开已构建的应用' 'make clean                     删除 dist/、artifacts/ 内的 .app 副本，保留安装包和其他文件' 'make test FILTER=SuiteOrTest    只运行指定套件或测试；必须提供 FILTER' 'make test-sliders              只验证滑块渐变渲染（深浅模式）' 'make test-ui                   只验证滑块与输入框交互并截图（需要辅助功能及屏幕录制权限）' 'make test-localization-ui      验证十二语原生选择、持久化、设置与菜单并截图' 'make test-ui-layout            只验证菜单栏和设置的深浅外观、语言与滚动布局并截图' 'make test-appearance-mode      只验证外观模式、请求协调及相关布局' 'make test-ui-mode              只验证托盘与设置三段切换及同步' 'make test-transitions          只验证切换动画触发、实际外观结果与请求协调' 'make test-ui-transitions       只验证居中扩散天空与日月过渡、动画开关及释放' 'make test-countdown            只验证切换前倒计时和唤醒行为' 'make test-ui-countdown         验证原生倒计时设置、按钮与浮层释放' 'make test-debug                只验证调试预览、正常切换协调及文案' 'make test-ui-debug             验证调试模式原生控件与预览按钮'
 
 build:
 	bash scripts/build-app.sh
@@ -45,7 +45,7 @@ test-ui-mode:
 
 
 test-transitions:
-	$(MAKE) test FILTER='AppearanceTransitionTests|SettingsPresentationTests/offsetOnlyPublishesEditedSectionAndTimeTextDuringAndAfterVerification'
+	$(MAKE) test FILTER='WebsiteTransitionTests|BeforeAppearanceTransitionTests|AppearanceTransitionTests|WakeAppearanceTransitionTests|SettingsPresentationTests/offsetOnlyPublishesEditedSectionAndTimeTextDuringAndAfterVerification'
 
 test-ui-transitions:
 	@mkdir -p artifacts/appearance-transition-0.1.17
@@ -71,3 +71,39 @@ test-update-signature:
 
 test-localization-ui:
 	AURALIM_LOCALIZATION_UI_TESTS=1 AURALIM_LOCALIZATION_UI_OUTPUT="$(CURDIR)/artifacts/localization-0.3.1" $(MAKE) test FILTER=LocalizationInteractionTests
+
+# Focused countdown validation; does not run unrelated app suites.
+test-countdown:
+	$(MAKE) test FILTER='AppearanceCountdownTests|BeforeAppearanceTransitionTests|WakeAppearanceTransitionTests'
+
+test-ui-countdown:
+	AURALIM_COUNTDOWN_UI_TESTS=1 AURALIM_COUNTDOWN_UI_OUTPUT="$(CURDIR)/artifacts/countdown-ui" $(MAKE) test FILTER='AppearanceCountdownTests/nativePanelDeadlineButtonsAndSettingsControls|AppearanceCountdownTests/realTimerReleasesPanelBeforeCompletingExactlyOnce|AppearanceCountdownTests/nativeCountdownThenAnimationReleasesBothPanelsBeforeApplying|AppearanceCountdownTests/acknowledgingPanelKeepsCountdownAndCompletesTheSwitch'
+
+test-debug:
+	AURALIM_DEBUG_TOOLS=1 $(MAKE) test FILTER='DebugPreviewTests|BuildFeaturesTests|LocalizationTests/catalogsAreCompleteAndFormatsMatch'
+
+test-ui-debug:
+	AURALIM_DEBUG_TOOLS=1 AURALIM_DEBUG_UI_TESTS=1 AURALIM_DEBUG_UI_OUTPUT="$(CURDIR)/artifacts/debug-ui" $(MAKE) test FILTER='DebugPreviewTests/settingsButtonsAndNativePreviewSequence|DebugPreviewTests/nativeFullSequenceReleasesPanelsWithoutChangingAppearance|DebugPreviewTests/nativeOptInAppliesOnlyAfterBothPanelsAreReleased|DebugPreviewTests/sharedPanelActionsRespectPreviewSwitchAndAcknowledgement'
+
+build-debug:
+	AURALIM_DEBUG_TOOLS=1 bash scripts/build-app.sh
+
+run-debug:
+	@test -d "dist/debug/Auralim Debug.app" || { printf '%s\n' '请先执行 make build-debug'; exit 1; }
+	open "dist/debug/Auralim Debug.app"
+
+prepare-debug-release:
+	AURALIM_UNIVERSAL=1 $(MAKE) build-debug
+	bash scripts/prepare-debug-release.sh
+
+prepare-release:
+	AURALIM_UNIVERSAL=1 $(MAKE) build
+	$(MAKE) prepare-update
+	$(MAKE) prepare-dmg
+	$(MAKE) prepare-debug-release
+
+test-ui-sky:
+	AURALIM_WEBSITE_TRANSITION_UI_TESTS=1 AURALIM_WEBSITE_TRANSITION_UI_OUTPUT="$(CURDIR)/artifacts/native-sky-ui" $(MAKE) test FILTER=WebsiteTransitionTests
+
+prepare-dmg:
+	bash scripts/prepare-dmg.sh

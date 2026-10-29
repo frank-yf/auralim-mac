@@ -80,7 +80,11 @@
 
 手动城市模式可完全离线使用。首次启用自动定位时，应用请求系统定位权限。自动定位使用 macOS 定位服务，可能需要 Wi-Fi 或网络；经纬度、对应时区和定位时间仅缓存在本机，不上传位置数据。应用每 3 小时单次刷新，不持续定位，也不提供刷新间隔设置。启动或唤醒时复用未过期缓存；用户主动刷新或系统时区变化时立即请求新位置。刷新失败时继续使用缓存位置，没有有效缓存时才使用已保存的手动城市。城市、偏移和语言等设置同样保存在本机。
 
-关闭设置窗口后应用继续运行；从菜单栏选择「退出」会停止后续调度，并保留当前系统外观。「登录时启动」可在设置中开启。日月过渡动画默认关闭，开启后也会遵循系统「减少动态效果」设置。唤醒后立即校正外观；如果睡眠前后外观不同，等待桌面恢复或解锁后再播放一次动画。
+关闭设置窗口后应用继续运行；从菜单栏选择「退出」会停止后续调度，并保留当前系统外观。「登录时启动」可在设置中开启。日月过渡动画默认关闭，开启后也会遵循系统「减少动态效果」设置。原生动画采用官网桌面效果：居中的 96% × 84% 天空区域、最高 78% 不透明度、扩散穹顶边缘、昼夜天空渐变，以及浓背景内的放大日月轨迹。手动与计划到点切换会先播放动画，结束后再切换系统外观；关闭动画或启用「减少动态效果」时跳过动画。唤醒后立即校正外观；如果睡眠前后外观不同，等待桌面恢复或解锁后再播放一次动画。
+
+可选切换前倒计时（默认关闭，1～120 秒，默认 10 秒）：原生倒计时浮层，提供「跳过本次切换」「知道了」「立即切换」，不发送系统通知，也不请求通知权限。唤醒时仍立即校正外观。「跳过本次切换」会跳过当前目标，直到日程进入下一个目标或你再次选择外观模式。「知道了」仅收起面板，倒计时继续。调试预览使用相同按钮，并遵循是否切换系统外观的开关。
+
+正式构建隐藏调试入口。调试构建的设置中提供倒计时、日出/日落动画及完整流程预览。「预览结束后切换系统外观」每次启动默认关闭；开启后，浮层释放后按选定外观进入手动模式。预览使用当前设置的倒计时秒数；正常切换、睡眠和锁屏会结束预览。
 
 ## 开发指南
 
@@ -110,6 +114,18 @@ AURALIM_SIGN_IDENTITY="Developer ID Application: Your Name (TEAMID)" make build
 
 正式分发还需完成 Apple 公证。通用包需要分别编译 Intel 与 Apple 芯片版本，合并后重新签名。构建产物、缓存和验证输出分别位于 `dist/`、`.build/`、`artifacts/`，均不纳入 Git。
 
+### 调试构建与 Release 附件
+
+```sh
+make build-debug
+make run-debug
+make prepare-debug-release
+```
+
+`make build-debug` 显式使用 `AURALIM_DEBUG_TOOLS` 编译，生成 `dist/debug/Auralim Debug.app`。调试版使用独立标识 `app.duskshift.mac.debug`、偏好设置和权限，并关闭正式版自动更新。正式构建无法通过修改偏好或运行时环境变量显示调试入口。
+
+`make prepare-debug-release` 构建 Intel / Apple 芯片通用调试版，生成 `dist/debug-releases/<版本>/Auralim-<版本>-debug-macos-universal.zip` 和 `SHA256SUMS-debug.txt`。将这两个文件与正式版附件上传到同一个 GitHub Release；调试 ZIP 不进入正式版 `appcast.xml`。该命令只准备本地文件，不发布，也不覆盖已有安装包。
+
 ### 准备 GitHub 更新发布
 
 ```sh
@@ -117,11 +133,13 @@ AURALIM_UNIVERSAL=1 make build
 make prepare-update
 ```
 
+`make prepare-release` 一次准备正式版通用 DMG、签名更新 ZIP/清单/校验文件及通用调试版安装包，供同一个 GitHub Release 使用；不上传或发布。
+
 该流程生成 `dist/updates/<版本>/` 下的通用 ZIP、签名 `appcast.xml` 和 `SHA256SUMS.txt`。将三个文件一起上传到 GitHub Release `v<版本>`，并将该正式 Release 设为 Latest。清单或安装包缺失会导致客户端检查/下载失败；不能只上传 DMG。脚本不会创建或发布 GitHub Release，也不会覆盖已生成的同版本文件。
 
 更新签名私钥保存在 macOS 登录钥匙串的 Sparkle 账户 `app.duskshift.mac`，公钥随应用分发，私钥不进入源码或发布包。迁移发布机器前使用 Sparkle `generate_keys` 工具安全备份/导入该账户密钥；新机器不能生成另一个密钥替代，否则现有用户将拒绝更新。生成脚本会检查公私钥是否匹配，并验证更新包与清单的签名。
 
-默认 ad-hoc 本地构建保留上游 Sparkle 框架签名，并只对 ad-hoc 主程序关闭库验证，以便加载不同签名身份的框架。指定 `AURALIM_SIGN_IDENTITY` 后使用 Developer ID 从内向外重签框架和安装助手，并保持库验证；正式分发仍需 Apple 公证。应用 bundle ID 保持不变以沿用偏好，真实系统权限连续性需要用正式签名链验收。
+默认 ad-hoc 本地构建保留上游 Sparkle 框架签名，并只对 ad-hoc 主程序关闭库验证，以便加载不同签名身份的框架。指定 `AURALIM_SIGN_IDENTITY` 后使用 Developer ID 从内向外重签框架和安装助手，并保持库验证；正式分发仍需 Apple 公证。正式版应用 bundle ID 保持不变以沿用偏好，真实系统权限连续性需要用正式签名链验收。
 
 ### 项目结构
 
@@ -160,7 +178,11 @@ make test FILTER=LocalizationTests
 | `make test-appearance-mode` | 外观模式、系统状态读取与请求协调 |
 | `make test-ui-mode` | 托盘与设置的模式切换和同步 |
 | `make test-transitions` | 动画触发、系统结果与请求协调 |
-| `make test-ui-transitions` | 半屏日月过渡、动画开关与资源释放 |
+| `make test-ui-transitions` | 扩散天空与日月过渡、动画开关与资源释放 |
+| `make test-countdown` | 倒计时取消和唤醒补偿 |
+| `make test-ui-countdown` | 原生倒计时设置、按钮和浮层释放 |
+| `make test-debug` | 调试预览协调与多语言文案 |
+| `make test-ui-debug` | 原生调试设置与预览按钮 |
 
 原生界面测试需要 macOS 登录会话、辅助功能和屏幕录制权限，使用临时偏好与替身系统服务。真实外观授权、睡眠唤醒、登录启动、定位权限和跨时区旅行需另行实机验收。
 

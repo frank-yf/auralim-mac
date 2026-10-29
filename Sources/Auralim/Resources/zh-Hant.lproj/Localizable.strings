@@ -147,3 +147,23 @@
 "update.error.network" = "檢查或下載更新失敗，請重試。";
 "update.error.validation" = "更新驗證失敗，未安裝該更新。";
 "update.error.installation" = "安裝更新失敗，請重試或前往 GitHub 下載。";
+
+"countdown.enabled" = "切換前倒數";
+"countdown.seconds" = "秒";
+"countdown.remaining" = "切換為%@：剩餘 %d 秒";
+"countdown.now" = "立即切換";
+"countdown.cancel" = "跳過本次切換";
+"countdown.cancelled" = "已取消本次切換";
+
+"debug.enabled" = "除錯模式";
+"debug.hint" = "僅預覽效果，不切換系統外觀";
+"debug.target" = "預覽目標";
+"debug.countdown" = "預覽倒數";
+"debug.animation" = "預覽動畫";
+"debug.sequence" = "完整預覽";
+"debug.stop" = "停止預覽";
+"debug.remaining" = "預覽%@：剩餘 %d 秒";
+"debug.continue" = "立即繼續";
+"debug.apply" = "預覽結束後切換系統外觀";
+"debug.applyHint" = "預覽結束後切換至選定外觀，並進入手動模式";
+"countdown.acknowledge" = "知道了";

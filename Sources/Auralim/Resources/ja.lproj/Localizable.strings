@@ -141,3 +141,23 @@
 "update.error.network" = "更新の確認またはダウンロードに失敗しました。再試行してください。";
 "update.error.validation" = "更新の検証に失敗しました。この更新はインストールしていません。";
 "update.error.installation" = "更新をインストールできません。再試行するか GitHub からダウンロードしてください。";
+
+"countdown.enabled" = "切り替え前のカウントダウン";
+"countdown.seconds" = "秒";
+"countdown.remaining" = "%@に切り替えるまで %d 秒";
+"countdown.now" = "今すぐ切り替え";
+"countdown.cancel" = "今回スキップ";
+"countdown.cancelled" = "今回の切り替えをキャンセルしました";
+
+"debug.enabled" = "デバッグモード";
+"debug.hint" = "プレビューのみ。システムの外観は変わりません。";
+"debug.target" = "プレビュー対象";
+"debug.countdown" = "カウントダウン";
+"debug.animation" = "アニメーション";
+"debug.sequence" = "全体プレビュー";
+"debug.stop" = "停止";
+"debug.remaining" = "%@のプレビューまで %d 秒";
+"debug.continue" = "今すぐ続行";
+"debug.apply" = "プレビュー後にシステムの外観を切り替える";
+"debug.applyHint" = "プレビュー後、手動モードで選択した外観に切り替えます。";
+"countdown.acknowledge" = "了解";

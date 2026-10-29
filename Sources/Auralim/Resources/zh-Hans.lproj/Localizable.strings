@@ -147,3 +147,23 @@
 "update.error.network" = "检查或下载更新失败，请重试。";
 "update.error.validation" = "更新校验失败，未安装该更新。";
 "update.error.installation" = "安装更新失败，请重试或前往 GitHub 下载。";
+
+"countdown.enabled" = "切换前倒计时";
+"countdown.seconds" = "秒";
+"countdown.remaining" = "切换为%@：剩余 %d 秒";
+"countdown.now" = "立即切换";
+"countdown.cancel" = "跳过本次切换";
+"countdown.cancelled" = "已取消本次切换";
+
+"debug.enabled" = "调试模式";
+"debug.hint" = "仅预览效果，不切换系统外观";
+"debug.target" = "预览目标";
+"debug.countdown" = "预览倒计时";
+"debug.animation" = "预览动画";
+"debug.sequence" = "完整预览";
+"debug.stop" = "停止预览";
+"debug.remaining" = "预览%@：剩余 %d 秒";
+"debug.continue" = "立即继续";
+"debug.apply" = "预览结束后切换系统外观";
+"debug.applyHint" = "预览结束后切换到选定外观，并进入手动模式";
+"countdown.acknowledge" = "知道了";

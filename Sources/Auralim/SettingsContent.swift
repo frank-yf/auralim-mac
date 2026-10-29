@@ -32,6 +32,9 @@ struct SettingsContent: View {
                     location
                     offset(sunrise: true)
                     offset(sunrise: false)
+                    #if AURALIM_DEBUG_TOOLS
+                    DebugSettingsView(model: model, preview: model.debugPreview)
+                    #endif
                 }
                 .padding(.horizontal, 24).padding(.bottom, 18).padding(.top, 1)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -62,6 +65,19 @@ struct SettingsContent: View {
                 Toggle(model.t("transition.enabled"), isOn: Binding(get: { model.transitionAnimationEnabled }, set: { model.transitionAnimationEnabled = $0 }))
                     .toggleStyle(.switch).controlSize(.small).font(.caption)
                     .accessibilityIdentifier("appearance-animation")
+                HStack {
+                    Toggle(model.t("countdown.enabled"), isOn: Binding(get: { model.countdownEnabled }, set: { model.countdownEnabled = $0 }))
+                        .toggleStyle(.switch).controlSize(.small).font(.caption)
+                        .accessibilityIdentifier("countdown-enabled")
+                    Spacer()
+                    TextField("", value: Binding(get: { model.countdownSeconds }, set: { model.countdownSeconds = $0 }), format: .number.precision(.fractionLength(0)).grouping(.never))
+                        .textFieldStyle(.roundedBorder).frame(width: 54)
+                        .accessibilityLabel(model.t("countdown.seconds"))
+                        .accessibilityIdentifier("countdown-seconds")
+                    Stepper("", value: Binding(get: { model.countdownSeconds }, set: { model.countdownSeconds = $0 }), in: 1...120)
+                        .labelsHidden().accessibilityLabel(model.t("countdown.seconds"))
+                    Text(model.t("countdown.seconds")).font(.caption).foregroundStyle(.secondary)
+                }
                 if let error = value.error {
                     HStack(alignment: .top, spacing: 12) {
                         DuskNotice(text: error, warning: true)

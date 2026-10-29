@@ -11,12 +11,12 @@ struct AuralimApp: App {
     init() {
         let updater = UpdateController()
         _updater = StateObject(wrappedValue: updater)
-        updater.start()
+        if !BuildFeatures.debugToolsEnabled { updater.start() }
     }
 
     var body: some Scene {
         MenuBarExtra {
-            MenuContent(model: model, openSettings: { settings.show(model: model, updater: updater) })
+            MenuContent(model: model, openSettings: { settings.show(model: model, updater: BuildFeatures.debugToolsEnabled ? nil : updater) })
         }
         label: {
             Image(nsImage: MenuBarIcon.image(for: model.currentSystemAppearance))

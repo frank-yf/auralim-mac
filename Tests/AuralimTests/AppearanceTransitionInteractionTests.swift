@@ -19,7 +19,7 @@ private final class TransitionUIAppearance: AppearanceApplying {
 struct AppearanceTransitionInteractionTests {
     @MainActor
     @Test(.enabled(if: ProcessInfo.processInfo.environment["DUSK_SHIFT_TRANSITION_UI_TESTS"] == "1"))
-    func halfScreenTransitionsRespectTheSettingsSwitchAndRelease() throws {
+    func wideSkyTransitionsRespectTheSettingsSwitchAndRelease() throws {
         let app = NSApplication.shared
         app.setActivationPolicy(.regular)
         app.finishLaunching()
@@ -30,7 +30,7 @@ struct AppearanceTransitionInteractionTests {
         let model = AppModel(defaults: defaults, controller: controller, enableTimers: false,
             workspaceNotifications: NotificationCenter(), systemNotifications: NotificationCenter(),
             loginItemController: FakeLoginItem(), locationController: FakeLocation(),
-            systemSettings: { .init(mode: .light, appearance: .light) }, transitionPlayer: player)
+            systemSettings: { .init(mode: controller.current == .dark ? .dark : .light, appearance: controller.current) }, transitionPlayer: player, desktopReady: { true })
         defer { model.shutdown(); defaults.removePersistentDomain(forName: suite) }
         let output = URL(fileURLWithPath: ProcessInfo.processInfo.environment["DUSK_SHIFT_TRANSITION_UI_OUTPUT"] ?? "/private/tmp/auralim-transition-ui")
         try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
@@ -47,6 +47,9 @@ struct AppearanceTransitionInteractionTests {
         }
         func choose(_ window: NSWindow, _ segment: Int) throws {
             window.makeKeyAndOrderFront(nil)
+            app.activate(ignoringOtherApps: true)
+            settle(0.12) // WindowServer focus changes are asynchronous.
+            #expect(app.keyWindow === window)
             let control = try picker(window)
             control.selectedSegment = segment
             #expect(control.sendAction(control.action, to: control.target))
@@ -60,7 +63,10 @@ struct AppearanceTransitionInteractionTests {
         }
         func checkFrame(_ panel: NSPanel) throws {
             let screen = try #require(NSScreen.screens.first { NSMouseInRect(NSEvent.mouseLocation, $0.frame, false) } ?? NSScreen.main)
-            #expect(panel.frame == HalfScreenTransition.frame(on: screen.frame))
+            let expected = AppearanceTransitionLayout.frame(on: screen.frame)
+            // AppKit aligns fractional screen percentages to backing pixels.
+            #expect(abs(panel.frame.minX - expected.minX) <= 1 && abs(panel.frame.minY - expected.minY) <= 1)
+            #expect(abs(panel.frame.width - expected.width) <= 1 && abs(panel.frame.height - expected.height) <= 1)
             #expect(panel.contentView?.bounds.size == panel.frame.size)
             #expect(panel.ignoresMouseEvents && !panel.canBecomeKey && !panel.canBecomeMain)
             #expect(descendants(panel.contentView!).compactMap { $0 as? NSTextField }.isEmpty)
@@ -76,7 +82,7 @@ struct AppearanceTransitionInteractionTests {
         defer { menu.close() }
         settle()
         let switches = descendants(settings.contentView!).compactMap { $0 as? NSSwitch }
-        #expect(switches.count == 2)
+        #expect(switches.count == 3 + (BuildFeatures.debugToolsEnabled ? 1 : 0))
         let animationSwitch = try #require(switches.first)
         #expect(animationSwitch.state == .off && !model.transitionAnimationEnabled)
         try choose(menu, 2)
@@ -93,27 +99,35 @@ struct AppearanceTransitionInteractionTests {
         let sunset = try #require(player.panel)
         try checkFrame(sunset)
         #expect(sunset.title == "日落 · 切换至深色" && app.keyWindow === menu)
+        #expect(controller.requests == beforeEnable && controller.current == .light)
         settle(1.15)
+        #expect(controller.current == .light)
         #expect(try picker(settings).selectedSegment == 2)
         try capture(sunset, "sunset-middle")
         settle(2.4)
         #expect(player.panel == nil && !sunset.isVisible && sunset.contentView == nil)
+        #expect(controller.current == .dark && controller.requests == beforeEnable + 1)
         try choose(settings, 0)
         let sunrise = try #require(player.panel)
         try checkFrame(sunrise)
         #expect(sunrise.title == "日出 · 切换至浅色" && app.keyWindow === settings)
+        #expect(controller.current == .dark)
         settle(1.15)
+        #expect(controller.current == .dark)
         #expect(try picker(menu).selectedSegment == 0)
         try capture(sunrise, "sunrise-middle")
         settle(2.4)
         #expect(player.panel == nil && !sunrise.isVisible && sunrise.contentView == nil)
+        #expect(controller.current == .light)
         model.reconcile()
         #expect(player.panel == nil)
         try choose(menu, 2)
         let replaced = try #require(player.panel)
         try choose(settings, 0)
+        #expect(player.panel == nil && !replaced.isVisible && replaced.contentView == nil)
+        #expect(controller.current == .light) // Reversing to the actual appearance cancels the effect.
+        try choose(menu, 2)
         let latest = try #require(player.panel)
-        #expect(latest !== replaced && !replaced.isVisible && replaced.contentView == nil)
         settle(0.35)
         #expect(player.panel === latest && latest.isVisible)
         let beforeDisable = controller.requests
@@ -122,9 +136,9 @@ struct AppearanceTransitionInteractionTests {
         #expect(!model.transitionAnimationEnabled && animationSwitch.state == .off)
         #expect(!defaults.bool(forKey: "transitionAnimationEnabled"))
         #expect(player.panel == nil && !latest.isVisible && latest.contentView == nil)
-        #expect(controller.requests == beforeDisable && model.appearanceMode == .light)
-        try choose(menu, 2)
-        #expect(player.panel == nil && model.appearanceMode == .dark)
+        #expect(controller.requests == beforeDisable + 1 && model.appearanceMode == .dark && controller.current == .dark)
+        try choose(settings, 0)
+        #expect(player.panel == nil && model.appearanceMode == .light && controller.current == .light)
         // This now omits the large effect entirely for Reduce Motion.
         let reduced = AppearanceTransitionController(reduceMotion: { true })
         reduced.play(.dark, title: "日落")
@@ -144,13 +158,13 @@ struct AppearanceTransitionInteractionTests {
         preview.setContentSize(NSSize(width: 1000, height: 400))
         defer { preview.close() }
         for appearance in [Appearance.light, .dark] {
-            for (name, progress) in [("start", 0.0), ("middle", 0.5), ("end", 1.0)] {
+            for (name, progress) in [("start", 0.16), ("middle", 0.42), ("end", 0.72)] {
                 preview.contentView = NSHostingView(rootView: SolarTransitionScene(progress: progress, appearance: appearance).background(Color(red: 0.30, green: 0.33, blue: 0.38)))
                 preview.orderFront(nil)
                 settle()
                 try capture(preview, "scene-" + (appearance == .light ? "sunrise-" : "sunset-") + name)
             }
         }
-        print("Verified default off; native settings switch on/off and no appearance requests; centered half-area display geometry; menu sunset/settings sunrise; focus and click-through; replacement, immediate cancellation and release; reduced motion skips; no replay. Actual system appearance is faked")
+        print("Verified default off; native settings switch on/off and no appearance requests; centered wide-sky display geometry; menu sunset/settings sunrise before system apply; focus and click-through; reversal cancellation, immediate apply when disabled, and release; reduced motion skips; no replay. Actual system appearance is faked")
     }
 }

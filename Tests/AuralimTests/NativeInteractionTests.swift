@@ -58,7 +58,8 @@ struct NativeInteractionTests {
             [view] + view.subviews.flatMap(descendants)
         }
         let sliders = descendants(host).compactMap { $0 as? NSSlider }
-        let fields = descendants(host).compactMap { $0 as? NSTextField }.filter { $0.isEditable }
+        // The appearance card also contains the countdown duration input.
+        let fields = Array(descendants(host).compactMap { $0 as? NSTextField }.filter { $0.isEditable }.suffix(2))
         print("Native controls:", sliders.count, fields.count, "active:", app.isActive, "key:", window.isKeyWindow)
         #expect(sliders.count == 2)
         #expect(fields.count == 2)
@@ -276,7 +277,7 @@ struct NativeInteractionTests {
         #expect(scrollView.contentView.bounds.origin == scrollBeforeOffset)
         #expect(fields[1].stringValue == otherInputBeforeOffset)
         #expect(descendants(host).compactMap { $0 as? NSSlider }[1] === sliders[1])
-        #expect(descendants(host).compactMap { $0 as? NSTextField }.filter { $0.isEditable }[1] === fields[1])
+        #expect(Array(descendants(host).compactMap { $0 as? NSTextField }.filter { $0.isEditable }.suffix(2))[1] === fields[1])
         appearance.hold = false
         appearance.pending?(.success(AppearanceApplication(changed: false)))
         settle()

@@ -34,6 +34,10 @@ final class WakeAppearanceTransition {
         }
     }
 
+    // Recovery must correct appearance before any optional animation. The
+    // same applies while the screen/session is unavailable.
+    var requiresImmediateCorrection: Bool { sleeping || waking || desktopBlocked }
+
     func willSleep(appearance: Appearance) {
         cancelWake()
         beforeSleep = appearance

@@ -141,3 +141,23 @@
 "update.error.network" = "Não foi possível buscar ou baixar a atualização. Tente novamente.";
 "update.error.validation" = "A verificação falhou. A atualização não foi instalada.";
 "update.error.installation" = "Não foi possível instalar a atualização. Tente novamente ou baixe pelo GitHub.";
+
+"countdown.enabled" = "Contagem regressiva antes da mudança";
+"countdown.seconds" = "segundos";
+"countdown.remaining" = "Mudança para %@ em %d segundos";
+"countdown.now" = "Mudar agora";
+"countdown.cancel" = "Pular";
+"countdown.cancelled" = "Esta mudança foi cancelada";
+
+"debug.enabled" = "Modo de depuração";
+"debug.hint" = "Apenas prévia. A aparência do sistema não muda.";
+"debug.target" = "Destino da prévia";
+"debug.countdown" = "Contagem";
+"debug.animation" = "Animação";
+"debug.sequence" = "Prévia completa";
+"debug.stop" = "Parar";
+"debug.remaining" = "Prévia de %@ em %d segundos";
+"debug.continue" = "Continuar";
+"debug.apply" = "Mudar a aparência do sistema após a prévia";
+"debug.applyHint" = "Após a prévia, ativar a aparência escolhida no modo manual.";
+"countdown.acknowledge" = "Entendi";

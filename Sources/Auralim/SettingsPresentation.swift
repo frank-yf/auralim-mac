@@ -20,6 +20,8 @@ struct SettingsLocale: Equatable {
 
 struct AppearanceSettings: Equatable {
     let mode: AppearanceMode?
+    let countdownEnabled: Bool
+    let countdownSeconds: Int
     let animationEnabled: Bool
     let status: String
     let error: String?
@@ -108,7 +110,7 @@ final class SettingsPresentation: ObservableObject {
 
         init(_ model: AppModel) {
             locale = SettingsLocale(selection: model.language, resolved: model.localizer.language)
-            appearance = AppearanceSettings(mode: model.appearanceMode, animationEnabled: model.transitionAnimationEnabled, status: model.settingsStatus, error: model.errorMessage)
+            appearance = AppearanceSettings(mode: model.appearanceMode, countdownEnabled: model.countdownEnabled, countdownSeconds: model.countdownSeconds, animationEnabled: model.transitionAnimationEnabled, status: model.settingsStatus, error: model.errorMessage)
             location = LocationSettings(mode: model.locationMode, cityID: model.cityID,
                 timeZoneID: model.city.timeZoneID,
                 status: model.locationMode == .automatic ? model.locationStatus : nil,

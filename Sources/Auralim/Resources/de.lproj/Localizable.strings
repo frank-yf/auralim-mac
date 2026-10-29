@@ -141,3 +141,23 @@
 "update.error.network" = "Update konnte nicht geprüft oder geladen werden. Bitte erneut versuchen.";
 "update.error.validation" = "Updateprüfung fehlgeschlagen. Das Update wurde nicht installiert.";
 "update.error.installation" = "Update konnte nicht installiert werden. Bitte erneut versuchen oder von GitHub herunterladen.";
+
+"countdown.enabled" = "Countdown vor dem Wechsel";
+"countdown.seconds" = "Sekunden";
+"countdown.remaining" = "Wechsel zu %@ in %d Sekunden";
+"countdown.now" = "Jetzt wechseln";
+"countdown.cancel" = "Überspringen";
+"countdown.cancelled" = "Dieser Wechsel wurde abgebrochen";
+
+"debug.enabled" = "Debugmodus";
+"debug.hint" = "Nur Vorschau. Das Systemerscheinungsbild bleibt unverändert.";
+"debug.target" = "Vorschauziel";
+"debug.countdown" = "Countdown";
+"debug.animation" = "Animation";
+"debug.sequence" = "Gesamte Vorschau";
+"debug.stop" = "Stopp";
+"debug.remaining" = "Vorschau %@ in %d Sekunden";
+"debug.continue" = "Jetzt fortfahren";
+"debug.apply" = "Systemerscheinungsbild nach der Vorschau wechseln";
+"debug.applyHint" = "Nach der Vorschau im manuellen Modus zur gewählten Darstellung wechseln.";
+"countdown.acknowledge" = "Verstanden";

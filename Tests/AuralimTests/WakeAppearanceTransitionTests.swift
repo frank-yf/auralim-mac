@@ -25,7 +25,7 @@ private final class WakeAppearance: AppearanceApplying {
 @MainActor
 private final class WakePlayer: AppearanceTransitionPlaying {
     var played: [Appearance] = []
-    func play(_ appearance: Appearance, title: String) { played.append(appearance) }
+    func play(_ appearance: Appearance, title: String, completion: @escaping @MainActor () -> Void) { played.append(appearance); completion() }
     func stop() {}
 }
 

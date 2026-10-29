@@ -3,6 +3,10 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 app="${AURALIM_UPDATE_APP:-$PWD/dist/Auralim.app}"
 info="$app/Contents/Info.plist"
+if [ "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$info")" != app.duskshift.mac ] ||
+   [ "$(/usr/libexec/PlistBuddy -c 'Print :AuralimDebugBuild' "$info" 2>/dev/null || true)" = true ]; then
+    printf '%s\n' 'Debug apps must not enter the stable update feed; use make prepare-debug-release.' >&2; exit 1
+fi
 tools="$PWD/.build/artifacts/sparkle/Sparkle/bin"
 account=app.duskshift.mac
 version=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$info")

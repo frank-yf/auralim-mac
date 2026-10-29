@@ -141,3 +141,23 @@
 "update.error.network" = "Update zoeken of downloaden mislukt. Probeer opnieuw.";
 "update.error.validation" = "Updatecontrole mislukt. De update is niet geïnstalleerd.";
 "update.error.installation" = "Update installeren mislukt. Probeer opnieuw of download via GitHub.";
+
+"countdown.enabled" = "Aftellen vóór omschakelen";
+"countdown.seconds" = "seconden";
+"countdown.remaining" = "Omschakelen naar %@ over %d seconden";
+"countdown.now" = "Nu omschakelen";
+"countdown.cancel" = "Overslaan";
+"countdown.cancelled" = "Deze omschakeling is geannuleerd";
+
+"debug.enabled" = "Debugmodus";
+"debug.hint" = "Alleen een voorbeeld. De systeemweergave verandert niet.";
+"debug.target" = "Voorbeelddoel";
+"debug.countdown" = "Aftellen";
+"debug.animation" = "Animatie";
+"debug.sequence" = "Volledig voorbeeld";
+"debug.stop" = "Stoppen";
+"debug.remaining" = "Voorbeeld %@ over %d seconden";
+"debug.continue" = "Doorgaan";
+"debug.apply" = "Systeemweergave na het voorbeeld wijzigen";
+"debug.applyHint" = "Na het voorbeeld de gekozen weergave in handmatige modus toepassen.";
+"countdown.acknowledge" = "Begrepen";

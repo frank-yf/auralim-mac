@@ -75,7 +75,11 @@ The automatic schedule keeps light appearance during polar day and dark appearan
 
 Manual city mode works entirely offline. Enabling automatic location for the first time requests macOS location permission. Automatic location uses macOS Location Services, which may require Wi-Fi or a network connection. Coordinates, the local time zone, and the fix timestamp are cached only on your Mac; Auralim never uploads location data. It requests a one-time fix every 3 hours without continuous tracking or a configurable refresh interval. Launch and wake reuse fresh cached data; manual refresh and system time-zone changes request a new fix immediately. Failed refreshes keep the cached location. Your saved manual city is used only when no valid cache exists. City, offset, and language settings are also stored locally.
 
-Closing settings keeps the app running. Choose Quit from the menu bar panel to stop future scheduling while keeping the current system appearance. Launch at login can be enabled in settings. The sun-and-moon animation is off by default and respects the system's Reduce Motion setting when enabled. After wake, Auralim corrects the appearance immediately. If it differs from the appearance before sleep, the animation waits for the desktop to return or unlock and plays once.
+Closing settings keeps the app running. Choose Quit from the menu bar panel to stop future scheduling while keeping the current system appearance. Launch at login can be enabled in settings. The sun-and-moon animation is off by default and respects the system's Reduce Motion setting when enabled. The native animation matches the website desktop effect: a centered 96% × 84% sky overlay at up to 78% opacity, blurred dome edges, day/night sky interpolation, and enlarged sun/moon on an inner orbit. For manual and scheduled switches, the animation finishes before macOS appearance changes. Disabling animation or using Reduce Motion skips the animation. After wake, Auralim corrects the appearance immediately. If it differs from the appearance before sleep, the animation waits for the desktop to return or unlock and plays once.
+
+Optional pre-switch countdown (off by default; 1–120 seconds, default 10): a native countdown panel with Skip this switch / Got it / Switch now; no system notification or notification permission is needed. Wake recovery still corrects the appearance immediately. Skip this switch skips the current target until the schedule changes target or you select a mode again. Got it dismisses the panel while the countdown continues. Debug previews use the same buttons and honor the optional system-appearance switch.
+
+Debug controls are hidden in standard builds. Debug builds expose countdown, sunrise/sunset animation, and full-sequence previews in settings. “Switch system appearance after preview” is off at each launch; enabling it applies the chosen appearance in manual mode after the preview panels are released. Previews use the configured countdown duration. Normal switches, sleep, and lock stop active previews.
 
 ## Development guide
 
@@ -105,6 +109,18 @@ AURALIM_SIGN_IDENTITY="Developer ID Application: Your Name (TEAMID)" make build
 
 Production distribution also requires Apple notarization. For a universal package, build Intel and Apple silicon versions separately, combine them, and sign again. Build products, caches, and verification output are stored in `dist/`, `.build/`, and `artifacts/`; these directories are excluded from Git.
 
+### Debug builds and release assets
+
+```sh
+make build-debug
+make run-debug
+make prepare-debug-release
+```
+
+`make build-debug` explicitly compiles with `AURALIM_DEBUG_TOOLS` and produces `dist/debug/Auralim Debug.app`. Its bundle ID is `app.duskshift.mac.debug`, with separate preferences and permissions. The debug app disables stable automatic updates. Editing preferences or runtime environment variables cannot expose debug controls in a standard binary.
+
+`make prepare-debug-release` builds a universal debug app and creates `dist/debug-releases/<version>/Auralim-<version>-debug-macos-universal.zip` and `SHA256SUMS-debug.txt`. Upload both alongside the standard assets to the same GitHub Release. Debug ZIPs must never enter the stable `appcast.xml`. This command only prepares local assets and refuses to overwrite existing archives.
+
 ### Preparing a GitHub update release
 
 ```sh
@@ -112,11 +128,13 @@ AURALIM_UNIVERSAL=1 make build
 make prepare-update
 ```
 
+`make prepare-release` prepares the standard universal DMG, signed update ZIP/appcast/checksums, and the universal debug archive for one GitHub Release. It does not upload or publish.
+
 Upload the universal ZIP, signed `appcast.xml` and `SHA256SUMS.txt` from `dist/updates/<version>/` to the stable GitHub Release `v<version>`, and mark it Latest. A DMG alone is not enough. The script validates versions, architecture, signing-key continuity and signatures; it does not publish releases or overwrite existing version artifacts.
 
 The update private key stays in the login Keychain under Sparkle account `app.duskshift.mac`; only its public key ships in the app. Securely back up/import that account with Sparkle's `generate_keys` tool before moving release machines. Generating a different key will break updates for existing installations.
 
-Local ad-hoc builds preserve upstream Sparkle signatures and disable library validation only for the ad-hoc host. Developer ID builds re-sign nested helpers and the framework inside-out and retain library validation; production distribution still requires notarization. The bundle ID remains unchanged to preserve preferences; permission continuity requires testing with the production signing identity.
+Local ad-hoc builds preserve upstream Sparkle signatures and disable library validation only for the ad-hoc host. Developer ID builds re-sign nested helpers and the framework inside-out and retain library validation; production distribution still requires notarization. The standard app’s bundle ID remains unchanged to preserve preferences; permission continuity requires testing with the production signing identity.
 
 ### Project structure
 
@@ -155,7 +173,11 @@ make test FILTER=LocalizationTests
 | `make test-appearance-mode` | Appearance modes, system state reads, and request coordination |
 | `make test-ui-mode` | Appearance mode switching and synchronization between both panels |
 | `make test-transitions` | Animation triggers, system results, and request coordination |
-| `make test-ui-transitions` | Half-screen sun-and-moon transitions, the animation toggle, and resource cleanup |
+| `make test-ui-transitions` | Diffuse sky and sun-and-moon transitions, the animation toggle, and resource cleanup |
+| `make test-countdown` | Countdown cancellation and wake recovery |
+| `make test-ui-countdown` | Native countdown controls, buttons, and panel cleanup |
+| `make test-debug` | Debug preview coordination and translated text |
+| `make test-ui-debug` | Native debug controls and preview buttons |
 
 Native UI tests require a macOS login session, Accessibility permission, and Screen Recording permission. They use temporary preferences and mock system services. Actual appearance authorization, sleep/wake recovery, launch at login, location permissions, and travel across time zones require separate on-device validation.
 

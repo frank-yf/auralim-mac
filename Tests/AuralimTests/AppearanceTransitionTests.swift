@@ -36,7 +36,7 @@ private final class TransitionRecorder: AppearanceTransitionPlaying {
     var appearances: [Appearance] = []
     var titles: [String] = []
     var stops = 0
-    func play(_ appearance: Appearance, title: String) { appearances.append(appearance); titles.append(title) }
+    func play(_ appearance: Appearance, title: String, completion: @escaping @MainActor () -> Void) { appearances.append(appearance); titles.append(title); completion() }
     func stop() { stops += 1 }
 }
 
@@ -54,7 +54,7 @@ struct AppearanceTransitionTests {
         let model = AppModel(defaults: store, controller: controller, clock: clock ?? { day }, enableTimers: false,
             workspaceNotifications: NotificationCenter(), systemNotifications: NotificationCenter(),
             loginItemController: FakeLoginItem(), locationController: FakeLocation(),
-            systemSettings: { .init(mode: .light, appearance: .light) }, transitionPlayer: player)
+            systemSettings: { .init(mode: controller.current == .dark ? .dark : .light, appearance: controller.current) }, transitionPlayer: player, desktopReady: { true })
         defer { model.shutdown(); store.removePersistentDomain(forName: suite) }
         body(model, controller, player)
     }
@@ -79,7 +79,7 @@ struct AppearanceTransitionTests {
         if case .success = AppearanceApplication.verified(malformed, target: .light) { Issue.record("Malformed response accepted") }
     }
 
-    @Test func manualSwitchesPlaySunsetThenSunriseAfterSuccess() {
+    @Test func manualSwitchesPlaySunsetThenSunriseBeforeApplying() {
         withModel { model, _, player in
             #expect(player.appearances.isEmpty)
             model.selectAppearanceMode(.dark)
@@ -102,15 +102,15 @@ struct AppearanceTransitionTests {
         }
     }
 
-    @Test func failedSwitchDoesNotAnimateAndSuccessfulRetryCanAnimate() {
+    @Test func failedSwitchShowsErrorAfterAnimationAndRetryCanAnimate() {
         withModel { model, controller, player in
             controller.failure = AppearanceFailure(message: "Denied", permissionDenied: true)
             model.selectAppearanceMode(.dark)
-            #expect(player.appearances.isEmpty)
+            #expect(player.appearances == [.dark])
             #expect(model.errorMessage != nil)
             controller.failure = nil
             model.retry()
-            #expect(player.appearances == [.dark])
+            #expect(player.appearances == [.dark, .dark])
             #expect(model.errorMessage == nil)
         }
     }
@@ -120,11 +120,11 @@ struct AppearanceTransitionTests {
             controller.hold = true
             model.selectAppearanceMode(.dark)
             model.selectAppearanceMode(.light)
-            #expect(player.appearances.isEmpty)
-            controller.finish() // Obsolete Dark request completed; latest Light is now pending.
-            #expect(player.appearances.isEmpty)
+            #expect(player.appearances == [.dark])
+            controller.finish() // Obsolete Dark request completed; latest Light animates before applying.
+            #expect(player.appearances == [.dark, .light])
             controller.finish()
-            #expect(player.appearances == [.light])
+            #expect(player.appearances == [.dark, .light])
         }
     }
 
@@ -176,7 +176,7 @@ struct AppearanceTransitionTests {
             AppModel(defaults: store, controller: controller, clock: { day }, enableTimers: false,
                 workspaceNotifications: NotificationCenter(), systemNotifications: NotificationCenter(),
                 loginItemController: FakeLoginItem(), locationController: FakeLocation(),
-                systemSettings: { .init(mode: .light, appearance: .light) }, transitionPlayer: player)
+                systemSettings: { .init(mode: controller.current == .dark ? .dark : .light, appearance: controller.current) }, transitionPlayer: player, desktopReady: { true })
         }
         let model = makeModel(controller, player), state = SettingsPresentation(model: model)
         defer { model.shutdown(); store.removePersistentDomain(forName: suite) }
@@ -218,10 +218,10 @@ struct AppearanceTransitionTests {
             model.transitionAnimationEnabled = false
             controller.finish()
             #expect(controller.current == .dark && model.appearanceMode == .dark)
-            #expect(player.appearances.isEmpty && player.stops == 1)
+            #expect(player.appearances == [.dark] && player.stops == 1)
             let count = controller.requests
             model.transitionAnimationEnabled = true
-            #expect(player.appearances.isEmpty && controller.requests == count)
+            #expect(player.appearances == [.dark] && controller.requests == count)
         }
     }
 
@@ -240,14 +240,14 @@ struct AppearanceTransitionTests {
         }
     }
 
-    @Test func halfScreenFrameIsCenteredAndCoversHalfTheDisplayArea() {
+    @Test func wideFrameIsCenteredAndMatchesWebsiteCoverage() {
         for screen in [CGRect(x: 0, y: 0, width: 1920, height: 1080),
                        CGRect(x: -2560, y: -360, width: 2560, height: 1440),
                        CGRect(x: 100, y: 1200, width: 1512, height: 982)] {
-            let frame = HalfScreenTransition.frame(on: screen)
+            let frame = AppearanceTransitionLayout.frame(on: screen)
             #expect(abs(frame.midX - screen.midX) < 0.001)
             #expect(abs(frame.midY - screen.midY) < 0.001)
-            #expect(abs(frame.width * frame.height / (screen.width * screen.height) - 0.5) < 0.00001)
+            #expect(abs(frame.width * frame.height / (screen.width * screen.height) - 0.8064) < 0.00001)
             #expect(frame.minX > screen.minX && frame.maxX < screen.maxX)
             #expect(frame.minY > screen.minY && frame.maxY < screen.maxY)
         }
@@ -259,9 +259,9 @@ struct AppearanceTransitionTests {
         let east = CelestialOrbit.position(progress: 0, rising: true, size: size)
         let noon = CelestialOrbit.position(progress: 1, rising: true, size: size)
         let west = CelestialOrbit.position(progress: 1, rising: false, size: size)
-        #expect(east.x < size.width / 2 && east.y > horizon)
+        #expect(east.x < size.width / 2 && east.y < horizon)
         #expect(abs(noon.x - size.width / 2) < 0.001 && noon.y < horizon)
-        #expect(west.x > size.width / 2 && west.y > horizon)
+        #expect(west.x > size.width / 2 && west.y < horizon)
         #expect(CelestialOrbit.position(progress: 0, rising: false, size: size) == noon)
         // At dawn the Sun rises / Moon sets; at dusk these tracks exchange.
         for rising in [true, false] {
