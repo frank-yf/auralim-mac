@@ -193,11 +193,8 @@ struct NativeInteractionTests {
         try VNImageRequestHandler(url: URL(fileURLWithPath: output)).perform([recognition])
         let visible = (recognition.results ?? []).compactMap { $0.topCandidates(1).first?.string }.joined(separator: " ")
         print("Visible window text:", visible)
-        #expect(visible.contains("日出转亮"))
-        #expect(visible.contains("日落转暗"))
-        let digits = visible.filter(\.isNumber)
-        #expect(digits.contains(model.time(model.schedule?.todayLightTime).filter(\.isNumber)))
-        #expect(digits.contains(model.time(model.schedule?.todayDarkTime).filter(\.isNumber)))
+        #expect(!visible.contains("日出转亮") && !visible.contains("日落转暗"))
+        #expect(visible.contains("日出偏移") && visible.contains("日落偏移"))
         // Locate the right-aligned reset in each slider's header. Other controls
         // can also have native focus-ring hosts; their global ordering is not stable.
         for slider in sliders {
@@ -243,7 +240,7 @@ struct NativeInteractionTests {
                     #expect(process.terminationStatus == 0)
                 }
             }
-            print("Slider-only verification: four drag directions, input synchronization, keyboard/AX, blur, bounds, invalid input, reset, displayed times, light/dark gradient captures")
+            print("Slider-only verification: four drag directions, input synchronization, keyboard/AX, blur, bounds, invalid input, reset, schedule times, removed time cards, light/dark gradient captures")
             return
         }
         window.close()

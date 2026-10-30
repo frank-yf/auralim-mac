@@ -123,7 +123,7 @@
 "appearance.auto.help" = "Automatisch bei lokalem Sonnenaufgang und -untergang wechseln";
 "transition.sunrise" = "Sonnenaufgang · Helle Darstellung";
 "transition.sunset" = "Sonnenuntergang · Dunkle Darstellung";
-"transition.enabled" = "Animation bei Sonnenauf- und -untergang";
+"transition.enabled" = "Wechselanimation";
 "location.cachedFallback" = "%@ Gespeicherter Standort wird verwendet: %@.";
 "update.automatic" = "Updates automatisch prüfen und laden";
 "update.check" = "Nach Updates suchen";
@@ -142,7 +142,7 @@
 "update.error.validation" = "Updateprüfung fehlgeschlagen. Das Update wurde nicht installiert.";
 "update.error.installation" = "Update konnte nicht installiert werden. Bitte erneut versuchen oder von GitHub herunterladen.";
 
-"countdown.enabled" = "Countdown vor dem Wechsel";
+"countdown.enabled" = "Wechsel-Countdown";
 "countdown.seconds" = "Sekunden";
 "countdown.remaining" = "Wechsel zu %@ in %d Sekunden";
 "countdown.now" = "Jetzt wechseln";
@@ -161,3 +161,10 @@
 "debug.apply" = "Systemerscheinungsbild nach der Vorschau wechseln";
 "debug.applyHint" = "Nach der Vorschau im manuellen Modus zur gewählten Darstellung wechseln.";
 "countdown.acknowledge" = "Verstanden";
+
+"update.mode" = "Softwareupdates";
+"update.mode.manual" = "Manuell";
+"update.mode.automatic" = "Automatisch";
+"update.manual" = "Updates manuell suchen und laden";
+
+"location.cachedRefreshing" = "Aktualisierung läuft; gespeicherter Standort: %@.";

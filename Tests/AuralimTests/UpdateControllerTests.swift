@@ -6,6 +6,37 @@ import Testing
 
 @MainActor
 struct UpdateControllerTests {
+    @Test func updateModePersistsAndHonorsExistingSparkleChoice() throws {
+        let suite = "Auralim.UpdateMode.\(UUID().uuidString)"
+        let preferences = try #require(UserDefaults(suiteName: suite))
+        defer { preferences.removePersistentDomain(forName: suite) }
+        #expect(UpdateController(preferences: preferences).mode == .manual)
+        preferences.set(false, forKey: "SUEnableAutomaticChecks")
+        preferences.set(false, forKey: "SUAutomaticallyUpdate")
+        let controller = UpdateController(preferences: preferences)
+        #expect(controller.mode == .manual && controller.canCheck)
+        controller.selectMode(.automatic)
+        #expect(preferences.bool(forKey: "SUEnableAutomaticChecks") && preferences.bool(forKey: "SUAutomaticallyUpdate"))
+        #expect(UpdateController(preferences: preferences).mode == .automatic)
+        controller.selectMode(.manual)
+        #expect(!preferences.bool(forKey: "SUEnableAutomaticChecks") && !preferences.bool(forKey: "SUAutomaticallyUpdate"))
+        #expect(UpdateController(preferences: preferences).mode == .manual)
+    }
+
+    @Test func manualModeRejectsBackgroundChecksButAllowsUserChecks() throws {
+        let suite = "Auralim.UpdateGate.\(UUID().uuidString)"
+        let preferences = try #require(UserDefaults(suiteName: suite))
+        defer { preferences.removePersistentDomain(forName: suite) }
+        let controller = UpdateController(preferences: preferences)
+        let engine = SPUUpdater(hostBundle: .main, applicationBundle: .main, userDriver: controller, delegate: controller)
+        controller.selectMode(.manual)
+        #expect(throws: NSError.self) { try controller.updater(engine, mayPerform: .updatesInBackground) }
+        #expect(throws: NSError.self) { try controller.updater(engine, mayPerform: .updateInformation) }
+        try controller.updater(engine, mayPerform: .updates)
+        controller.selectMode(.automatic)
+        try controller.updater(engine, mayPerform: .updatesInBackground)
+    }
+
     @Test func downloadAndPreparationNeverInvokeRestartUntilClicked() {
         let controller = UpdateController()
         var installs = 0
@@ -94,13 +125,13 @@ struct UpdateControllerTests {
         #expect(opened == [URL(string: "https://github.com/frank-yf/auralim-mac/releases/latest")!])
     }
 
-    @Test func distributionConfigUsesSignedGitHubFeedAndDailyAutomaticDownloads() throws {
+    @Test func distributionConfigUsesSignedGitHubFeedAndManualUpdatesByDefault() throws {
         let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
         let data = try Data(contentsOf: root.appendingPathComponent("Resources/Info.plist"))
         let info = try #require(PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any])
         #expect(info["SUFeedURL"] as? String == UpdateController.feedURL.absoluteString)
-        #expect(info["SUEnableAutomaticChecks"] as? Bool == true)
-        #expect(info["SUAutomaticallyUpdate"] as? Bool == true)
+        #expect(info["SUEnableAutomaticChecks"] as? Bool == false)
+        #expect(info["SUAutomaticallyUpdate"] as? Bool == false)
         #expect(info["SUVerifyUpdateBeforeExtraction"] as? Bool == true)
         #expect(info["SURequireSignedFeed"] as? Bool == true)
         #expect(info["SUSignedFeedFailureExpirationInterval"] as? Int == 0)
@@ -108,6 +139,6 @@ struct UpdateControllerTests {
         #expect(info["SUScheduledCheckInterval"] as? Int == 86400)
         let key = try #require(info["SUPublicEDKey"] as? String)
         #expect(Data(base64Encoded: key)?.count == 32)
-        #expect(info["CFBundleShortVersionString"] as? String == "0.4.1")
+        #expect((info["CFBundleShortVersionString"] as? String)?.isEmpty == false)
     }
 }

@@ -29,7 +29,7 @@ struct LocationSettingsInteractionTests {
         defer { model.shutdown(); store.removePersistentDomain(forName: suite) }
         let window = NSWindow(contentViewController: NSHostingController(rootView: SettingsContent(model: model)))
         window.isReleasedWhenClosed = false
-        window.setContentSize(NSSize(width: 600, height: 720))
+        window.setContentSize(NSSize(width: 600, height: 640))
         window.center()
         window.makeKeyAndOrderFront(nil)
         defer { window.close() }
@@ -42,36 +42,53 @@ struct LocationSettingsInteractionTests {
             #expect(mode.sendAction(mode.action, to: mode.target))
             settle()
         }
+        let folder = URL(fileURLWithPath: ProcessInfo.processInfo.environment["AURALIM_LOCATION_UI_OUTPUT"]
+            ?? "/private/tmp/auralim-location-ui")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        func capture(_ stage: String) throws {
+            for language in [AppLanguage.simplifiedChinese, .english] {
+                model.language = language
+                for theme in [NSAppearance.Name.aqua, .darkAqua] {
+                    window.appearance = NSAppearance(named: theme); settle()
+                    let host = try #require(window.contentView)
+                    let bitmap = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds))
+                    host.cacheDisplay(in: host.bounds, to: bitmap)
+                    try #require(bitmap.representation(using: .png, properties: [:])).write(to:
+                        folder.appendingPathComponent("\(stage)-\(language.rawValue)-\(theme == .aqua ? "light" : "dark").png"))
+                }
+            }
+            model.language = .simplifiedChinese; settle()
+        }
         settle()
         let manualPickerCount = popups().count
         #expect(location.starts == 0 && store.object(forKey: "locationRefreshInterval") == nil)
+        let cityPicker = try #require(popups().first { !$0.itemTitles.contains("English") })
+        for cityID in ["Asia/Shanghai", "Asia/Tokyo"] {
+            let city = try #require(City.all.first { $0.id == cityID })
+            let index = cityPicker.indexOfItem(withTitle: model.cityName(city))
+            try #require(index >= 0)
+            try #require(cityPicker.menu).performActionForItem(at: index); settle()
+            #expect(model.cityID == cityID && model.city.id == cityID)
+        }
+        #expect(model.t("location.manual") == "选择城市")
+        try capture("manual")
         try selectMode(1)
         #expect(model.locationMode == .automatic && location.starts == 1)
+        #expect(model.city.id == "Asia/Tokyo")
         // Only language and city dropdowns remain, in both modes.
         #expect(popups().count == manualPickerCount && manualPickerCount == 2)
         let cached = City(id: "current-location", name: "", latitude: 40.7128,
             longitude: -74.0060, timeZoneID: "America/New_York")
         location.onEvent?(.resolved(cached))
         model.refreshLocation()
-        #expect(location.refreshes == 1 && model.city == cached)
+        #expect(location.refreshes == 1 && model.city == cached && model.isLocating)
+        #expect(model.locationStatus.contains("沿用缓存位置"))
+        try capture("refreshing-cached")
         location.onEvent?(.failed(.timeout, cachedCity: cached))
         settle()
         #expect(model.city == cached && !model.isLocating)
         #expect(model.locationStatus.contains("缓存位置") && !model.locationStatus.contains("东京"))
-        let folder = URL(fileURLWithPath: ProcessInfo.processInfo.environment["AURALIM_LOCATION_UI_OUTPUT"]
-            ?? "/private/tmp/auralim-location-ui")
-        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
-        for theme in [NSAppearance.Name.aqua, .darkAqua] {
-            window.appearance = NSAppearance(named: theme)
-            settle()
-            #expect(popups().count == 2)
-            let capture = Process()
-            capture.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
-            capture.arguments = ["-x", "-o", "-l", String(window.windowNumber),
-                folder.appendingPathComponent(theme == .aqua ? "location-light.png" : "location-dark.png").path]
-            try capture.run(); capture.waitUntilExit()
-            #expect(capture.terminationStatus == 0)
-        }
+        try capture("automatic-cached")
         try selectMode(0)
         #expect(model.locationMode == .manual && model.city.id == "Asia/Tokyo" && location.stops == 1)
         #expect(popups().count == manualPickerCount)

@@ -21,6 +21,14 @@ private final class StubLocationSession: LocationSession {
 }
 
 @MainActor
+private final class StubNetworkChanges: NetworkChangeObserving {
+    var changed: (@MainActor () -> Void)?
+    var starts = 0, stops = 0
+    func start(_ changed: @escaping @MainActor () -> Void) { starts += 1; self.changed = changed }
+    func stop() { stops += 1; changed = nil }
+}
+
+@MainActor
 private final class LocationEnvironment {
     static let baseline = Date(timeIntervalSince1970: 1_800_000_000)
     var date = baseline
@@ -28,6 +36,7 @@ private final class LocationEnvironment {
     var authorization: CLAuthorizationStatus = .authorizedAlways
     var zone = TimeZone(identifier: "America/New_York")
     var sessions: [StubLocationSession] = []
+    let network = StubNetworkChanges()
     var timers: [(TimeInterval, Timer)] = []
     var failures: [LocationFailure] = []
     var cities: [City] = []
@@ -73,7 +82,7 @@ private struct LocationHarness {
         self.env = env
         controller = LocationController(defaults: store,
             makeSession: { env.makeSession() }, servicesEnabled: { env.services },
-            now: { env.date }, lookupTimeZone: { _, _ in env.zone },
+            now: { env.date }, lookupTimeZone: { _, _ in env.zone }, network: env.network,
             schedule: { env.schedule($0, $1) })
         controller.onEvent = { event in
             switch event {
@@ -116,14 +125,14 @@ struct LocationControllerTests {
         let h = LocationHarness(); defer { h.close() }
         h.controller.start()
         let session = h.env.sessions[0]
-        for delay in [2.0, 5.0, 10.0] {
-            session.error(.network)
-            #expect(h.env.failures.isEmpty)
-            h.env.date += delay; h.env.fire(delay)
-        }
         session.error(.network)
-        #expect(session.requests == 4)
-        #expect(h.env.failures == [.unavailable])
+        h.env.date += 2; h.env.fire(2)
+        session.error(.network)
+        #expect(h.env.failures.isEmpty && session.requests == 2)
+        #expect(!h.env.timers.contains { $0.0 == 10 })
+        h.env.date += 3; h.env.fire(5)
+        #expect(session.requests == 2)
+        #expect(h.env.failures == [.timeout])
         #expect(session.invalidations == 1)
         #expect(h.controller.nextRefresh == h.env.date.addingTimeInterval(3 * 3600))
         h.controller.refreshIfNeeded()
@@ -136,7 +145,7 @@ struct LocationControllerTests {
         let session = h.env.sessions[0]
         let late = session.onEvent
         session.error(.locationUnknown)
-        h.env.date += 30; h.env.fire(30); h.env.fire(2)
+        h.env.date += 5; h.env.fire(5); h.env.fire(2)
         late?(.locations([h.env.sample()]))
         #expect(session.requests == 1)
         #expect(h.env.failures == [.timeout])
@@ -147,7 +156,7 @@ struct LocationControllerTests {
         let h = LocationHarness(); defer { h.close() }
         h.controller.start()
         h.env.sessions[0].error(.locationUnknown)
-        h.env.date += 31; h.env.fire(2)
+        h.env.date += 6; h.env.fire(2)
         #expect(h.env.failures == [.timeout])
         #expect(h.env.sessions[0].requests == 1)
     }
@@ -253,7 +262,7 @@ struct LocationControllerTests {
         h.controller.stop()
         let otherStore = UserDefaults(suiteName: h.suite)!
         let restored = LocationController(defaults: otherStore,
-            makeSession: { h.env.makeSession() }, now: { h.env.date },
+            makeSession: { h.env.makeSession() }, now: { h.env.date }, network: h.env.network,
             schedule: { h.env.schedule($0, $1) })
         defer { restored.stop() }
         var restoredCity: City?
@@ -289,7 +298,7 @@ struct LocationControllerTests {
         switch failure {
         case .denied: session.error(.denied)
         case .unavailable: session.onEvent?(.failed(NSError(domain: "test", code: 1)))
-        case .timeout: h.env.date += 30; h.env.fire(30)
+        case .timeout: h.env.date += 5; h.env.fire(5)
         case .timeZoneUnavailable:
             h.env.zone = nil; session.onEvent?(.locations([h.env.sample()]))
         case .servicesDisabled: break
@@ -313,6 +322,136 @@ struct LocationControllerTests {
         h.env.authorization = .authorizedAlways
         h.controller.refresh()
         #expect(h.env.sessions[1].authorizationRequests == 0 && h.env.sessions[1].requests == 1)
+    }
+
+    @Test func cacheTimestampAndPositionRemainAvailableThroughoutRefreshAndRecovery() throws {
+        let h = LocationHarness(cache: LocationHarness.cached(age: 7 * 86400)); defer { h.close() }
+        let saved = h.store.data(forKey: "cachedLocation")
+        let timestamp = LocationEnvironment.baseline.addingTimeInterval(-7 * 86400)
+        func storedTimestamp() throws -> Date {
+            try JSONDecoder().decode(CachedLocation.self, from: #require(h.store.data(forKey: "cachedLocation"))).timestamp
+        }
+        h.controller.start()
+        #expect(h.env.cities.count == 1 && h.env.locating == 1)
+        #expect(try storedTimestamp() == timestamp)
+        h.env.date += 5; h.env.fire(5)
+        #expect(h.env.failures == [.timeout])
+        h.env.network.changed?(); h.env.date += 3; h.env.fire(3)
+        #expect(h.env.sessions.count == 2)
+        #expect(try storedTimestamp() == timestamp)
+        #expect(h.store.data(forKey: "cachedLocation") == saved)
+        h.env.sessions[1].onEvent?(.locations([h.env.sample()]))
+        #expect(try storedTimestamp() == h.env.date)
+        #expect(h.env.cities.count == 2 && h.store.data(forKey: "cachedLocation") != saved)
+    }
+
+    @Test func networkChangesDebounceCooldownAndStopAfterTwoRecoveries() {
+        let h = LocationHarness(); defer { h.close() }
+        h.controller.start()
+        h.env.network.changed?() // Pending requests never overlap.
+        #expect(h.env.timers.count == 1)
+        h.env.date += 5; h.env.fire(5)
+        for _ in 0..<5 { h.env.network.changed?() }
+        #expect(h.env.timers.filter { $0.0 == 3 && $0.1.isValid }.count == 1)
+        h.env.date += 3; h.env.fire(3)
+        #expect(h.env.sessions.count == 2)
+        h.env.network.changed?()
+        #expect(h.env.sessions.count == 2)
+        h.env.sessions[1].onEvent?(.failed(NSError(domain: "test", code: 1)))
+        h.env.network.changed?()
+        #expect(h.env.timers.last?.0 == 60)
+        h.env.date += 60; h.env.fire(60)
+        #expect(h.env.sessions.count == 3)
+        h.env.sessions[2].onEvent?(.failed(NSError(domain: "test", code: 1)))
+        let count = h.env.timers.count
+        for _ in 0..<5 { h.env.network.changed?() }
+        #expect(h.env.timers.count == count && h.env.sessions.count == 3)
+        // The normal periodic refresh still runs and starts a new bounded budget.
+        h.env.date += 3 * 3600; h.env.fire(3 * 3600)
+        #expect(h.env.sessions.count == 4)
+        h.env.sessions[3].onEvent?(.failed(NSError(domain: "test", code: 1)))
+        h.env.network.changed?(); h.env.date += 3; h.env.fire(3)
+        #expect(h.env.sessions.count == 5)
+    }
+
+    @Test func networkRecoveryRequiresAFailureAndManualRefreshCancelsQueuedRecovery() {
+        let h = LocationHarness(cache: LocationHarness.cached()); defer { h.close() }
+        h.controller.start()
+        h.env.network.changed?()
+        #expect(h.env.sessions.isEmpty)
+        h.controller.refresh()
+        h.env.date += 5; h.env.fire(5)
+        h.env.network.changed?()
+        let queued = h.env.timers.last!.1
+        h.controller.refresh()
+        #expect(!queued.isValid && h.env.sessions.count == 2)
+        h.env.date += 3; h.env.fire(3)
+        #expect(h.env.sessions.count == 2)
+        h.env.sessions.last?.onEvent?(.locations([h.env.sample()]))
+        let count = h.env.timers.count
+        h.env.network.changed?()
+        #expect(h.env.timers.count == count)
+    }
+
+    @Test func stoppedOrPreviousNetworkObservationCannotRestartLocation() {
+        let h = LocationHarness(); defer { h.close() }
+        h.controller.start()
+        let oldCallback = h.env.network.changed
+        h.env.date += 5; h.env.fire(5)
+        h.env.network.changed?()
+        h.controller.stop()
+        #expect(h.env.network.changed == nil && h.env.timers.allSatisfy { !$0.1.isValid })
+        oldCallback?(); h.env.fire(3)
+        #expect(h.env.sessions.count == 1)
+        h.controller.start()
+        h.env.date += 5; h.env.fire(5)
+        let count = h.env.timers.count
+        oldCallback?()
+        #expect(h.env.timers.count == count)
+        h.env.network.changed?()
+        #expect(h.env.timers.last?.0 == 3)
+    }
+
+    @Test func permissionAndOfflineTimeZoneFailuresDoNotRetryOnNetworkChanges() {
+        for failure in [LocationFailure.denied, .servicesDisabled, .timeZoneUnavailable] {
+            let h = LocationHarness(configure: { env in
+                if failure == .denied { env.authorization = .denied }
+                if failure == .servicesDisabled { env.services = false }
+                if failure == .timeZoneUnavailable { env.zone = nil }
+            })
+            defer { h.close() }
+            h.controller.start()
+            if failure == .timeZoneUnavailable { h.env.sessions[0].onEvent?(.locations([h.env.sample()])) }
+            let count = h.env.timers.count
+            h.env.network.changed?()
+            #expect(h.env.failures == [failure] && h.env.timers.count == count)
+        }
+    }
+
+    @Test func networkRestoredDuringPendingRequestWaitsUntilFailureBeforeRetrying() {
+        let h = LocationHarness(); defer { h.close() }
+        h.controller.start()
+        h.env.network.changed?()
+        #expect(h.env.sessions.count == 1 && h.env.timers.count == 1)
+        h.env.date += 5; h.env.fire(5)
+        #expect(h.env.failures == [.timeout] && h.env.sessions.count == 1)
+        h.env.date += 3; h.env.fire(3)
+        #expect(h.env.sessions.count == 2 && h.env.sessions[0].invalidations == 1)
+    }
+
+    @Test func nativeNetworkObserverCanRegisterStopAndReleaseWithoutChangingNetwork() {
+        weak var released: NetworkConfigurationObserver?
+        do {
+            let observer = NetworkConfigurationObserver()
+            released = observer
+            observer.start { }
+            #expect(observer.isObserving)
+            observer.start { } // Re-registration must release the previous session.
+            #expect(observer.isObserving)
+            observer.stop()
+            #expect(!observer.isObserving)
+        }
+        #expect(released == nil)
     }
 
 }

@@ -95,7 +95,7 @@
 "help.login.title" = "Ouverture à la connexion";
 "help.login.body" = "Activez « Ouvrir à la connexion » dans les réglages pour lancer Auralim à la connexion à macOS avec la ville, les décalages et le réglage automatique enregistrés. Si nécessaire, autorisez Auralim dans Ouverture. Le bouton reste activé pendant l’attente ; l’état indique si la fonction est active. La désactivation empêche les prochains lancements sans fermer l’app actuelle.";
 "location.mode" = "Mode de localisation";
-"location.manual" = "Ville";
+"location.manual" = "Choisir une ville";
 "location.automatic" = "Automatique";
 "location.current" = "Position actuelle";
 "location.fallbackCity" = "Ville de secours";
@@ -123,7 +123,7 @@
 "appearance.auto.help" = "Changer automatiquement au lever et au coucher du soleil locaux";
 "transition.sunrise" = "Lever du soleil · Mode clair";
 "transition.sunset" = "Coucher du soleil · Mode sombre";
-"transition.enabled" = "Animation du lever et du coucher du soleil";
+"transition.enabled" = "Animation de changement";
 "location.cachedFallback" = "%@ Utilisation de la position en cache : %@.";
 "update.automatic" = "Recherche et téléchargement automatiques";
 "update.check" = "Rechercher des mises à jour";
@@ -142,7 +142,7 @@
 "update.error.validation" = "La vérification a échoué. La mise à jour n’a pas été installée.";
 "update.error.installation" = "Impossible d’installer la mise à jour. Réessayez ou téléchargez depuis GitHub.";
 
-"countdown.enabled" = "Compte à rebours avant changement";
+"countdown.enabled" = "Compte à rebours";
 "countdown.seconds" = "secondes";
 "countdown.remaining" = "Passage à %@ dans %d secondes";
 "countdown.now" = "Changer maintenant";
@@ -161,3 +161,10 @@
 "debug.apply" = "Changer l’apparence du système après l’aperçu";
 "debug.applyHint" = "Après l’aperçu, activer l’apparence choisie en mode manuel.";
 "countdown.acknowledge" = "Compris";
+
+"update.mode" = "Mises à jour";
+"update.mode.manual" = "Manuelles";
+"update.mode.automatic" = "Automatiques";
+"update.manual" = "Rechercher et télécharger manuellement";
+
+"location.cachedRefreshing" = "Actualisation ; position enregistrée : %@.";

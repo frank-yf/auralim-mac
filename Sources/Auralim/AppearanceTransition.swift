@@ -6,10 +6,17 @@ import AuralimCore
 @MainActor
 protocol AppearanceTransitionPlaying {
     func play(_ appearance: Appearance, title: String, completion: @escaping @MainActor () -> Void)
+    func play(_ appearance: Appearance, title: String, onAnimationEnd: @escaping @MainActor () -> Void,
+              completion: @escaping @MainActor () -> Void)
     func stop()
 }
 
 extension AppearanceTransitionPlaying {
+    func play(_ appearance: Appearance, title: String, onAnimationEnd: @escaping @MainActor () -> Void,
+              completion: @escaping @MainActor () -> Void) {
+        play(appearance, title: title) { onAnimationEnd(); completion() }
+    }
+
     func play(_ appearance: Appearance, title: String) {
         play(appearance, title: title, completion: {})
     }
@@ -17,6 +24,7 @@ extension AppearanceTransitionPlaying {
 
 enum AppearanceTransitionLayout {
     static let duration: TimeInterval = 3.2
+    static let finalFrameDuration: TimeInterval = 1
     static func frame(on screen: CGRect) -> CGRect {
         let size = CGSize(width: screen.width * 0.96, height: screen.height * 0.84)
         return CGRect(x: screen.midX - size.width / 2, y: screen.midY - size.height / 2,
@@ -41,29 +49,40 @@ enum CelestialOrbit {
 }
 
 /// A diffuse sky centered on the pointer's display. A single one-shot timer
-/// releases it before applying appearance; rendering owns the fade envelope.
+/// calls the appearance request at motion end, then holds the final sky for one second.
 @MainActor
 final class AppearanceTransitionController: AppearanceTransitionPlaying {
     private(set) var panel: NSPanel?
     private var dismissal: Timer?
     private var completion: (@MainActor () -> Void)?
+    private var animationEnded: (@MainActor () -> Void)?
+    private(set) var isHoldingFinalFrame = false
     private var accessibilityObserver: NSObjectProtocol?
     private let reduceMotion: () -> Bool
     private let duration: TimeInterval
+    private let finalFrameDuration: TimeInterval
 
     init(reduceMotion: @escaping () -> Bool = { NSWorkspace.shared.accessibilityDisplayShouldReduceMotion },
-         duration: TimeInterval = AppearanceTransitionLayout.duration) {
+         duration: TimeInterval = AppearanceTransitionLayout.duration,
+         finalFrameDuration: TimeInterval = AppearanceTransitionLayout.finalFrameDuration) {
         self.reduceMotion = reduceMotion
         self.duration = duration
+        self.finalFrameDuration = finalFrameDuration
     }
 
     func play(_ appearance: Appearance, title: String, completion: @escaping @MainActor () -> Void) {
+        play(appearance, title: title, onAnimationEnd: {}, completion: completion)
+    }
+
+    func play(_ appearance: Appearance, title: String, onAnimationEnd: @escaping @MainActor () -> Void,
+              completion: @escaping @MainActor () -> Void) {
         stop()
         // This is a large motion effect: omit it when macOS asks to
         // reduce motion, rather than replacing it with a large static overlay.
         guard !reduceMotion(),
-              let screen = NSScreen.screens.first(where: { NSMouseInRect(NSEvent.mouseLocation, $0.frame, false) }) ?? NSScreen.main else { completion(); return }
+              let screen = NSScreen.screens.first(where: { NSMouseInRect(NSEvent.mouseLocation, $0.frame, false) }) ?? NSScreen.main else { onAnimationEnd(); completion(); return }
         self.completion = completion
+        animationEnded = onAnimationEnd
         let frame = AppearanceTransitionLayout.frame(on: screen.frame)
         // Prepare the static, quarter-resolution blur before starting playback.
         _ = TransitionSkyMask.image(for: frame.size)
@@ -80,7 +99,10 @@ final class AppearanceTransitionController: AppearanceTransitionPlaying {
         panel.ignoresMouseEvents = true
         panel.level = .statusBar
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .transient, .ignoresCycle]
-        panel.contentView = NSHostingView(rootView: AppearanceTransitionView(appearance: appearance, duration: duration))
+        panel.contentView = NSHostingView(rootView: AppearanceTransitionView(appearance: appearance, duration: duration, onStart: { [weak self, weak panel] in
+            guard let self, let panel, self.panel === panel else { return }
+            self.startPlaybackTimer(for: panel)
+        }))
         panel.setFrame(frame, display: false)
         panel.alphaValue = 1
         self.panel = panel
@@ -90,27 +112,52 @@ final class AppearanceTransitionController: AppearanceTransitionPlaying {
         ) { [weak self] _ in
             MainActor.assumeIsolated {
                 guard let self, self.reduceMotion() else { return }
-                self.finish()
+                self.finishImmediately()
             }
         }
+    }
+
+    private func startPlaybackTimer(for panel: NSPanel) {
+        guard dismissal == nil, !isHoldingFinalFrame else { return }
         let dismissal = Timer(timeInterval: duration, repeats: false) { [weak self, weak panel] _ in
             MainActor.assumeIsolated {
                 guard let self, let panel, self.panel === panel else { return }
-                self.finish()
+                self.finishMotion()
             }
         }
         self.dismissal = dismissal
         RunLoop.main.add(dismissal, forMode: .common)
     }
 
-    private func finish() {
-        let completed = completion
-        stop() // Release the overlay before asking macOS to redraw its windows.
-        completed?()
+    private func finishMotion() {
+        guard let panel, !isHoldingFinalFrame else { return }
+        let ended = animationEnded
+        animationEnded = nil
+        isHoldingFinalFrame = true
+        dismissal?.invalidate()
+        let hold = Timer(timeInterval: finalFrameDuration, repeats: false) { [weak self, weak panel] _ in
+            MainActor.assumeIsolated {
+                guard let self, let panel, self.panel === panel else { return }
+                let completed = self.completion
+                self.stop()
+                completed?()
+            }
+        }
+        dismissal = hold
+        RunLoop.main.add(hold, forMode: .common)
+        ended?() // Request the system change now, while the completed sky covers the redraw.
+    }
+
+    private func finishImmediately() {
+        let ended = animationEnded, completed = completion
+        stop()
+        ended?(); completed?()
     }
 
     func stop() {
+        animationEnded = nil
         completion = nil
+        isHoldingFinalFrame = false
         if let accessibilityObserver {
             NSWorkspace.shared.notificationCenter.removeObserver(accessibilityObserver)
             self.accessibilityObserver = nil
@@ -128,8 +175,8 @@ private final class TransitionPanel: NSPanel {
     override var canBecomeMain: Bool { false }
 }
 
-/// The website timeline: establish the initial sky, travel, then hold the
-/// completed sky briefly while fading out. Geometry easing is independent of color.
+/// Establish the initial sky, then finish travel at the playback boundary.
+/// The controller owns the one-second final-frame hold.
 struct SolarTransitionPhase {
     let travel: Double
     let orbit: Double
@@ -141,7 +188,7 @@ struct SolarTransitionPhase {
 
     init(progress: Double, appearance: Appearance) {
         let phase = min(1, max(0, progress))
-        travel = min(1, max(0, (phase - 0.12) / 0.60))
+        travel = min(1, max(0, (phase - 0.12) / 0.88))
         orbit = Self.ease(travel)
         moonOrbit = appearance == .dark ? Self.ease(max(0, travel - 0.045) / 0.955) : orbit
         let sky = travel * travel * (3 - 2 * travel)
@@ -151,7 +198,7 @@ struct SolarTransitionPhase {
             return t * t * (3 - 2 * t)
         }
         sunlight = visible(daylight); moonlight = visible(1 - daylight)
-        opacity = max(0, min(1, phase / 0.14, (1 - phase) / 0.26)) * 0.78
+        opacity = max(0, min(1, phase / 0.14)) * 0.78
     }
 
     static func ease(_ phase: Double) -> Double {
@@ -208,12 +255,14 @@ enum TransitionSkyMask {
 struct AppearanceTransitionView: View {
     let appearance: Appearance
     var duration = AppearanceTransitionLayout.duration
+    var onStart: () -> Void = {}
     @State private var progress = 0.0
 
     var body: some View {
         SolarTransitionScene(progress: progress, appearance: appearance)
             .accessibilityHidden(true)
             .task {
+                onStart()
                 withAnimation(.linear(duration: duration)) { progress = 1 }
             }
     }

@@ -123,7 +123,7 @@
 "appearance.auto.help" = "Automatisch wisselen bij lokale zonsopkomst en zonsondergang";
 "transition.sunrise" = "Zonsopkomst · Lichte weergave";
 "transition.sunset" = "Zonsondergang · Donkere weergave";
-"transition.enabled" = "Animatie bij zonsopkomst en zonsondergang";
+"transition.enabled" = "Wisselanimatie";
 "location.cachedFallback" = "%@ Opgeslagen locatie wordt gebruikt: %@.";
 "update.automatic" = "Updates automatisch zoeken en downloaden";
 "update.check" = "Zoek updates";
@@ -142,7 +142,7 @@
 "update.error.validation" = "Updatecontrole mislukt. De update is niet geïnstalleerd.";
 "update.error.installation" = "Update installeren mislukt. Probeer opnieuw of download via GitHub.";
 
-"countdown.enabled" = "Aftellen vóór omschakelen";
+"countdown.enabled" = "Aftellen voor wisseling";
 "countdown.seconds" = "seconden";
 "countdown.remaining" = "Omschakelen naar %@ over %d seconden";
 "countdown.now" = "Nu omschakelen";
@@ -161,3 +161,10 @@
 "debug.apply" = "Systeemweergave na het voorbeeld wijzigen";
 "debug.applyHint" = "Na het voorbeeld de gekozen weergave in handmatige modus toepassen.";
 "countdown.acknowledge" = "Begrepen";
+
+"update.mode" = "Software-updates";
+"update.mode.manual" = "Handmatig";
+"update.mode.automatic" = "Automatisch";
+"update.manual" = "Updates handmatig zoeken en downloaden";
+
+"location.cachedRefreshing" = "Vernieuwen; opgeslagen locatie: %@.";

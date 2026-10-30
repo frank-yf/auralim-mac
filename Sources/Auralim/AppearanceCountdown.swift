@@ -45,7 +45,7 @@ final class CountdownController: CountdownPresenting {
         self.tick = tick; self.finish = finish; self.cancel = cancel
         deadline = now() + Double(seconds)
         display.remaining = seconds
-        let size = CGSize(width: 340, height: 142)
+        let size = CGSize(width: 340, height: 112)
         let frame = CGRect(x: screen.visibleFrame.maxX - size.width - 24,
                            y: screen.visibleFrame.maxY - size.height - 24, width: size.width, height: size.height)
         let panel = NSPanel(contentRect: frame, styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
@@ -106,18 +106,18 @@ private struct CountdownView: View {
     let acknowledge: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 12) {
-                Image(systemName: target == .light ? "sun.max.fill" : "moon.fill")
-                    .font(.title2).foregroundStyle(target == .light ? DuskStyle.gold : DuskStyle.blue)
-                VStack(alignment: .leading, spacing: 5) {
-                    Text(localizer.text("app.name")).font(.headline)
+                DuskSymbol(name: target == .light ? "sun.max.fill" : "moon.fill",
+                           tint: target == .light ? DuskStyle.gold : DuskStyle.blue)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(localizer.text("app.name")).font(.system(size: 13, weight: .semibold))
                     Text(localizer.text(preview ? "debug.remaining" : "countdown.remaining", localizer.text(target == .light ? "light" : "dark"), display.remaining))
-                        .font(.callout).monospacedDigit().accessibilityIdentifier("countdown-remaining")
+                        .font(.callout).monospacedDigit().fixedSize(horizontal: false, vertical: true).accessibilityIdentifier("countdown-remaining")
                 }
                 Spacer(minLength: 0)
             }
-            HStack {
+            HStack(spacing: 8) {
                 Button(localizer.text("countdown.cancel"), action: cancel)
                     .accessibilityIdentifier("countdown-cancel")
                 Spacer(minLength: 4)
@@ -126,10 +126,19 @@ private struct CountdownView: View {
                     .accessibilityIdentifier("countdown-acknowledge")
                 Button(localizer.text("countdown.now"), action: finish)
                     .accessibilityIdentifier("countdown-now")
-            }.controlSize(.small).font(.caption)
-        }.padding(18).frame(width: 340, height: 142)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+            }.buttonStyle(CountdownSecondaryStyle()).controlSize(.small).font(.caption)
+        }.padding(14).frame(width: 340, height: 112)
+            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
             .environment(\.locale, localizer.locale)
+    }
+}
+
+private struct CountdownSecondaryStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .lineLimit(1).minimumScaleFactor(0.85)
+            .padding(.horizontal, 10).frame(height: 24)
+            .background(Color.primary.opacity(configuration.isPressed ? 0.12 : 0.06), in: RoundedRectangle(cornerRadius: 7))
     }
 }
 
@@ -139,8 +148,9 @@ private struct CountdownAcknowledgementStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .foregroundStyle(.white)
-            .padding(.horizontal, 8).padding(.vertical, 3)
-            .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 4))
+            .lineLimit(1).minimumScaleFactor(0.85)
+            .padding(.horizontal, 10).frame(height: 24)
+            .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 7))
             .opacity(configuration.isPressed ? 0.8 : 1)
     }
 }

@@ -67,9 +67,9 @@ private final class CountdownFixture {
     func enable(animation: Bool = true) { model.transitionAnimationEnabled = animation; model.countdownEnabled = true }
     func schedule(_ target: Appearance) {
         now = ISO8601DateFormatter().date(from: target == .dark ? "2026-10-22T14:00:00Z" : "2026-10-23T04:00:00Z")!
-        let alreadyAutomatic = model.enabled
-        model.selectAppearanceMode(.automatic)
-        if alreadyAutomatic { model.reconcile() }
+        // Simulate a scheduled/automatic event, not an explicit picker selection.
+        if model.enabled { model.reconcile() }
+        else { model.enabled = true }
     }
     func close() { model.shutdown(); defaults.removePersistentDomain(forName: suite) }
 }
@@ -125,6 +125,49 @@ struct AppearanceCountdownTests {
         }
     }
 
+    @Test func explicitAutomaticSelectionSkipsCountdownInBothDirectionsWithOrWithoutAnimation() {
+        for animation in [false, true] {
+            for prior in [AppearanceMode.light, .dark] {
+                let f = CountdownFixture(); defer { f.close() }; f.enable(animation: animation)
+                f.model.selectAppearanceMode(prior); f.player.finish()
+                let target: Appearance = prior == .light ? .dark : .light
+                f.now = ISO8601DateFormatter().date(from: target == .dark ? "2026-10-22T14:00:00Z" : "2026-10-22T04:00:00Z")!
+                let requests = f.appearance.requests.count, plays = f.player.targets.count
+                let previousAppearance = f.appearance.current
+                f.model.selectAppearanceMode(.automatic)
+                #expect(f.model.enabled && f.model.appearanceMode == .automatic)
+                #expect(f.defaults.bool(forKey: "enabled") && f.defaults.object(forKey: "manualAppearance") == nil)
+                #expect(f.model.countdownEnabled && f.panel.starts == 0 && f.model.countdownRemaining == nil)
+                if animation {
+                    #expect(f.player.targets.count == plays + 1 && f.player.targets.last == target)
+                    #expect(f.appearance.current == previousAppearance && f.appearance.requests.count == requests)
+                    f.model.reconcile() // A pending animation must not acquire a countdown later.
+                    #expect(f.panel.starts == 0)
+                    f.player.finish()
+                } else {
+                    #expect(f.player.targets.count == plays)
+                }
+                #expect(f.appearance.current == target && f.appearance.requests.count == requests + 1)
+                // The next solar transition keeps the user's countdown preference.
+                f.now = ISO8601DateFormatter().date(from: target == .dark ? "2026-10-23T04:00:00Z" : "2026-10-22T14:00:00Z")!
+                f.model.reconcile()
+                #expect(f.panel.starts == 1 && f.model.countdownRemaining == 10)
+            }
+        }
+    }
+
+    @Test func explicitAutomaticSelectionWithMatchingAppearanceDoesNotAnimateOrCountDown() {
+        for prior in [AppearanceMode.light, .dark] {
+            let f = CountdownFixture(); defer { f.close() }; f.enable()
+            f.model.selectAppearanceMode(prior); f.player.finish()
+            f.now = ISO8601DateFormatter().date(from: prior == .light ? "2026-10-22T04:00:00Z" : "2026-10-22T14:00:00Z")!
+            let plays = f.player.targets.count
+            f.model.selectAppearanceMode(.automatic)
+            #expect(f.model.enabled && f.player.targets.count == plays && f.panel.starts == 0)
+            #expect(f.model.countdownRemaining == nil && f.model.scheduledCheck != nil)
+        }
+    }
+
     @Test func fullSequenceKeepsActualAppearanceUntilAnimationEnds() throws {
         let f = CountdownFixture(); defer { f.close() }; f.enable()
         f.schedule(.dark)
@@ -170,10 +213,12 @@ struct AppearanceCountdownTests {
         f.model.reconcile(); f.model.offset = 10
         #expect(f.panel.starts == 1 && f.player.targets.isEmpty && f.appearance.current == .light)
         f.model.selectAppearanceMode(.automatic)
-        #expect(f.panel.starts == 2)
-        f.panel.cancel?()
+        #expect(f.panel.starts == 1 && f.player.targets == [.dark])
+        f.player.finish()
         f.now = ISO8601DateFormatter().date(from: "2026-10-23T04:00:00Z")!
         f.model.reconcile()
+        #expect(f.panel.starts == 2)
+        f.panel.finish?(); f.player.finish()
         f.now = ISO8601DateFormatter().date(from: "2026-10-23T14:00:00Z")!
         f.model.reconcile(); #expect(f.panel.starts == 3)
     }
@@ -252,7 +297,7 @@ struct AppearanceCountdownTests {
     }
 
     @Test(.enabled(if: ProcessInfo.processInfo.environment["AURALIM_COUNTDOWN_UI_TESTS"] == "1"))
-    func nativeManualPickersSkipCountdownAndReleaseAnimationBeforeApply() async throws {
+    func nativeManualPickersSkipCountdownAndApplyWhileFinalFrameHolds() async throws {
         let app = NSApplication.shared; app.setActivationPolicy(.regular); app.finishLaunching()
         let countdown = CountdownController()
         let animation = AppearanceTransitionController(reduceMotion: { false }, duration: 0.15)
@@ -271,7 +316,7 @@ struct AppearanceCountdownTests {
         settle()
         let settingsContent = try #require(settings.contentView)
         let settingsPicker = try #require(views(settingsContent).compactMap { $0 as? NSSegmentedControl }.first { $0.segmentCount == 3 })
-        f.appearance.beforeApply = { #expect(countdown.panel == nil && animation.panel == nil) }
+        f.appearance.beforeApply = { #expect(countdown.panel == nil && animation.panel?.isVisible == true && animation.isHoldingFinalFrame) }
         for picker in [menuPicker, settingsPicker] {
             for (segment, target) in [(2, Appearance.dark), (0, .light)] {
                 let requests = f.appearance.requests.count
@@ -292,6 +337,54 @@ struct AppearanceCountdownTests {
     }
 
     @Test(.enabled(if: ProcessInfo.processInfo.environment["AURALIM_COUNTDOWN_UI_TESTS"] == "1"))
+    func nativeAutomaticPickersSkipCountdownAndKeepBothPanelsInSync() async throws {
+        let app = NSApplication.shared; app.setActivationPolicy(.regular); app.finishLaunching()
+        let countdown = CountdownController()
+        let animation = AppearanceTransitionController(reduceMotion: { false }, duration: 0.08, finalFrameDuration: 0.08)
+        let f = CountdownFixture(presenter: countdown, transition: animation); defer { f.close() }; f.enable()
+        let menu = NSWindow(contentViewController: NSHostingController(rootView: MenuContent(model: f.model, quit: {})))
+        menu.isReleasedWhenClosed = false
+        menu.setContentSize(NSSize(width: MenuPanelLayout.width, height: MenuPanelLayout.height)); menu.makeKeyAndOrderFront(nil)
+        let settingsPresenter = SettingsWindowController(); settingsPresenter.show(model: f.model)
+        let settings = try #require(settingsPresenter.window)
+        defer { menu.close(); settings.close() }
+        func settle() { RunLoop.main.run(until: Date().addingTimeInterval(0.03)) }
+        func views(_ v: NSView) -> [NSView] { [v] + v.subviews.flatMap(views) }
+        settle()
+        let menuContent = try #require(menu.contentView), settingsContent = try #require(settings.contentView)
+        let menuPicker = try #require(views(menuContent).compactMap { $0 as? NSSegmentedControl }.first { $0.segmentCount == 3 })
+        let settingsPicker = try #require(views(settingsContent).compactMap { $0 as? NSSegmentedControl }.first { $0.segmentCount == 3 })
+        for picker in [menuPicker, settingsPicker] {
+            for prior in [AppearanceMode.light, .dark] {
+                f.appearance.beforeApply = nil
+                f.model.transitionAnimationEnabled = false
+                f.model.selectAppearanceMode(prior)
+                let target: Appearance = prior == .light ? .dark : .light
+                f.now = ISO8601DateFormatter().date(from: target == .dark ? "2026-10-22T14:00:00Z" : "2026-10-22T04:00:00Z")!
+                f.model.transitionAnimationEnabled = true
+                f.appearance.beforeApply = { #expect(countdown.panel == nil && animation.isHoldingFinalFrame) }
+                let requests = f.appearance.requests.count
+                picker.selectedSegment = 1
+                #expect(picker.sendAction(picker.action, to: picker.target))
+                #expect(countdown.panel == nil && f.model.countdownRemaining == nil)
+                #expect(animation.panel?.isVisible == true && f.appearance.requests.count == requests)
+                for _ in 0..<60 {
+                    settle()
+                    if animation.panel == nil { break }
+                    try await Task.sleep(for: .milliseconds(10))
+                }
+                #expect(animation.panel == nil && countdown.panel == nil && f.appearance.current == target)
+                #expect(f.appearance.requests.count == requests + 1 && f.model.countdownEnabled)
+                #expect(menuPicker.selectedSegment == 1 && settingsPicker.selectedSegment == 1)
+            }
+        }
+        f.appearance.beforeApply = nil
+        f.now = ISO8601DateFormatter().date(from: "2026-10-22T14:00:00Z")!
+        f.model.reconcile()
+        #expect(countdown.panel?.isVisible == true && f.model.countdownRemaining == 10)
+    }
+
+    @Test(.enabled(if: ProcessInfo.processInfo.environment["AURALIM_COUNTDOWN_UI_TESTS"] == "1"))
     func nativePanelDeadlineButtonsAndSettingsControls() throws {
         let app = NSApplication.shared; app.setActivationPolicy(.regular); app.finishLaunching()
         var now: TimeInterval = 100
@@ -309,7 +402,8 @@ struct AppearanceCountdownTests {
         #expect(toggle.state == .off)
         _ = toggle.accessibilityPerformPress(); settle()
         #expect(f.model.countdownEnabled)
-        let input = try #require(controls.compactMap { $0 as? NSTextField }.first { $0.isEditable })
+        let updatedControls = views(try #require(window.contentView))
+        let input = try #require(updatedControls.compactMap { $0 as? NSTextField }.first { $0.isEditable && $0.stringValue == "10" })
         window.makeFirstResponder(input)
         let editor = try #require(input.currentEditor() as? NSTextView)
         editor.selectAll(nil); editor.insertText("12", replacementRange: editor.selectedRange()); settle()
@@ -348,7 +442,7 @@ struct AppearanceCountdownTests {
         func clickPanel(x: CGFloat) throws {
             let current = try #require(panel.panel)
             for kind in [NSEvent.EventType.leftMouseDown, .leftMouseUp] {
-                let event = try #require(NSEvent.mouseEvent(with: kind, location: NSPoint(x: x, y: 45), modifierFlags: [],
+                let event = try #require(NSEvent.mouseEvent(with: kind, location: NSPoint(x: x, y: 34), modifierFlags: [],
                     timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: current.windowNumber,
                     context: nil, eventNumber: 0, clickCount: 1, pressure: 1))
                 app.sendEvent(event)
@@ -379,19 +473,21 @@ struct AppearanceCountdownTests {
     }
 
     @Test(.enabled(if: ProcessInfo.processInfo.environment["AURALIM_COUNTDOWN_UI_TESTS"] == "1"))
-    func nativeCountdownThenAnimationReleasesBothPanelsBeforeApplying() async throws {
+    func nativeCountdownThenAnimationHoldsFinalFrameDuringApply() async throws {
         _ = NSApplication.shared
         let countdown = CountdownController()
         let transition = AppearanceTransitionController(reduceMotion: { false }, duration: 0.15)
         let f = CountdownFixture(presenter: countdown, transition: transition); defer { f.close() }
-        f.appearance.beforeApply = { #expect(countdown.panel == nil && transition.panel == nil) }
+        f.appearance.beforeApply = { #expect(countdown.panel == nil && transition.panel?.isVisible == true && transition.isHoldingFinalFrame) }
         f.enable()
         f.schedule(.dark)
         #expect(countdown.panel?.isVisible == true && transition.panel == nil && f.appearance.current == .light)
         countdown.complete()
         #expect(countdown.panel == nil && transition.panel?.isVisible == true && f.appearance.requests.isEmpty)
         try await Task.sleep(for: .milliseconds(300))
-        #expect(countdown.panel == nil && transition.panel == nil && f.appearance.requests == [.dark])
+        #expect(countdown.panel == nil && transition.panel?.isVisible == true && f.appearance.requests == [.dark])
+        try await Task.sleep(for: .milliseconds(1000))
+        #expect(transition.panel == nil)
     }
 
     @Test(.enabled(if: ProcessInfo.processInfo.environment["AURALIM_COUNTDOWN_UI_TESTS"] == "1"))
@@ -404,7 +500,7 @@ struct AppearanceCountdownTests {
         let original = try #require(panel.panel)
         RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.1))
         for kind in [NSEvent.EventType.leftMouseDown, .leftMouseUp] {
-            let event = try #require(NSEvent.mouseEvent(with: kind, location: NSPoint(x: 215, y: 45), modifierFlags: [],
+            let event = try #require(NSEvent.mouseEvent(with: kind, location: NSPoint(x: 215, y: 34), modifierFlags: [],
                 timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: original.windowNumber,
                 context: nil, eventNumber: 0, clickCount: 1, pressure: 1))
             app.sendEvent(event)

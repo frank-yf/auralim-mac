@@ -31,6 +31,8 @@ struct LocationSettings: Equatable {
     let mode: LocationMode
     let cityID: String
     let timeZoneID: String
+    let sunriseTime: String
+    let sunsetTime: String
     let status: String?
     let isLocating: Bool
     let failed: Bool
@@ -113,12 +115,14 @@ final class SettingsPresentation: ObservableObject {
             appearance = AppearanceSettings(mode: model.appearanceMode, countdownEnabled: model.countdownEnabled, countdownSeconds: model.countdownSeconds, animationEnabled: model.transitionAnimationEnabled, status: model.settingsStatus, error: model.errorMessage)
             location = LocationSettings(mode: model.locationMode, cityID: model.cityID,
                 timeZoneID: model.city.timeZoneID,
+                sunriseTime: model.clockTime(model.schedule?.today.sunrise),
+                sunsetTime: model.clockTime(model.schedule?.today.sunset),
                 status: model.locationMode == .automatic ? model.locationStatus : nil,
-                isLocating: model.isLocating, failed: model.locationFailure != nil)
+                isLocating: model.isLocating, failed: model.locationFailure != nil && model.locatedCity == nil)
             let schedule = model.schedule
             times = SwitchTimeSettings(title: model.t("today.city", model.cityName()),
-                lightTime: schedule?.today.sunrise == nil ? model.t("no.sunrise") : schedule?.todayLightTime.map { model.time($0) } ?? model.t("skipped"),
-                darkTime: schedule?.today.sunset == nil ? model.t("no.sunset") : schedule?.todayDarkTime.map { model.time($0) } ?? model.t("skipped"),
+                lightTime: schedule?.today.sunrise == nil ? model.t("no.sunrise") : schedule?.todayLightTime.map { model.clockTime($0) } ?? model.t("skipped"),
+                darkTime: schedule?.today.sunset == nil ? model.t("no.sunset") : schedule?.todayDarkTime.map { model.clockTime($0) } ?? model.t("skipped"),
                 sunriseHelp: model.t("sunrise") + ": " + model.time(schedule?.today.sunrise),
                 sunsetHelp: model.t("sunset") + ": " + model.time(schedule?.today.sunset),
                 polarNotice: schedule?.today.condition == .polarDay ? model.t("polar.day")

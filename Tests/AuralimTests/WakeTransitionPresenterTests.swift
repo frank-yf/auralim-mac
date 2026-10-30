@@ -11,7 +11,7 @@ struct WakeTransitionPresenterTests {
         #expect(WakeAppearanceTransition.desktopIsReady())
         for target in [Appearance.light, .dark] {
             var ready = false
-            let player = AppearanceTransitionController(reduceMotion: { false }, duration: 0.5)
+            let player = AppearanceTransitionController(reduceMotion: { false }, duration: 0.5, finalFrameDuration: 0.05)
             let gate = WakeAppearanceTransition(desktopReady: { ready }, delay: 0.01) { appearance in
                 player.play(appearance, title: "Wake transition test")
             }

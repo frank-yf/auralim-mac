@@ -246,4 +246,24 @@ struct LocationTests {
         }
     }
 
+    @Test func cachedRefreshKeepsUsingPositionWithoutChangingSolarSchedule() async {
+        await withModel(true) { model, location, _, _, _, _ in
+            location.onEvent?(.resolved(newYork))
+            let transition = model.schedule?.nextTransition
+            let state = SettingsPresentation(model: model)
+            location.onEvent?(.locating)
+            #expect(model.isLocating && model.city == newYork)
+            #expect(model.locationStatus.contains("cached location"))
+            location.onEvent?(.failed(.timeout, cachedCity: newYork))
+            for _ in 0..<3 { await Task.yield() }
+            #expect(model.schedule?.nextTransition == transition)
+            #expect(!state.location.value.failed)
+            model.language = .simplifiedChinese
+            location.onEvent?(.locating)
+            #expect(model.locationStatus.contains("沿用缓存位置"))
+            model.locationMode = .manual
+            #expect(model.locatedCity == nil && model.city == model.manualCity)
+        }
+    }
+
 }

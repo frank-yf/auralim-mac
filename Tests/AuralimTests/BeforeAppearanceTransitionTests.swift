@@ -213,16 +213,19 @@ struct BeforeAppearanceTransitionTests {
     }
 
     @Test(.enabled(if: ProcessInfo.processInfo.environment["AURALIM_BEFORE_TRANSITION_UI_TESTS"] == "1"))
-    func realPanelIsReleasedBeforeSystemApplyAndCancelledEffectsCannotApply() async throws {
+    func realPanelHoldsDuringSystemApplyAndCancelledEffectsCannotApply() async throws {
         _ = NSApplication.shared
         let player = AppearanceTransitionController(reduceMotion: { false }, duration: 0.15)
         let f = DeferredFixture(player: player); defer { f.shutdown() }
-        f.controller.panelReleased = { MainActor.assumeIsolated { player.panel == nil } }
+        f.controller.panelReleased = { MainActor.assumeIsolated { player.panel?.isVisible == true && player.isHoldingFinalFrame } }
         f.model.selectAppearanceMode(.dark)
         let first = try #require(player.panel)
         #expect(first.isVisible && f.controller.requests.isEmpty)
         try await Task.sleep(for: .milliseconds(300))
-        #expect(f.controller.requests == [.dark] && player.panel == nil && first.contentView == nil)
+        #expect(f.controller.requests == [.dark] && player.panel === first && first.isVisible)
+        try await Task.sleep(for: .milliseconds(1000))
+        #expect(player.panel == nil && first.contentView == nil)
+        f.controller.panelReleased = nil
         f.model.selectAppearanceMode(.light)
         let cancelled = try #require(player.panel)
         f.model.selectAppearanceMode(.dark) // Dark is still the actual system appearance.

@@ -19,11 +19,11 @@ struct OffsetControl: View {
             HStack(spacing: 9) {
                 DuskSymbol(name: sunrise ? "sunrise.fill" : "sunset.fill", tint: sunrise ? DuskStyle.gold : DuskStyle.blue)
                 Text(localizer.text("offset.title", title)).font(.system(size: 13, weight: .semibold))
+                    .lineLimit(1).minimumScaleFactor(0.85)
                 Spacer()
                 Text(summary)
                     .font(.caption).foregroundStyle(.secondary)
-                    .padding(.horizontal, 8).padding(.vertical, 4)
-                    .background(Color.primary.opacity(0.04), in: Capsule())
+                    .monospacedDigit()
                 Button(localizer.text("offset.reset")) { updateDraft(0); commit() }.font(.caption).controlSize(.small)
                     .accessibilityIdentifier("\(identifier)-reset")
             }

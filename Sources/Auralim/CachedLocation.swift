@@ -2,6 +2,7 @@ import Foundation
 import AuralimCore
 
 enum LocationPolicy {
+    static let requestTimeout: TimeInterval = 5
     static let refreshInterval: TimeInterval = 3 * 3600
 }
 

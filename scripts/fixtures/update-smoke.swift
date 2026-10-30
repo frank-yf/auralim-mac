@@ -43,6 +43,9 @@ struct UpdateSmoke {
             if case .failed = state { DispatchQueue.main.async { app.terminate(nil) } }
         }
         updater.start()
+        // Manual is the default: explicitly exercise the user-requested update path.
+        record("update-mode-" + updater.mode.rawValue)
+        DispatchQueue.main.async { record("user-initiated-update-check"); updater.checkForUpdates() }
         withExtendedLifetime(subscription) { app.run() }
     }
 }

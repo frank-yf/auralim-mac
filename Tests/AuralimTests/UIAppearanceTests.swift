@@ -57,7 +57,7 @@ struct UIAppearanceTests {
         #expect(host.bounds.width == 600)
         #expect(host.bounds.height <= 720)
         #expect(descendants(host).compactMap { $0 as? NSSlider }.count == 2)
-        #expect(descendants(host).compactMap { $0 as? NSTextField }.filter(\.isEditable).count == 3)
+        #expect(descendants(host).compactMap { $0 as? NSTextField }.filter(\.isEditable).count == (model.countdownEnabled ? 3 : 2))
         let switches = descendants(host).compactMap { $0 as? NSSwitch }
         print("Native settings switches:", switches.count)
         #expect(switches.count == 3 + (BuildFeatures.debugToolsEnabled ? 1 : 0))
@@ -136,7 +136,7 @@ struct UIAppearanceTests {
                 for theme in [NSAppearance.Name.aqua, .darkAqua] {
                     menu.appearance = NSAppearance(named: theme)
                     try capture(menu, "menu-\(language.rawValue)-\(enabled ? "on" : "off")-\(theme == .aqua ? "light" : "dark")")
-                    #expect(menu.contentView!.bounds.size == NSSize(width: 320, height: 264))
+                    #expect(menu.contentView!.bounds.size == NSSize(width: 320, height: 188))
                 }
             }
         }

@@ -47,6 +47,14 @@ final class LocationController: LocationProviding {
     private var timeout: Timer?
     private var retry: Timer?
     private var refreshTimer: Timer?
+    private var networkRetry: Timer?
+    private var networkRetryGeneration = 0
+    private var networkObservationGeneration = 0
+    private var canRecoverOnNetworkChange = false
+    private var networkChangedDuringRequest = false
+    private var networkRecoveryCount = 0
+    private var lastNetworkRecovery: Date?
+    private let network: any NetworkChangeObserving
     private(set) var nextRefresh: Date?
     private var pending = false
     private var active = false
@@ -71,6 +79,7 @@ final class LocationController: LocationProviding {
          servicesEnabled: @escaping @MainActor () -> Bool = { CLLocationManager.locationServicesEnabled() },
          now: @escaping () -> Date = Date.init,
          lookupTimeZone: ((Double, Double) -> TimeZone?)? = nil,
+         network: (any NetworkChangeObserving)? = nil,
          schedule: @escaping @MainActor (TimeInterval, @escaping @MainActor () -> Void) -> Timer = { delay, action in
              let timer = Timer(timeInterval: delay, repeats: false) { _ in
                  MainActor.assumeIsolated { action() }
@@ -85,11 +94,18 @@ final class LocationController: LocationProviding {
         self.now = now
         self.lookupTimeZone = lookupTimeZone
         self.schedule = schedule
+        self.network = network ?? NetworkConfigurationObserver()
     }
 
     func start() {
         guard !active else { return }
         active = true
+        networkObservationGeneration += 1
+        let generation = networkObservationGeneration
+        network.start { [weak self] in
+            guard let self, self.active, self.networkObservationGeneration == generation else { return }
+            self.networkChanged()
+        }
         if let city = cache?.usableCity(at: now()) { onEvent?(.resolved(city)) }
         refreshIfNeeded()
     }
@@ -108,8 +124,14 @@ final class LocationController: LocationProviding {
         }
     }
 
-    private func requestFix() {
+    private func requestFix(resetNetworkBudget: Bool = true) {
         guard active, !pending else { return }
+        cancelNetworkRetry()
+        canRecoverOnNetworkChange = false
+        networkChangedDuringRequest = false
+        if resetNetworkBudget {
+            networkRecoveryCount = 0; lastNetworkRecovery = nil
+        }
         if session == nil {
             let session = makeSession()
             self.session = session
@@ -134,10 +156,10 @@ final class LocationController: LocationProviding {
             attempt = 1
             requestGeneration += 1
             let generation = requestGeneration
-            requestDeadline = now().addingTimeInterval(30)
+            requestDeadline = now().addingTimeInterval(LocationPolicy.requestTimeout)
             cancelRefresh()
             onEvent?(.locating)
-            timeout = schedule(30) { [weak self] in
+            timeout = schedule(LocationPolicy.requestTimeout) { [weak self] in
                 guard let self, self.pending, self.requestGeneration == generation else { return }
                 self.fail(.timeout)
             }
@@ -174,6 +196,9 @@ final class LocationController: LocationProviding {
                 defaults.set(data, forKey: "cachedLocation")
             }
             cancelRequest()
+            cancelNetworkRetry()
+            canRecoverOnNetworkChange = false
+            networkRecoveryCount = 0; lastNetworkRecovery = nil
             releaseSession()
             scheduleRefresh(at: sample.timestamp.addingTimeInterval(LocationPolicy.refreshInterval))
             logger.info("Location resolved and cached using offline time-zone lookup")
@@ -194,6 +219,8 @@ final class LocationController: LocationProviding {
         guard pending, session != nil, retry == nil else { return }
         guard attempt <= retryDelays.count else { fail(.unavailable); return }
         let delay = retryDelays[attempt - 1]
+        // Never queue a retry outside the overall five-second acquisition window.
+        guard let deadline = requestDeadline, now().addingTimeInterval(delay) < deadline else { return }
         let generation = requestGeneration
         logger.info("Retrying location after \(delay, privacy: .public) seconds")
         retry = schedule(delay) { [weak self] in
@@ -206,6 +233,31 @@ final class LocationController: LocationProviding {
             self.logger.info("Requesting location, attempt \(self.attempt, privacy: .public)")
             self.session?.requestLocation()
         }
+    }
+
+    private func networkChanged() {
+        guard active else { return }
+        if pending { networkChangedDuringRequest = true; return }
+        guard canRecoverOnNetworkChange, !awaitingAuthorization,
+              networkRecoveryCount < 2 else { return }
+        cancelNetworkRetry()
+        let generation = networkRetryGeneration
+        let cooldown = lastNetworkRecovery.map { 60 - now().timeIntervalSince($0) } ?? 0
+        networkRetry = schedule(max(3, cooldown)) { [weak self] in
+            guard let self, self.active, self.networkRetryGeneration == generation,
+                  self.canRecoverOnNetworkChange, !self.pending, !self.awaitingAuthorization,
+                  self.networkRecoveryCount < 2 else { return }
+            self.networkRetry = nil
+            self.networkRecoveryCount += 1
+            self.lastNetworkRecovery = self.now()
+            self.logger.info("Network configuration changed; location recovery \(self.networkRecoveryCount) of 2")
+            self.requestFix(resetNetworkBudget: false)
+        }
+    }
+
+    private func cancelNetworkRetry() {
+        networkRetryGeneration += 1
+        networkRetry?.invalidate(); networkRetry = nil
     }
 
     private func cancelRequest() {
@@ -243,6 +295,12 @@ final class LocationController: LocationProviding {
 
     func stop() {
         active = false
+        networkObservationGeneration += 1
+        network.stop()
+        cancelNetworkRetry()
+        canRecoverOnNetworkChange = false
+        networkChangedDuringRequest = false
+        networkRecoveryCount = 0; lastNetworkRecovery = nil
         cancelRequest()
         cancelRefresh()
         releaseSession()
@@ -251,11 +309,14 @@ final class LocationController: LocationProviding {
     private func fail(_ error: LocationFailure) {
         guard let session else { return }
         cancelRequest()
+        cancelNetworkRetry()
+        canRecoverOnNetworkChange = error == .timeout || error == .unavailable
         session.stopUpdates()
         releaseSession()
-        // Keep the previous fix and wait three hours before the next automatic attempt.
+        // Keep the previous fix and the three-hour schedule; route changes may trigger bounded recovery.
         scheduleRefresh(at: now().addingTimeInterval(LocationPolicy.refreshInterval))
         logger.error("Location request ended: \(error.rawValue, privacy: .public)")
         onEvent?(.failed(error, cachedCity: cache?.usableCity(at: now())))
+        if networkChangedDuringRequest, canRecoverOnNetworkChange { networkChanged() }
     }
 }

@@ -95,7 +95,7 @@
 "help.login.title" = "Iniciar ao entrar";
 "help.login.body" = "Ative «Abrir ao iniciar sessão» nos ajustes para abrir o Auralim ao entrar no macOS e restaurar a cidade, os ajustes de horário e a troca automática salvos. Se necessário, autorize em Itens de Início. O controle continua ligado enquanto aguarda aprovação; o status indica se está ativo. Desativar impede aberturas futuras sem fechar o app atual.";
 "location.mode" = "Modo de localização";
-"location.manual" = "Cidade";
+"location.manual" = "Escolher cidade";
 "location.automatic" = "Automática";
 "location.current" = "Localização atual";
 "location.fallbackCity" = "Cidade alternativa";
@@ -123,7 +123,7 @@
 "appearance.auto.help" = "Alternar automaticamente no nascer e pôr do sol locais";
 "transition.sunrise" = "Nascer do sol · Aparência clara";
 "transition.sunset" = "Pôr do sol · Aparência escura";
-"transition.enabled" = "Animação do nascer e pôr do sol";
+"transition.enabled" = "Animação de troca";
 "location.cachedFallback" = "%@ Usando a localização em cache: %@.";
 "update.automatic" = "Busca e baixa atualizações automaticamente";
 "update.check" = "Buscar atualizações";
@@ -142,7 +142,7 @@
 "update.error.validation" = "A verificação falhou. A atualização não foi instalada.";
 "update.error.installation" = "Não foi possível instalar a atualização. Tente novamente ou baixe pelo GitHub.";
 
-"countdown.enabled" = "Contagem regressiva antes da mudança";
+"countdown.enabled" = "Contagem regressiva";
 "countdown.seconds" = "segundos";
 "countdown.remaining" = "Mudança para %@ em %d segundos";
 "countdown.now" = "Mudar agora";
@@ -161,3 +161,10 @@
 "debug.apply" = "Mudar a aparência do sistema após a prévia";
 "debug.applyHint" = "Após a prévia, ativar a aparência escolhida no modo manual.";
 "countdown.acknowledge" = "Entendi";
+
+"update.mode" = "Atualizações";
+"update.mode.manual" = "Manuais";
+"update.mode.automatic" = "Automáticas";
+"update.manual" = "Verificar e baixar atualizações manualmente";
+
+"location.cachedRefreshing" = "Atualizando; localização salva: %@.";

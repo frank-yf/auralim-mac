@@ -16,17 +16,39 @@ struct MenuLayoutTests {
         let size = host.fittingSize
         print("Unconstrained menu fitting size:", size)
         #expect(size.width == 320)
-        #expect(size.height == 264)
+        #expect(size.height == 188)
         #expect(size.height <= 300)
         let controller = NSHostingController(rootView: MenuContent(model: model))
         let compressed = controller.sizeThatFits(in: NSSize(width: 320, height: 1))
         print("Compressed menu fitting size:", compressed)
-        #expect(compressed.height == 264)
+        #expect(compressed.height == 188)
+        if let path = ProcessInfo.processInfo.environment["AURALIM_MENU_LAYOUT_OUTPUT"] {
+            let app = NSApplication.shared
+            app.setActivationPolicy(.regular); app.finishLaunching()
+            let folder = URL(fileURLWithPath: path)
+            try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 320, height: 188), styleMask: [.titled], backing: .buffered, defer: false)
+            window.isReleasedWhenClosed = false; window.contentView = host; window.orderFront(nil)
+            defer { window.close() }
+            for language in [AppLanguage.simplifiedChinese, .english] {
+                model.language = language
+                for theme in [NSAppearance.Name.aqua, .darkAqua] {
+                    window.appearance = NSAppearance(named: theme)
+                    RunLoop.main.run(until: Date().addingTimeInterval(0.18))
+                    host.layoutSubtreeIfNeeded()
+                    if let bitmap = host.bitmapImageRepForCachingDisplay(in: host.bounds) {
+                        host.cacheDisplay(in: host.bounds, to: bitmap)
+                        let file = folder.appendingPathComponent("menu-\(language.rawValue)-\(theme == .aqua ? "light" : "dark").png")
+                        try? bitmap.representation(using: .png, properties: [:])?.write(to: file)
+                    }
+                }
+            }
+        }
     }
 
     @Test
     func panelFitsSmallerDisplays() {
-        #expect(SettingsPanelLayout.height(availableHeight: 900) == 720)
+        #expect(SettingsPanelLayout.height(availableHeight: 900) == 640)
         #expect(SettingsPanelLayout.height(availableHeight: 600) == 520)
         #expect(SettingsPanelLayout.height(availableHeight: 480) == 400)
     }

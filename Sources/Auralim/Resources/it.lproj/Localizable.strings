@@ -95,7 +95,7 @@
 "help.login.title" = "Avvio al login";
 "help.login.body" = "Attiva «Apri al login» nelle impostazioni per avviare Auralim all’accesso a macOS e ripristinare città, scostamenti e cambio automatico salvati. Se richiesto, autorizza Auralim in Elementi login. L’interruttore resta acceso in attesa di approvazione; lo stato indica se è attivo. Disattivarlo impedisce avvii futuri senza chiudere l’app corrente.";
 "location.mode" = "Modalità posizione";
-"location.manual" = "Città";
+"location.manual" = "Scegli città";
 "location.automatic" = "Automatica";
 "location.current" = "Posizione attuale";
 "location.fallbackCity" = "Città alternativa";
@@ -123,7 +123,7 @@
 "appearance.auto.help" = "Cambia automaticamente all’alba e al tramonto locali";
 "transition.sunrise" = "Alba · Aspetto chiaro";
 "transition.sunset" = "Tramonto · Aspetto scuro";
-"transition.enabled" = "Animazione di alba e tramonto";
+"transition.enabled" = "Animazione del cambio";
 "location.cachedFallback" = "%@ Uso della posizione memorizzata: %@.";
 "update.automatic" = "Ricerca e download automatici";
 "update.check" = "Cerca aggiornamenti";
@@ -142,7 +142,7 @@
 "update.error.validation" = "Verifica non riuscita. L’aggiornamento non è stato installato.";
 "update.error.installation" = "Impossibile installare l’aggiornamento. Riprova o scarica da GitHub.";
 
-"countdown.enabled" = "Conto alla rovescia prima del cambio";
+"countdown.enabled" = "Conto alla rovescia";
 "countdown.seconds" = "secondi";
 "countdown.remaining" = "Passaggio a %@ tra %d secondi";
 "countdown.now" = "Cambia ora";
@@ -161,3 +161,10 @@
 "debug.apply" = "Cambia l’aspetto del sistema dopo l’anteprima";
 "debug.applyHint" = "Dopo l’anteprima, applica l’aspetto selezionato in modalità manuale.";
 "countdown.acknowledge" = "Capito";
+
+"update.mode" = "Aggiornamenti";
+"update.mode.manual" = "Manuali";
+"update.mode.automatic" = "Automatici";
+"update.manual" = "Cerca e scarica gli aggiornamenti manualmente";
+
+"location.cachedRefreshing" = "Aggiornamento; posizione salvata: %@.";

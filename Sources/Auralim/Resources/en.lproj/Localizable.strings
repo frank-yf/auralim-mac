@@ -97,7 +97,7 @@
 "help.login.body" = "Enable Launch at login on the Automatic switching tab to start Auralim when you log in to macOS. It restores your saved city, offsets, and automatic switching setting. If approval is required, open Login Items Settings and allow Auralim. The switch remains on while approval is pending; the status indicates whether it is active. Turning it off prevents future launches at login and keeps the current app running.";
 
 "location.mode" = "Location mode";
-"location.manual" = "Manual city";
+"location.manual" = "Select city";
 "location.automatic" = "Automatic location";
 "location.current" = "Current location";
 "location.fallbackCity" = "Fallback city";
@@ -127,7 +127,7 @@
 "appearance.auto.help" = "Switch automatically at local sunrise and sunset";
 "transition.sunrise" = "Sunrise · Light appearance";
 "transition.sunset" = "Sunset · Dark appearance";
-"transition.enabled" = "Sunrise and sunset animation";
+"transition.enabled" = "Switch animation";
 
 "location.cachedFallback" = "%@ Using cached location: %@.";
 
@@ -167,3 +167,10 @@
 "debug.apply" = "Switch system appearance after preview";
 "debug.applyHint" = "After preview, switch to the selected appearance in manual mode.";
 "countdown.acknowledge" = "Got it";
+
+"update.mode" = "Software updates";
+"update.mode.manual" = "Manual updates";
+"update.mode.automatic" = "Automatic updates";
+"update.manual" = "Check for updates manually";
+
+"location.cachedRefreshing" = "Refreshing; using cached location: %@.";

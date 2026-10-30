@@ -95,7 +95,7 @@
 "help.login.title" = "Abrir al iniciar sesión";
 "help.login.body" = "Activa «Abrir al iniciar sesión» en los ajustes para iniciar Auralim al entrar en macOS y restaurar la ciudad, los ajustes horarios y el cambio automático guardados. Si hace falta, autorízalo en Ítems de inicio. El interruptor sigue activo mientras se espera aprobación; el estado indica si funciona. Desactivarlo evita futuros inicios sin cerrar la app actual.";
 "location.mode" = "Modo de ubicación";
-"location.manual" = "Ciudad";
+"location.manual" = "Elegir ciudad";
 "location.automatic" = "Automática";
 "location.current" = "Ubicación actual";
 "location.fallbackCity" = "Ciudad de respaldo";
@@ -123,7 +123,7 @@
 "appearance.auto.help" = "Cambiar automáticamente al amanecer y al atardecer locales";
 "transition.sunrise" = "Amanecer · Modo claro";
 "transition.sunset" = "Atardecer · Modo oscuro";
-"transition.enabled" = "Animación de amanecer y atardecer";
+"transition.enabled" = "Animación de cambio";
 "location.cachedFallback" = "%@ Se usa la ubicación en caché: %@.";
 "update.automatic" = "Busca y descarga actualizaciones automáticamente";
 "update.check" = "Buscar actualizaciones";
@@ -142,7 +142,7 @@
 "update.error.validation" = "Falló la verificación. La actualización no se instaló.";
 "update.error.installation" = "No se pudo instalar la actualización. Reintenta o descarga desde GitHub.";
 
-"countdown.enabled" = "Cuenta atrás antes del cambio";
+"countdown.enabled" = "Cuenta atrás del cambio";
 "countdown.seconds" = "segundos";
 "countdown.remaining" = "Cambio a %@ en %d segundos";
 "countdown.now" = "Cambiar ahora";
@@ -161,3 +161,10 @@
 "debug.apply" = "Cambiar la apariencia del sistema tras la vista previa";
 "debug.applyHint" = "Tras la vista previa, activar la apariencia elegida en modo manual.";
 "countdown.acknowledge" = "Entendido";
+
+"update.mode" = "Actualizaciones";
+"update.mode.manual" = "Manuales";
+"update.mode.automatic" = "Automáticas";
+"update.manual" = "Buscar y descargar actualizaciones manualmente";
+
+"location.cachedRefreshing" = "Actualizando; ubicación guardada: %@.";

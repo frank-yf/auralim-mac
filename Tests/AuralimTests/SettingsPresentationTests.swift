@@ -39,6 +39,40 @@ struct SettingsPresentationTests {
         await body(model, controller)
     }
 
+    @Test func locationTimesUseRealSolarEventsWithoutOffsets() async {
+        await withModel { model, _ in
+            model.cityID = "Asia/Shanghai"
+            let state = SettingsPresentation(model: model)
+            let initial = state.location.value
+            #expect(initial.sunriseTime == model.clockTime(model.schedule?.today.sunrise))
+            #expect(initial.sunsetTime == model.clockTime(model.schedule?.today.sunset))
+            model.sunriseOffset = 120; model.offset = -120
+            await flush()
+            #expect(state.location.value == initial)
+            model.cityID = "America/New_York"
+            await flush()
+            #expect(state.location.value.cityID == "America/New_York")
+            #expect(state.location.value.sunriseTime == model.clockTime(model.schedule?.today.sunrise))
+            #expect(state.location.value.sunsetTime == model.clockTime(model.schedule?.today.sunset))
+        }
+    }
+
+    @Test func expectedTimesUse24HourClockAndTheSelectedCityTimeZone() async {
+        await withModel { model, _ in
+            let instant = ISO8601DateFormatter().date(from: "2026-10-30T04:00:00Z")!
+            model.cityID = "Asia/Shanghai"
+            #expect(model.clockTime(instant) == "12:00")
+            let state = SettingsPresentation(model: model)
+            #expect(state.times.value.lightTime.range(of: #"^\d{2}:\d{2}$"#, options: .regularExpression) != nil)
+            #expect(state.times.value.darkTime.range(of: #"^\d{2}:\d{2}$"#, options: .regularExpression) != nil)
+            #expect(model.time(instant).count > 5) // The tray and full-date tooltips keep their date.
+            model.cityID = "America/New_York"
+            await flush()
+            #expect(model.clockTime(instant) == "00:00")
+            #expect(state.times.value.lightTime.range(of: #"^\d{2}:\d{2}$"#, options: .regularExpression) != nil)
+        }
+    }
+
     @Test func offsetOnlyPublishesEditedSectionAndTimeTextDuringAndAfterVerification() async {
         await withModel { model, controller in
             let state = SettingsPresentation(model: model)

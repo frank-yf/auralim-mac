@@ -135,6 +135,7 @@ final class AppModel: ObservableObject {
     private var pendingCountdown: (id: UUID, target: Appearance)?
     private var cancelledCountdownTarget: Appearance?
     private var applyingDebugPreview = false
+    private var handlingAppearanceSelection = false
     private var pendingTransition: (id: UUID, target: Appearance)?
     private let desktopReady: @MainActor () -> Bool
     private let loginItemController: LoginItemControlling
@@ -245,7 +246,8 @@ final class AppModel: ObservableObject {
         switch event {
         case .locating: isLocating = true; locationFailure = nil
         case .resolved(let city):
-            locatedCity = city; isLocating = false; locationFailure = nil
+            locatedCity = city
+            isLocating = false; locationFailure = nil
         case .failed(let error, let cachedCity):
             locatedCity = cachedCity ?? locatedCity; isLocating = false; locationFailure = error
         }
@@ -263,7 +265,10 @@ final class AppModel: ObservableObject {
             }
             return t("location.fallback", t(locationFailure.localizationKey), cityName(manualCity))
         }
-        if isLocating { return t("location.locating") }
+        if isLocating {
+            if let locatedCity { return t("location.cachedRefreshing", locationCoordinates(locatedCity)) }
+            return t("location.locating")
+        }
         if let locatedCity {
             return t("location.using", locationCoordinates(locatedCity))
         }
@@ -382,13 +387,13 @@ final class AppModel: ObservableObject {
         debugPreview.stop()
         let id = UUID()
         pendingTransition = (id, target)
-        transitionPlayer.play(target, title: t(target == .light ? "transition.sunrise" : "transition.sunset")) { [weak self] in
+        transitionPlayer.play(target, title: t(target == .light ? "transition.sunrise" : "transition.sunset"), onAnimationEnd: { [weak self] in
             guard let self, !self.isShutdown, self.pendingTransition?.id == id else { return }
             self.pendingTransition = nil
             // Re-evaluate time, city, settings and actual appearance after the
             // effect. Never apply a captured target that has become obsolete.
             self.reconcile(allowAnimation: false, allowCountdown: false)
-        }
+        }, completion: {})
     }
 
     private func configurationChanged() {
@@ -406,6 +411,11 @@ final class AppModel: ObservableObject {
     func selectAppearanceMode(_ selection: AppearanceMode?) {
         guard let mode = selection else { return }
         guard mode != appearanceMode || cancelledCountdownTarget != nil || (!enabled && manualAppearance == nil) else { return }
+        // Explicit choices, including Auto, express intent to switch now.
+        // Scope this to the selection so later scheduled transitions still count down.
+        let previousSelection = handlingAppearanceSelection
+        handlingAppearanceSelection = true
+        defer { handlingAppearanceSelection = previousSelection }
         cancelledCountdownTarget = nil
         statusState = .disabled
         if mode == .automatic {
@@ -463,7 +473,7 @@ final class AppModel: ObservableObject {
         if cancelledCountdownTarget != target { cancelledCountdownTarget = nil }
         if cancelledCountdownTarget == target && !wakeTransition.requiresImmediateCorrection { return }
         // Manual choices already express intent: animate and apply without a countdown.
-        let canCountdown = enabled && !applyingDebugPreview && allowCountdown && countdownEnabled && failures == 0
+        let canCountdown = enabled && !handlingAppearanceSelection && !applyingDebugPreview && allowCountdown && countdownEnabled && failures == 0
             && !wakeTransition.requiresImmediateCorrection && desktopReady() && target != currentSystemAppearance
         if let pendingCountdown {
             if pendingCountdown.target == target && canCountdown { return }
@@ -485,7 +495,7 @@ final class AppModel: ObservableObject {
             animateBeforeApplying(target)
             return
         }
-        if target != currentSystemAppearance { debugPreview.stop() }
+        if target != currentSystemAppearance && !applyingDebugPreview { debugPreview.stop() }
         isApplying = true
         let requestGeneration = generation
         controller.apply(target) { [weak self] result in
@@ -561,6 +571,15 @@ final class AppModel: ObservableObject {
     func cityName(_ city: City? = nil) -> String {
         let selected = city ?? self.city
         return selected.id == "current-location" ? t("location.current") : localizer.cityName(selected)
+    }
+
+    func clockTime(_ date: Date?) -> String {
+        guard let date else { return t("none") }
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = city.timeZone
+        formatter.dateFormat = "HH:mm"
+        return formatter.string(from: date)
     }
 
     func time(_ date: Date?) -> String {

@@ -123,7 +123,7 @@
 "appearance.auto.help" = "현지 일출과 일몰에 자동으로 전환";
 "transition.sunrise" = "일출 · 라이트 모드";
 "transition.sunset" = "일몰 · 다크 모드";
-"transition.enabled" = "일출 및 일몰 애니메이션";
+"transition.enabled" = "전환 애니메이션";
 "location.cachedFallback" = "%@ 캐시된 위치 사용: %@.";
 "update.automatic" = "업데이트 자동 확인 및 다운로드";
 "update.check" = "업데이트 확인";
@@ -142,7 +142,7 @@
 "update.error.validation" = "업데이트 검증에 실패했습니다. 업데이트는 설치되지 않았습니다.";
 "update.error.installation" = "업데이트를 설치할 수 없습니다. 다시 시도하거나 GitHub에서 다운로드하세요.";
 
-"countdown.enabled" = "전환 전 카운트다운";
+"countdown.enabled" = "전환 카운트다운";
 "countdown.seconds" = "초";
 "countdown.remaining" = "%@ 모드로 전환까지 %d초";
 "countdown.now" = "지금 전환";
@@ -161,3 +161,10 @@
 "debug.apply" = "미리보기 종료 후 시스템 모드 전환";
 "debug.applyHint" = "미리보기 후 선택한 시스템 모드로 전환하고 수동 모드를 사용합니다.";
 "countdown.acknowledge" = "확인";
+
+"update.mode" = "소프트웨어 업데이트";
+"update.mode.manual" = "수동 업데이트";
+"update.mode.automatic" = "자동 업데이트";
+"update.manual" = "업데이트를 수동으로 확인 및 다운로드";
+
+"location.cachedRefreshing" = "새로 고치는 중. 저장된 위치 사용: %@.";

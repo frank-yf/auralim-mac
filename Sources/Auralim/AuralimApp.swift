@@ -34,17 +34,15 @@ struct MenuContent: View {
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 8) {
                 DuskMark(size: 30)
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(model.t("app.name")).accessibilityIdentifier("menu-app-name").font(.system(size: 14, weight: .semibold)).lineLimit(1)
-                    Text(model.appearanceModeTitle)
-                        .font(.caption).foregroundStyle(.secondary).lineLimit(1).minimumScaleFactor(0.8)
-                }.frame(maxWidth: .infinity, alignment: .leading)
+                Text(model.t("app.name")).accessibilityIdentifier("menu-app-name")
+                    .font(.system(size: 14, weight: .semibold)).lineLimit(1)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 AppearanceModePicker(selection: Binding(get: { model.appearanceMode }, set: { model.selectAppearanceMode($0) }),
                                      localizer: model.localizer, identifier: "menu-appearance-mode")
-                    .frame(width: 180, alignment: .trailing)
+                    .frame(width: 166, alignment: .trailing)
             }
             VStack(alignment: .leading, spacing: 10) {
                 HStack(spacing: 5) {
@@ -59,7 +57,7 @@ struct MenuContent: View {
                                    tint: next.appearance == .dark ? DuskStyle.blue : DuskStyle.gold)
                         VStack(alignment: .leading, spacing: 3) {
                             Text(model.time(next.date))
-                                .font(.system(size: 18, weight: .semibold, design: .rounded))
+                                .font(.system(size: 17, weight: .semibold, design: .rounded))
                                 .monospacedDigit().lineLimit(1).minimumScaleFactor(0.8)
                             Text(model.t(next.appearance == .dark ? "dark" : "light"))
                                 .font(.caption).foregroundStyle(.secondary)
@@ -72,11 +70,6 @@ struct MenuContent: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }.duskCard(padding: 12)
-            Label(model.settingsStatus, systemImage: model.errorMessage != nil ? "exclamationmark.circle" : (model.enabled || model.manualAppearance != nil) ? "checkmark.circle" : "pause.circle")
-                .font(.caption).foregroundStyle(model.errorMessage == nil ? Color.secondary : .orange)
-                .lineLimit(2).frame(maxWidth: .infinity, minHeight: 28, alignment: .leading)
-                .help(model.errorMessage ?? model.settingsStatus)
-            Divider()
             HStack {
                 Button {
                     dismiss()
@@ -89,6 +82,7 @@ struct MenuContent: View {
                 Spacer()
                 Button(action: quit) { Label(model.t("quit"), systemImage: "power") }
             }.buttonStyle(.borderless).controlSize(.small)
+                .frame(minHeight: 24, maxHeight: .infinity, alignment: .bottom)
         }
         .padding(16)
         // Keep an explicit viewport: MenuBarExtra can propose a near-zero height.
@@ -101,5 +95,5 @@ struct MenuContent: View {
 
 enum MenuPanelLayout {
     static let width: CGFloat = 320
-    static let height: CGFloat = 264
+    static let height: CGFloat = 188
 }

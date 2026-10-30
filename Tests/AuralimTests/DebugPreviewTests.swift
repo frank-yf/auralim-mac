@@ -162,7 +162,8 @@ struct DebugPreviewTests {
         let f = PreviewFixture(); defer { f.close() }; f.debug.enabled = true
         f.model.countdownEnabled = true
         f.appearance.current = .dark
-        f.model.selectAppearanceMode(.automatic)
+        // Simulate automatic scheduling; an explicit Auto click now skips countdown.
+        f.model.enabled = true
         #expect(!f.model.canPreviewDebug && f.realCountdown.seconds == 10)
         f.model.previewDebug(.sequence, target: .light)
         #expect(f.countdown.seconds == nil && f.debug.phase == .idle)
@@ -204,14 +205,14 @@ struct DebugPreviewTests {
         #expect(!f.debug.applyAppearanceAfterPreview)
     }
 
-    @Test func enabledFullPreviewAppliesOnceAfterReleaseAndEntersManualMode() {
+    @Test func enabledFullPreviewAppliesAtMotionEndAndEntersManualMode() {
         let f = PreviewFixture(); defer { f.close() }; f.debug.enabled = true
         f.model.selectAppearanceMode(.automatic)
         f.model.countdownEnabled = true; f.model.transitionAnimationEnabled = true
         f.debug.applyAppearanceAfterPreview = true
         let initialRequests = f.appearance.targets
         f.appearance.beforeApply = {
-            #expect(f.debug.phase == .idle && f.countdown.seconds == nil && f.animation.completion == nil)
+            #expect(f.debug.phase == .animation(.dark) && f.countdown.seconds == nil)
         }
         f.model.previewDebug(.sequence, target: .dark)
         #expect(f.appearance.targets == initialRequests)
@@ -257,20 +258,25 @@ struct DebugPreviewTests {
     }
 
     @Test(.enabled(if: ProcessInfo.processInfo.environment["AURALIM_DEBUG_UI_TESTS"] == "1"))
-    func nativeOptInAppliesOnlyAfterBothPanelsAreReleased() async throws {
+    func nativeOptInAppliesAtMotionEndWhileFinalFrameHolds() async throws {
         _ = NSApplication.shared
         let countdown = CountdownController(preview: true)
         let animation = AppearanceTransitionController(reduceMotion: { false }, duration: 0.15)
         let f = PreviewFixture(countdown: countdown, animation: animation); defer { f.close() }; f.debug.enabled = true
         f.debug.applyAppearanceAfterPreview = true
-        f.appearance.beforeApply = { #expect(countdown.panel == nil && animation.panel == nil) }
+        f.appearance.beforeApply = { #expect(countdown.panel == nil && animation.panel?.isVisible == true && animation.isHoldingFinalFrame) }
         f.model.previewDebug(.sequence, target: .dark)
         #expect(countdown.panel?.isVisible == true && f.appearance.targets.isEmpty)
         countdown.complete()
         #expect(animation.panel?.isVisible == true && f.appearance.targets.isEmpty)
-        try await Task.sleep(for: .milliseconds(300))
+        for _ in 0..<75 {
+            if !f.appearance.targets.isEmpty { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
         #expect(f.appearance.targets == [.dark] && f.model.currentSystemAppearance == .dark)
-        #expect(countdown.panel == nil && animation.panel == nil && f.debug.phase == .idle)
+        #expect(countdown.panel == nil && animation.panel?.isVisible == true && f.debug.phase == .animation(.dark))
+        try await Task.sleep(for: .milliseconds(1000))
+        #expect(animation.panel == nil && f.debug.phase == .idle)
     }
 
     @Test(.enabled(if: ProcessInfo.processInfo.environment["AURALIM_DEBUG_UI_TESTS"] == "1"))
@@ -284,7 +290,10 @@ struct DebugPreviewTests {
         #expect(panel.title == f.model.t("debug.countdown") && animation.panel == nil)
         countdown.complete()
         #expect(countdown.panel == nil && panel.contentView == nil && animation.panel?.isVisible == true)
-        try await Task.sleep(for: .milliseconds(300))
+        for _ in 0..<150 {
+            if animation.panel == nil { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
         #expect(animation.panel == nil && f.debug.phase == .idle && f.appearance.targets.isEmpty)
     }
 
@@ -295,8 +304,8 @@ struct DebugPreviewTests {
         let animation = PreviewAnimation()
         let f = PreviewFixture(countdown: countdown, animation: animation); defer { f.close() }
         let window = NSWindow(contentViewController: NSHostingController(rootView: DebugSettingsView(model: f.model, preview: f.debug)
-            .frame(width: 552).padding(14).frame(width: 580, height: 270, alignment: .topLeading).background(DuskStyle.background)))
-        window.isReleasedWhenClosed = false; window.setContentSize(NSSize(width: 580, height: 270))
+            .frame(width: 552).padding(14).frame(width: 580, height: 360, alignment: .topLeading).background(DuskStyle.background)))
+        window.isReleasedWhenClosed = false; window.setContentSize(NSSize(width: 580, height: 360))
         window.center(); window.makeKeyAndOrderFront(nil); app.activate(ignoringOtherApps: true)
         defer { window.close() }
         func settle() { RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.15)) }
@@ -320,31 +329,45 @@ struct DebugPreviewTests {
             window.appearance = NSAppearance(named: theme); settle()
             try capture(theme == .aqua ? "debug-light" : "debug-dark")
         }
-        func click(_ x: CGFloat) throws {
+        func click(_ key: String) throws {
+            // Native focus hosts identify the four bordered buttons without fixed coordinates.
+            let pickerBottom = picker.convert(picker.bounds, to: nil).minY
+            let buttons = views(content).filter {
+                String(describing: Swift.type(of: $0)) == "_FocusRingView" &&
+                    $0.convert(NSPoint(x: $0.bounds.midX, y: $0.bounds.midY), to: nil).y < pickerBottom
+            }.sorted { lhs, rhs in
+                let l = lhs.convert(NSPoint(x: lhs.bounds.midX, y: lhs.bounds.midY), to: nil)
+                let r = rhs.convert(NSPoint(x: rhs.bounds.midX, y: rhs.bounds.midY), to: nil)
+                return abs(l.y - r.y) > 2 ? l.y > r.y : l.x < r.x
+            }
+            try #require(buttons.count == 4)
+            let index = try #require(["debug.countdown", "debug.animation", "debug.sequence", "debug.stop"].firstIndex(of: key))
+            let button = buttons[index]
+            let point = button.convert(NSPoint(x: button.bounds.midX, y: button.bounds.midY), to: nil)
             for kind in [NSEvent.EventType.leftMouseDown, .leftMouseUp] {
-                let event = try #require(NSEvent.mouseEvent(with: kind, location: NSPoint(x: x, y: 119), modifierFlags: [],
+                let event = try #require(NSEvent.mouseEvent(with: kind, location: point, modifierFlags: [],
                     timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: window.windowNumber,
                     context: nil, eventNumber: 0, clickCount: 1, pressure: 1))
                 app.sendEvent(event)
             }
             settle()
         }
-        try click(65) // Countdown button.
+        try click("debug.countdown") // Countdown button.
         #expect(countdown.panel?.isVisible == true && f.debug.phase == .countdown(.dark))
-        try click(520) // Stop preview.
+        try click("debug.stop") // Stop preview.
         #expect(countdown.panel == nil && f.debug.phase == .idle)
-        try click(143) // Animation button.
+        try click("debug.animation") // Animation button.
         #expect(animation.targets == [.dark] && f.debug.phase == .animation(.dark))
-        try click(520)
+        try click("debug.stop")
         #expect(f.debug.phase == .idle)
-        try click(215) // Full sequence button.
+        try click("debug.sequence") // Full sequence button.
         let panel = try #require(countdown.panel)
         #expect(panel.isVisible && f.debug.phase == .countdown(.dark))
         countdown.complete()
         #expect(countdown.panel == nil && animation.targets == [.dark, .dark] && f.appearance.targets.isEmpty)
         animation.completion?(); settle(); #expect(f.debug.phase == .idle)
         picker.selectedSegment = 0; #expect(picker.sendAction(picker.action, to: picker.target)); settle()
-        try click(143)
+        try click("debug.animation")
         #expect(animation.targets == [.dark, .dark, .light])
         animation.completion?(); settle()
         let switches = views(content).compactMap { $0 as? NSSwitch }
@@ -354,7 +377,7 @@ struct DebugPreviewTests {
         #expect(f.debug.applyAppearanceAfterPreview)
         try capture("debug-apply-on")
         picker.selectedSegment = 1; #expect(picker.sendAction(picker.action, to: picker.target)); settle()
-        try click(215); countdown.complete()
+        try click("debug.sequence"); countdown.complete()
         #expect(f.appearance.targets.isEmpty)
         animation.completion?(); settle()
         #expect(f.appearance.targets == [.dark] && f.model.currentSystemAppearance == .dark)
@@ -371,12 +394,14 @@ struct DebugPreviewTests {
             let countdown = CountdownController(now: { now }, preview: true)
             let f = PreviewFixture(countdown: countdown); defer { f.close() }; f.debug.enabled = true
             f.debug.applyAppearanceAfterPreview = apply
-            f.appearance.beforeApply = { #expect(countdown.panel == nil && f.animation.completion == nil) }
+            f.model.language = apply ? .english : .simplifiedChinese
+            // Appearance is now applied at motion end while the final frame holds.
+            f.appearance.beforeApply = { #expect(countdown.panel == nil) }
             func click(_ x: CGFloat) throws {
                 let panel = try #require(countdown.panel)
                 RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.08))
                 for kind in [NSEvent.EventType.leftMouseDown, .leftMouseUp] {
-                    let event = try #require(NSEvent.mouseEvent(with: kind, location: NSPoint(x: x, y: 45), modifierFlags: [],
+                    let event = try #require(NSEvent.mouseEvent(with: kind, location: NSPoint(x: x, y: 34), modifierFlags: [],
                         timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: panel.windowNumber,
                         context: nil, eventNumber: 0, clickCount: 1, pressure: 1))
                     app.sendEvent(event)

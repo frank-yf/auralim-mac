@@ -3,7 +3,7 @@
 "language" = "語言";
 "language.system" = "跟隨系統";
 "language.hint" = "語言選擇立即生效，並儲存在本機。";
-"slogan" = "晦明變化，循日而行。";
+"slogan" = "晦明變化者，山間之朝暮也。";
 "auto" = "自動";
 "paused" = "已暫停";
 "auto.switch" = "自動切換";
@@ -18,7 +18,7 @@
 "quit" = "結束";
 "tab.general" = "自動切換";
 "tab.help" = "使用說明";
-"city.picker" = "手動城市";
+"city.picker" = "城市";
 "city.timeZone" = "城市時區：%@";
 "sunrise" = "日出";
 "sunset" = "日落";
@@ -97,10 +97,10 @@
 "help.login.body" = "在「自動切換」頁啟用「登入時啟動」，即可在登入 macOS 後啟動 晦明，恢復已儲存的城市、偏移和自動切換開關。若提示等待批准，請打開登入項目設定並允許 晦明。等待批准時開關保持開啟，狀態文字說明是否生效。關閉此開關會停止以後的登入啟動，目前的應用程式繼續執行。";
 
 "location.mode" = "位置模式";
-"location.manual" = "手動城市";
+"location.manual" = "選擇城市";
 "location.automatic" = "自動定位";
 "location.current" = "目前位置";
-"location.fallbackCity" = "備用手動城市";
+"location.fallbackCity" = "備用城市";
 "location.refresh" = "更新位置";
 "location.locating" = "正在定位… 取得新位置前繼續使用目前計畫。";
 "location.using" = "目前座標：%@";
@@ -127,7 +127,7 @@
 "appearance.auto.help" = "按當地日出日落自動切換";
 "transition.sunrise" = "日出 · 切換至淺色";
 "transition.sunset" = "日落 · 切換至深色";
-"transition.enabled" = "日出日落動畫";
+"transition.enabled" = "切換動畫";
 
 "location.cachedFallback" = "%@ 繼續使用快取位置：%@。";
 
@@ -148,7 +148,7 @@
 "update.error.validation" = "更新驗證失敗，未安裝該更新。";
 "update.error.installation" = "安裝更新失敗，請重試或前往 GitHub 下載。";
 
-"countdown.enabled" = "切換前倒數";
+"countdown.enabled" = "切換倒數計時";
 "countdown.seconds" = "秒";
 "countdown.remaining" = "切換為%@：剩餘 %d 秒";
 "countdown.now" = "立即切換";
@@ -167,3 +167,10 @@
 "debug.apply" = "預覽結束後切換系統外觀";
 "debug.applyHint" = "預覽結束後切換至選定外觀，並進入手動模式";
 "countdown.acknowledge" = "知道了";
+
+"update.mode" = "軟體更新";
+"update.mode.manual" = "手動更新";
+"update.mode.automatic" = "自動更新";
+"update.manual" = "手動檢查並下載更新";
+
+"location.cachedRefreshing" = "正在更新，沿用快取位置：%@。";

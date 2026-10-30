@@ -123,7 +123,7 @@
 "appearance.auto.help" = "現地の日の出と日の入りで自動的に切り替えます";
 "transition.sunrise" = "日の出 · ライトモード";
 "transition.sunset" = "日の入り · ダークモード";
-"transition.enabled" = "日の出・日の入りのアニメーション";
+"transition.enabled" = "切り替えアニメーション";
 "location.cachedFallback" = "%@ 保存済みの位置を使用します：%@。";
 "update.automatic" = "更新を自動確認・ダウンロード";
 "update.check" = "更新を確認";
@@ -142,7 +142,7 @@
 "update.error.validation" = "更新の検証に失敗しました。この更新はインストールしていません。";
 "update.error.installation" = "更新をインストールできません。再試行するか GitHub からダウンロードしてください。";
 
-"countdown.enabled" = "切り替え前のカウントダウン";
+"countdown.enabled" = "切り替えカウントダウン";
 "countdown.seconds" = "秒";
 "countdown.remaining" = "%@に切り替えるまで %d 秒";
 "countdown.now" = "今すぐ切り替え";
@@ -161,3 +161,10 @@
 "debug.apply" = "プレビュー後にシステムの外観を切り替える";
 "debug.applyHint" = "プレビュー後、手動モードで選択した外観に切り替えます。";
 "countdown.acknowledge" = "了解";
+
+"update.mode" = "ソフトウェア更新";
+"update.mode.manual" = "手動更新";
+"update.mode.automatic" = "自動更新";
+"update.manual" = "手動で更新を確認してダウンロード";
+
+"location.cachedRefreshing" = "更新中。保存済みの位置を使用：%@。";

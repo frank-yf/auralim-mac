@@ -7,17 +7,17 @@ import AuralimCore
 @MainActor
 @Suite(.serialized)
 struct WebsiteTransitionTests {
-    @Test func phaseMatchesWebsiteInitialMiddleAndFinalSkies() {
+    @Test func phaseFillsPlaybackAndKeepsTheFinalSkyVisible() {
         for target in [Appearance.light, .dark] {
             let start = SolarTransitionPhase(progress: 0.16, appearance: target)
-            let middle = SolarTransitionPhase(progress: 0.42, appearance: target)
-            let end = SolarTransitionPhase(progress: 0.72, appearance: target)
+            let middle = SolarTransitionPhase(progress: 0.56, appearance: target)
+            let end = SolarTransitionPhase(progress: 1, appearance: target)
             #expect(target == .light ? start.daylight < 0.02 : start.daylight > 0.98)
             #expect(abs(middle.daylight - 0.5) < 0.00001)
             #expect(target == .light ? end.daylight > 0.999 : end.daylight < 0.001)
             #expect(start.opacity == 0.78 && middle.opacity == 0.78 && abs(end.opacity - 0.78) < 0.00001)
             #expect(SolarTransitionPhase(progress: 0, appearance: target).opacity == 0)
-            #expect(SolarTransitionPhase(progress: 1, appearance: target).opacity == 0)
+            #expect(SolarTransitionPhase(progress: 1, appearance: target).opacity == 0.78)
             #expect(target == .dark ? middle.moonOrbit < middle.orbit : middle.moonOrbit == middle.orbit)
             #expect(SolarTransitionPhase(progress: 0, appearance: target).orbit < 0.00001)
             #expect(end.orbit > 0.99999)
@@ -73,7 +73,7 @@ struct WebsiteTransitionTests {
         for darkBackground in [false, true] {
             for target in [Appearance.light, .dark] {
                 var brightness: [Double] = []
-                for (stage, progress) in [("start", 0.16), ("middle", 0.42), ("end", 0.72)] {
+                for (stage, progress) in [("start", 0.16), ("middle", 0.56), ("end", 1.0)] {
                     let backdrop = darkBackground ? Color(red: 0.12, green: 0.13, blue: 0.16) : .white
                     window.contentView = NSHostingView(rootView: SolarTransitionScene(progress: progress, appearance: target)
                         .frame(width: size.width, height: size.height).background(backdrop))

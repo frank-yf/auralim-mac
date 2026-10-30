@@ -4,7 +4,7 @@
 
 **Between light and dark.**
 
-*晦明变化，循日而行。*
+*晦明变化者，山间之朝暮也。*
 
 Auralim is a native macOS menu bar app built with Swift and SwiftUI. It switches between light and dark appearance at local sunrise and sunset. Sunrise, sunset, and time-zone lookup are calculated on your Mac, without online APIs or macOS's automatic appearance schedule.
 
@@ -13,11 +13,11 @@ Auralim is a native macOS menu bar app built with Swift and SwiftUI. It switches
 ### Features
 
 - **Automatic sunrise and sunset switching**: independently calculates solar events to switch to light at sunrise and dark at sunset.
-- **Separate time offsets**: adjust sunrise and sunset independently by ±120 minutes, using synchronized sliders and minute inputs. Settings show the adjusted switch times.
+- **Separate time offsets**: adjust sunrise and sunset independently by ±120 minutes, using synchronized sliders and minute inputs. Location settings show the actual sunrise and sunset; the menu bar panel shows the next adjusted switch.
 - **Three appearance modes**: Light, Auto, and Dark stay synchronized between the menu bar panel and settings. System Auto and App Auto are clearly distinguished.
 - **Travel support**: automatic location uses your current coordinates and local time zone. You can also choose a built-in city; failed refreshes keep the cached location, using the saved manual city only when no valid cache exists.
 - **Wake recovery**: checks appearance and the schedule on launch, wake, session restore, and system time changes.
-- **Menu bar app**: a warm gold sun in light mode and a pale blue-purple moon in dark mode follow the actual system appearance. No Dock icon or WebView. Scheduling uses events and one-shot timers, with no continuous background polling.
+- **Menu bar app**: a warm gold sun in light mode and a pale blue-purple moon in dark mode follow the actual system appearance. The Dock icon appears while settings is open and hides when settings closes. No WebView. Scheduling uses events and one-shot timers, with no continuous background polling.
 - **Preferences**: launch at login, 12 interface languages, and an optional sun-and-moon transition animation that is off by default.
 
 ### Languages
@@ -38,7 +38,7 @@ The current packages are ad-hoc signed and have not been notarized by Apple. mac
 
 ### In-app updates
 
-Starting with 0.3, Sparkle 2 checks daily and downloads compatible stable updates in the background. Settings shows progress and a **Restart to update** button when ready. Clicking installs and relaunches; updates do not force a restart. Following Sparkle's standard behavior, a prepared update may also install on normal quit. Manual checks, inline errors, retry and a GitHub release-page fallback are available in the footer.
+Updates use Sparkle 2. Manual updates are the default: use Check for updates to check and download on demand. Choose Automatic updates in settings to enable daily checks and background downloads; your choice is saved. Settings shows progress and a **Restart to update** button when ready. Clicking installs and relaunches; updates do not force a restart. Following Sparkle's standard behavior, a prepared update may also install on normal quit. Manual checks, inline errors, retry and a GitHub release-page fallback are available in the scrollable preferences section.
 
 The signed feed is hosted at `https://github.com/frank-yf/auralim-mac/releases/latest/download/appcast.xml`; package URLs point to immutable release tags. Both the feed and archives use EdDSA signatures, with verification before extraction; signed-feed failures never expire into relaxed validation. Requests go to GitHub without location coordinates; system profiling is disabled. Older versions need one manual installation of 0.3 or later to gain the updater.
 
@@ -67,19 +67,19 @@ Both sliders use the center as zero: left is earlier and right is later. The hin
 | Sunrise | Darker side · earlier light-mode switch | Lighter side · later light-mode switch |
 | Sunset | Lighter side · earlier dark-mode switch | Darker side · later dark-mode switch |
 
-In the input fields, negative numbers mean earlier and positive numbers mean later, from −120 to +120 minutes. Changes apply when you release the slider, press Return, or leave the input field. Reset returns the offset to zero. Settings show the adjusted “Switch to light” and “Switch to dark” times, using the active location's time zone and local date.
+In the input fields, negative numbers mean earlier and positive numbers mean later, from −120 to +120 minutes. Changes apply when you release the slider, press Return, or leave the input field. Reset returns the offset to zero. Location settings show the actual sunrise and sunset as HH:mm, before offsets. The menu bar shows the next adjusted switch with its date and time. Both use the active location's time zone.
 
 The automatic schedule keeps light appearance during polar day and dark appearance during polar night. Offsets that cross adjacent day or night boundaries are limited or skipped, with a notice in the interface. Calculations do not account for terrain obstruction, elevation, or real-time weather.
 
 #### Offline use, privacy, and quitting
 
-Manual city mode works entirely offline. Enabling automatic location for the first time requests macOS location permission. Automatic location uses macOS Location Services, which may require Wi-Fi or a network connection. Coordinates, the local time zone, and the fix timestamp are cached only on your Mac; Auralim never uploads location data. It requests a one-time fix every 3 hours without continuous tracking or a configurable refresh interval. Launch and wake reuse fresh cached data; manual refresh and system time-zone changes request a new fix immediately. Failed refreshes keep the cached location. Your saved manual city is used only when no valid cache exists. City, offset, and language settings are also stored locally.
+Manual city mode works entirely offline. Enabling automatic location for the first time requests macOS location permission. Automatic location uses macOS Location Services, which may require Wi-Fi or a network connection. Coordinates, the local time zone, and the fix timestamp are cached only on your Mac; Auralim never uploads location data. It requests a one-time fix every 3 hours without continuous tracking or a configurable refresh interval. Launch and wake reuse fresh cached data; manual refresh and system time-zone changes request a new fix immediately. Cached coordinates remain active while refreshing and after failed refreshes. Your saved manual city is used only when no valid cache exists. Following a timeout or temporary failure, network route/DNS changes may trigger up to two additional recovery rounds, with a 3-second debounce and at least 60 seconds between rounds. Each round keeps the existing 5-second limit and bounded retries. These event-driven recovery rounds reset after success, manual refresh, or the regular periodic refresh; permission errors do not trigger network recovery. This does not bypass VPN policies or guarantee a fresh location while system Location Services is blocked. City, offset, and language settings are also stored locally.
 
-Closing settings keeps the app running. Choose Quit from the menu bar panel to stop future scheduling while keeping the current system appearance. Launch at login can be enabled in settings. The sun-and-moon animation is off by default and respects the system's Reduce Motion setting when enabled. The native animation matches the website desktop effect: a centered 96% × 84% sky overlay at up to 78% opacity, blurred dome edges, day/night sky interpolation, and enlarged sun/moon on an inner orbit. For manual and scheduled switches, the animation finishes before macOS appearance changes. Disabling animation or using Reduce Motion skips the animation. After wake, Auralim corrects the appearance immediately. If it differs from the appearance before sleep, the animation waits for the desktop to return or unlock and plays once.
+Settings can be minimized and restored from the menu bar. Launch at login, language and update preferences sit at the end of the scrolling settings content. The brand header and version/license footer stay fixed. Closing settings keeps the app running. Choose Quit from the menu bar panel to stop future scheduling while keeping the current system appearance. Launch at login can be enabled in settings. The sun-and-moon animation is off by default and respects the system's Reduce Motion setting when enabled. The native animation uses the website desktop scene: a centered 96% × 84% sky overlay at up to 78% opacity, blurred dome edges, day/night sky interpolation, and enlarged sun/moon on an inner orbit. For manual and scheduled switches, the system appearance request starts at motion end while the final frame remains visible for one second. Disabling animation or using Reduce Motion skips the animation. After wake, Auralim corrects the appearance immediately. If it differs from the appearance before sleep, the animation waits for the desktop to return or unlock and plays once.
 
-Optional countdown for automatic scheduled switches (off by default; 1–120 seconds, default 10): a native countdown panel with Skip this switch / Got it / Switch now; no system notification or notification permission is needed. Manual Light/Dark choices in the menu or settings skip the countdown and play the enabled animation before switching. Wake recovery still corrects the appearance immediately. Skip this switch skips the current target until the schedule changes target or you select a mode again. Got it dismisses the panel while the countdown continues. Debug previews use the same buttons and honor the optional system-appearance switch.
+Optional countdown for automatic scheduled switches (off by default; 1–120 seconds, default 10): a native countdown panel with Skip this switch / Got it / Switch now; no system notification or notification permission is needed. Manual Light/Auto/Dark choices in the menu or settings skip the countdown and play the enabled animation before switching. Wake recovery still corrects the appearance immediately. Skip this switch skips the current target until the schedule changes target or you select a mode again. Got it dismisses the panel while the countdown continues. Debug previews use the same buttons and honor the optional system-appearance switch.
 
-Debug controls are hidden in standard builds. Debug builds expose countdown, sunrise/sunset animation, and full-sequence previews in settings. “Switch system appearance after preview” is off at each launch; enabling it applies the chosen appearance in manual mode after the preview panels are released. Previews use the configured countdown duration. Normal switches, sleep, and lock stop active previews.
+Debug controls are hidden in standard builds. Debug builds expose countdown, sunrise/sunset animation, and full-sequence previews in settings. “Switch system appearance after preview” is off at each launch; enabling it applies the chosen appearance in manual mode at motion end, while the final frame remains for one second. Countdown-only previews apply when the countdown ends. Previews use the configured countdown duration. Normal switches, sleep, and lock stop active previews.
 
 ## Development guide
 
@@ -91,11 +91,10 @@ You need macOS, a Swift 6 toolchain, and the macOS SDK, provided by Xcode or Com
 git clone https://github.com/frank-yf/auralim-mac.git
 cd auralim-mac
 make help
-make build
 make run
 ```
 
-Quit the running app before building. `make build` creates and signs `dist/Auralim.app` for the host architecture by default. `make run` opens that app bundle. Run the packaged `.app` so macOS can read its permission usage descriptions and resources.
+`make run` quits the development standard/debug apps in this checkout, waits for them to exit, rebuilds and signs `dist/Auralim.app`, then launches the standard app. It leaves installed copies in `/Applications` untouched and stops if quitting or building fails. The default build targets the host architecture. `make build` only builds and signs the app; quit the running app before using it directly. Run the packaged `.app` so macOS can read its permission usage descriptions and resources.
 
 After changing the icon artwork in `Resources/Icons/Auralim.png`, run `make icon` to regenerate `Resources/Auralim.icns` using macOS `sips` and `iconutil`. The command also updates `Sources/Auralim/Resources/AppIcon.png`, the 256px image shared by the settings and menu panels. The artwork and generated icon resources are tracked in Git; `make build` packages them into the app bundle.
 
@@ -112,10 +111,12 @@ Production distribution also requires Apple notarization. For a universal packag
 ### Debug builds and release assets
 
 ```sh
-make build-debug
 make run-debug
+make build-debug
 make prepare-debug-release
 ```
+
+`make run-debug` quits the development apps in this checkout, waits for them to exit, builds the debug app, and opens it. Use this single command for local testing. It leaves installed copies in `/Applications` untouched and stops if quitting or building fails. `make build-debug` only builds the app.
 
 `make build-debug` explicitly compiles with `AURALIM_DEBUG_TOOLS` and produces `dist/debug/Auralim Debug.app`. Its bundle ID is `app.duskshift.mac.debug`, with separate preferences and permissions. The debug app disables stable automatic updates. Editing preferences or runtime environment variables cannot expose debug controls in a standard binary.
 
@@ -148,7 +149,7 @@ scripts/              Build, test, and on-device verification tools
 Makefile              Development command entry points
 ```
 
-Solar calculations use Meeus / NOAA solar coordinate equations and a standard apparent horizon of `−0.833°` to calculate sunrise and sunset within the local date. One-shot timers and system events trigger schedule updates, with appearance requests executed serially. Location uses one-shot requests and one-shot periodic timers, with no continuous updates or significant-change monitoring. Transient failures receive bounded retries within a 30-second acquisition deadline.
+Solar calculations use Meeus / NOAA solar coordinate equations and a standard apparent horizon of `−0.833°` to calculate sunrise and sunset within the local date. One-shot timers and system events trigger schedule updates, with appearance requests executed serially. Location uses one-shot requests and one-shot periodic timers, with no continuous updates or significant-change monitoring. Transient failures receive bounded retries within a 5-second acquisition deadline.
 
 ### Test only the affected scope
 

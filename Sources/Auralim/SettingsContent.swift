@@ -8,7 +8,7 @@ struct SettingsContent: View {
     let updater: UpdateController?
     @StateObject private var state: SettingsPresentation
 
-    init(model: AppModel, height: CGFloat = 720, updater: UpdateController? = nil) {
+    init(model: AppModel, height: CGFloat = 640, updater: UpdateController? = nil) {
         self.model = model
         self.height = height
         self.updater = updater
@@ -17,26 +17,23 @@ struct SettingsContent: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            HStack(spacing: 12) {
-                DuskMark(size: 40)
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(model.t("app.name")).accessibilityIdentifier("settings-app-name").font(.system(size: 23, weight: .semibold, design: .rounded))
-                    Text(model.t("slogan")).accessibilityIdentifier("app-slogan").font(.callout).foregroundStyle(.secondary)
-                }
-                Spacer()
-            }.padding(.horizontal, 24).padding(.top, 20).padding(.bottom, 16)
+            brand.padding(.horizontal, 24).padding(.top, 10).padding(.bottom, 8)
             ScrollView {
-                VStack(alignment: .leading, spacing: 10) {
+                VStack(alignment: .leading, spacing: 12) {
                     appearance
-                    times
                     location
                     offset(sunrise: true)
                     offset(sunrise: false)
+                    SettingsSectionView(section: state.times) { value in
+                        if let notice = value.polarNotice { DuskNotice(text: notice) }
+                        if value.clipped { DuskNotice(text: model.t("clipped"), warning: true) }
+                    }
                     #if AURALIM_DEBUG_TOOLS
                     DebugSettingsView(model: model, preview: model.debugPreview)
                     #endif
+                    preferences
                 }
-                .padding(.horizontal, 24).padding(.bottom, 18).padding(.top, 1)
+                .padding(.horizontal, 24).padding(.top, 10).padding(.bottom, 14)
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
             footer
@@ -45,6 +42,20 @@ struct SettingsContent: View {
         .background(DuskStyle.background)
         .environment(\.locale, state.localizer.locale)
         .onAppear { model.refreshLoginItemStatus(); model.reconcile() }
+    }
+
+    private var brand: some View {
+        HStack(spacing: 12) {
+            DuskMark(size: 40)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(model.t("app.name")).accessibilityIdentifier("settings-app-name")
+                    .font(.system(size: 21, weight: .semibold, design: .rounded))
+                Text(model.t("slogan")).accessibilityIdentifier("app-slogan")
+                    .font(.callout).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 0)
+        }.padding(.vertical, 4)
     }
 
     private var appearance: some View {
@@ -60,23 +71,35 @@ struct SettingsContent: View {
                     Spacer(minLength: 4)
                     AppearanceModePicker(selection: Binding(get: { model.appearanceMode }, set: { model.selectAppearanceMode($0) }),
                                          localizer: state.localizer, identifier: "settings-appearance-mode")
-                        .frame(width: 210, alignment: .trailing)
+                        .frame(width: DuskLayout.controlWidth, alignment: .trailing)
                 }
-                Toggle(model.t("transition.enabled"), isOn: Binding(get: { model.transitionAnimationEnabled }, set: { model.transitionAnimationEnabled = $0 }))
-                    .toggleStyle(.switch).controlSize(.small).font(.caption)
-                    .accessibilityIdentifier("appearance-animation")
-                HStack {
-                    Toggle(model.t("countdown.enabled"), isOn: Binding(get: { model.countdownEnabled }, set: { model.countdownEnabled = $0 }))
-                        .toggleStyle(.switch).controlSize(.small).font(.caption)
-                        .accessibilityIdentifier("countdown-enabled")
-                    Spacer()
-                    TextField("", value: Binding(get: { model.countdownSeconds }, set: { model.countdownSeconds = $0 }), format: .number.precision(.fractionLength(0)).grouping(.never))
-                        .textFieldStyle(.roundedBorder).frame(width: 54)
-                        .accessibilityLabel(model.t("countdown.seconds"))
-                        .accessibilityIdentifier("countdown-seconds")
-                    Stepper("", value: Binding(get: { model.countdownSeconds }, set: { model.countdownSeconds = $0 }), in: 1...120)
-                        .labelsHidden().accessibilityLabel(model.t("countdown.seconds"))
-                    Text(model.t("countdown.seconds")).font(.caption).foregroundStyle(.secondary)
+                Divider()
+                VStack(spacing: 6) {
+                    SettingsPreferenceRow(title: model.t("transition.enabled")) {
+                        Toggle(model.t("transition.enabled"), isOn: Binding(get: { model.transitionAnimationEnabled }, set: { model.transitionAnimationEnabled = $0 }))
+                            .labelsHidden().toggleStyle(.switch).controlSize(.small)
+                            .accessibilityIdentifier("appearance-animation")
+                    }
+                    SettingsPreferenceRow(title: model.t("countdown.enabled")) {
+                        HStack(spacing: 12) {
+                            Group {
+                                if value.countdownEnabled {
+                                    HStack(spacing: 6) {
+                                        TextField("", value: Binding(get: { model.countdownSeconds }, set: { model.countdownSeconds = $0 }), format: .number.precision(.fractionLength(0)).grouping(.never))
+                                            .textFieldStyle(.roundedBorder).frame(width: 48)
+                                            .accessibilityLabel(model.t("countdown.seconds"))
+                                            .accessibilityIdentifier("countdown-seconds")
+                                        Stepper("", value: Binding(get: { model.countdownSeconds }, set: { model.countdownSeconds = $0 }), in: 1...120)
+                                            .labelsHidden().accessibilityLabel(model.t("countdown.seconds"))
+                                        Text(model.t("countdown.seconds")).font(.caption).foregroundStyle(.secondary)
+                                    }
+                                } else { Color.clear }
+                            }.frame(width: 106, height: 28)
+                            Toggle(model.t("countdown.enabled"), isOn: Binding(get: { model.countdownEnabled }, set: { model.countdownEnabled = $0 }))
+                                .labelsHidden().toggleStyle(.switch).controlSize(.small)
+                                .accessibilityIdentifier("countdown-enabled")
+                        }
+                    }
                 }
                 if let error = value.error {
                     HStack(alignment: .top, spacing: 12) {
@@ -92,7 +115,7 @@ struct SettingsContent: View {
 
     private var location: some View {
         SettingsSectionView(section: state.location) { value in
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 10) {
                 HStack(spacing: 12) {
                     DuskSymbol(name: "location")
                     Text(model.t("location.mode")).font(.system(size: 13, weight: .semibold))
@@ -101,18 +124,35 @@ struct SettingsContent: View {
                         Text(model.t("location.manual")).tag(LocationMode.manual)
                         Text(model.t("location.automatic")).tag(LocationMode.automatic)
                     }.pickerStyle(.segmented).labelsHidden()
-                        .frame(width: 240).accessibilityIdentifier("location-mode")
+                        .frame(width: DuskLayout.controlWidth, alignment: .trailing).accessibilityIdentifier("location-mode")
                 }
-                HStack(alignment: .center, spacing: 16) {
+                SettingsPreferenceRow(title: model.t(value.mode == .automatic ? "location.fallbackCity" : "city.picker")) {
                     Picker(model.t(value.mode == .automatic ? "location.fallbackCity" : "city.picker"),
                            selection: Binding(get: { model.cityID }, set: { model.cityID = $0 })) {
                         ForEach(City.all) { Text(model.cityName($0)).tag($0.id) }
-                    }.frame(maxWidth: 260).accessibilityIdentifier("city-picker")
-                    Spacer(minLength: 0)
-                    Text(value.timeZoneID).font(.caption.monospaced()).foregroundStyle(.secondary)
-                        .lineLimit(1).minimumScaleFactor(0.8)
-                        .help(model.t("city.timeZone", value.timeZoneID))
+                    }.labelsHidden().controlSize(.small)
+                        .frame(width: DuskLayout.controlWidth, alignment: .trailing).accessibilityIdentifier("city-picker")
                 }
+                Divider()
+                HStack(spacing: 16) {
+                    Label(value.timeZoneID, systemImage: "globe")
+                        .font(.caption2).lineLimit(1).truncationMode(.middle)
+                        .help(model.t("city.timeZone", value.timeZoneID))
+                    Spacer(minLength: 4)
+                    HStack(spacing: 16) {
+                        Label {
+                            Text("\(model.t("sunrise")) \(value.sunriseTime)").monospacedDigit()
+                        } icon: {
+                            Image(systemName: "sunrise.fill").foregroundStyle(DuskStyle.gold)
+                        }
+                        Label {
+                            Text("\(model.t("sunset")) \(value.sunsetTime)").monospacedDigit()
+                        } icon: {
+                            Image(systemName: "sunset.fill").foregroundStyle(DuskStyle.blue)
+                        }
+                    }.font(.caption).fixedSize(horizontal: true, vertical: false)
+                        .accessibilityIdentifier("location-solar-times")
+                }.foregroundStyle(.secondary)
                 if let status = value.status {
                     HStack(alignment: .top, spacing: 12) {
                         DuskNotice(text: status, warning: value.failed)
@@ -137,61 +177,43 @@ struct SettingsContent: View {
         }
     }
 
-    private var times: some View {
-        SettingsSectionView(section: state.times) { value in
-            VStack(alignment: .leading, spacing: 10) {
-                Text(value.title).font(.caption.weight(.medium)).foregroundStyle(.secondary)
-                HStack(spacing: 12) {
-                    timeTile(label: model.t("sunrise.switch"), value: value.lightTime, symbol: "sunrise.fill", tint: DuskStyle.gold)
-                        .accessibilityIdentifier("sunrise-switch-time").help(value.sunriseHelp)
-                    timeTile(label: model.t("sunset.switch"), value: value.darkTime, symbol: "sunset.fill", tint: DuskStyle.blue)
-                        .accessibilityIdentifier("sunset-switch-time").help(value.sunsetHelp)
-                }
-                if let notice = value.polarNotice { DuskNotice(text: notice) }
-                if value.clipped { DuskNotice(text: model.t("clipped"), warning: true) }
-            }
-        }
-    }
-
-    private func timeTile(label: String, value: String, symbol: String, tint: Color) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Label(label, systemImage: symbol).font(.system(size: 13, weight: .medium)).foregroundStyle(tint)
-            Text(value).font(.system(size: 19, weight: .semibold, design: .rounded)).monospacedDigit()
-                .lineLimit(1).minimumScaleFactor(0.75)
-        }.frame(maxWidth: .infinity, alignment: .leading).duskCard()
-    }
-
-    private var footer: some View {
-        VStack(spacing: 12) {
+    private var preferences: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            login
             Divider()
-            HStack(alignment: .top, spacing: 20) {
-                login.frame(maxWidth: .infinity, alignment: .leading)
+            SettingsPreferenceRow(title: model.t("language")) {
                 Picker(model.t("language"), selection: Binding(get: { model.language }, set: { model.language = $0 })) {
                     ForEach(AppLanguage.allCases) { language in
                         Text(language == .system ? model.t("language.system") : language.nativeName).tag(language)
                     }
-                }.accessibilityIdentifier("language-picker").frame(width: 235)
+                }.labelsHidden().controlSize(.small).accessibilityIdentifier("language-picker")
             }
             if let updater {
+                Divider()
                 UpdateSettingsView(updater: updater, localizer: state.localizer)
             }
-            HStack {
-                if let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String {
-                    Text("\(model.t("app.name")) \(version)").accessibilityIdentifier("app-version").font(.caption2).foregroundStyle(.tertiary)
-                }
-                Spacer()
-                Button(model.t("licenses.open")) { openNotices() }
-                    .buttonStyle(.link).font(.caption2).foregroundStyle(.secondary)
+        }.duskCard().accessibilityIdentifier("settings-preferences")
+    }
+
+    private var footer: some View {
+        HStack {
+            if let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String {
+                Text("v\(version)").accessibilityIdentifier("app-version").font(.caption2).foregroundStyle(.tertiary)
             }
-        }.padding(.horizontal, 24).padding(.bottom, 16)
+            Spacer()
+            Button(model.t("licenses.open")) { openNotices() }
+                .buttonStyle(.link).font(.caption2).foregroundStyle(.secondary)
+        }.padding(.horizontal, 24).padding(.top, 10).padding(.bottom, 12)
     }
 
     private var login: some View {
         SettingsSectionView(section: state.login) { value in
             VStack(alignment: .leading, spacing: 6) {
-                Toggle(model.t("login.title"), isOn: Binding(get: { model.loginItemStatus.isRegistered }, set: { model.setLaunchAtLogin($0) }))
-                    .toggleStyle(.switch).controlSize(.small)
-                    .accessibilityIdentifier("launch-at-login")
+                SettingsPreferenceRow(title: model.t("login.title")) {
+                    Toggle(model.t("login.title"), isOn: Binding(get: { model.loginItemStatus.isRegistered }, set: { model.setLaunchAtLogin($0) }))
+                        .labelsHidden().toggleStyle(.switch).controlSize(.small)
+                        .accessibilityIdentifier("launch-at-login")
+                }
                 if value.status == .requiresApproval || value.status == .unknown {
                     DuskNotice(text: model.t(value.status.localizationKey))
                         .accessibilityIdentifier("login-item-status")
@@ -216,4 +238,18 @@ private struct SettingsSectionView<Value: Equatable, Content: View>: View {
     @ObservedObject var section: SettingsSection<Value>
     @ViewBuilder let content: (Value) -> Content
     var body: some View { content(section.value) }
+}
+
+/// A shared label and trailing control column for general preferences.
+struct SettingsPreferenceRow<Control: View>: View {
+    let title: String
+    @ViewBuilder let control: Control
+
+    var body: some View {
+        HStack(spacing: 16) {
+            Text(title).font(DuskLayout.rowFont).fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 8)
+            control.frame(width: DuskLayout.controlWidth, alignment: .trailing)
+        }.frame(minHeight: DuskLayout.rowHeight).font(DuskLayout.rowFont)
+    }
 }

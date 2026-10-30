@@ -1,16 +1,22 @@
 import AppKit
 import SwiftUI
 
+enum DuskLayout {
+    static let controlWidth: CGFloat = 240
+    static let rowHeight: CGFloat = 32
+    static let rowFont = Font.system(size: 13)
+}
+
 /// Shared, appearance-aware surfaces; slider colors remain independently tuned.
 enum DuskStyle {
     static let background = Color(nsColor: NSColor(name: "DuskBackground") { appearance in
         appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
-            ? NSColor(srgbRed: 0.12, green: 0.13, blue: 0.16, alpha: 1)
-            : NSColor(srgbRed: 0.96, green: 0.96, blue: 0.97, alpha: 1)
+            ? NSColor(srgbRed: 0.13, green: 0.13, blue: 0.14, alpha: 1)
+            : NSColor(srgbRed: 0.96, green: 0.96, blue: 0.965, alpha: 1)
     })
     static let surface = Color(nsColor: NSColor(name: "DuskSurface") { appearance in
         appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
-            ? NSColor(srgbRed: 0.17, green: 0.18, blue: 0.21, alpha: 1)
+            ? NSColor(srgbRed: 0.18, green: 0.18, blue: 0.19, alpha: 1)
             : NSColor.white
     })
     static let blue = Color(nsColor: NSColor(name: "DuskBlue") { appearance in
@@ -72,9 +78,9 @@ private struct DuskCard: ViewModifier {
     var padding: CGFloat
     func body(content: Content) -> some View {
         content.padding(padding)
-            .background(DuskStyle.surface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .background(DuskStyle.surface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
             .overlay {
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
                     .strokeBorder(Color.primary.opacity(0.06), lineWidth: 0.5)
                     .allowsHitTesting(false)
             }
