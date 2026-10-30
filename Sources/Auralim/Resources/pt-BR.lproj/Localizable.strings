@@ -22,10 +22,10 @@
 "city.timeZone" = "Fuso horário da cidade: %@";
 "sunrise" = "Nascer do sol";
 "sunset" = "Pôr do sol";
-"sunrise.left" = "Mais escuro · mais tarde";
-"sunrise.right" = "Mais claro · mais cedo";
-"sunset.left" = "Mais claro · mais tarde";
-"sunset.right" = "Mais escuro · mais cedo";
+"sunrise.left" = "Mais cedo";
+"sunrise.right" = "Mais tarde";
+"sunset.left" = "Mais cedo";
+"sunset.right" = "Mais tarde";
 "today.city" = "Hoje · %@";
 "sunrise.switch" = "Mudar para claro";
 "sunset.switch" = "Mudar para escuro";
@@ -60,7 +60,7 @@
 "help.start.title" = "Primeiros passos";
 "help.start.body" = "Em Ajustes do Sistema → Aparência, selecione Clara ou Escura para desativar a programação automática do macOS. Escolha a cidade e os ajustes de horário e ative a troca automática. No primeiro uso, permita que o Auralim controle System Events.";
 "help.offset.title" = "Ajustes do nascer e pôr do sol";
-"help.offset.body" = "Ajuste o nascer e o pôr do sol separadamente em até 120 minutos para cada lado, em passos de um minuto. O centro indica o horário previsto. À esquerda, a troca para claro ou escuro é adiada; à direita, é antecipada. Na entrada numérica, valores negativos antecipam e positivos adiam. A prévia é imediata; o valor é aplicado ao soltar o controle, pressionar Return ou sair do campo. Redefinir volta o ajuste para zero.";
+"help.offset.body" = "Ajuste o nascer e o pôr do sol separadamente em até 120 minutos para cada lado, em passos de um minuto. O centro indica o horário previsto. À esquerda, a troca é antecipada; à direita, é adiada. O lado mais claro adia o nascer do sol e antecipa o pôr do sol. Na entrada numérica, valores negativos antecipam e positivos adiam. A prévia é imediata; o valor é aplicado ao soltar o controle, pressionar Return ou sair do campo. Redefinir volta o ajuste para zero.";
 "help.city.title" = "Cidades, fusos horários e uso offline";
 "help.city.body" = "Os horários usam o fuso e a data do local ativo, incluindo horário de verão. Os cálculos solares e a consulta de fuso são locais. O modo manual funciona offline sem permissão de localização. O automático solicita uma posição ao macOS a cada 3 horas. Se falhar, mantém o cache; a cidade manual salva só é usada quando não há cache válido. Os dados ficam neste Mac e nunca são enviados.";
 "help.sleep.title" = "Alternância e retomada após repouso";

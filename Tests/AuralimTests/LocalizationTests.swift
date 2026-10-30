@@ -25,6 +25,18 @@ struct LocalizationTests {
     }
 
     @Test
+    func offsetDirectionLabelsMatchChronologicalOrder() {
+        for (language, labels) in [
+            (AppLanguage.simplifiedChinese, ["提前", "延后", "提前", "延后"]),
+            (.english, ["Earlier", "Later", "Earlier", "Later"])
+        ] {
+            let localizer = Localizer(language: language)
+            let keys = ["sunrise.left", "sunrise.right", "sunset.left", "sunset.right"]
+            #expect(keys.map { localizer.text($0) } == labels)
+        }
+    }
+
+    @Test
     func catalogsAreCompleteAndFormatsMatch() throws {
         var catalogs: [[String: String]] = []
         for language in AppLanguage.allCases where language != .system {

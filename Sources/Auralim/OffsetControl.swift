@@ -53,11 +53,11 @@ struct OffsetControl: View {
                 Text(localizer.text("offset.unit")).font(.caption)
             }
             HStack {
-                Label(leftLabel, systemImage: sunrise ? "moon.fill" : "sun.max.fill")
+                directionHint(leftLabel, light: !sunrise)
                 Spacer()
                 Text("0")
                 Spacer()
-                Label(rightLabel, systemImage: sunrise ? "sun.max.fill" : "moon.fill")
+                directionHint(rightLabel, light: sunrise)
             }.font(.caption).foregroundStyle(.secondary).padding(.trailing, 88)
             if inputError {
                 Text(localizer.text("offset.invalid")).font(.caption2).foregroundStyle(.red)
@@ -66,6 +66,15 @@ struct OffsetControl: View {
         .duskCard()
         .onAppear { updateDraft(minutes) }
         .onChange(of: minutes) { updateDraft($0) }
+    }
+
+    private func directionHint(_ label: String, light: Bool) -> some View {
+        Label {
+            Text(label)
+        } icon: {
+            Image(systemName: light ? "sun.max.fill" : "moon.fill")
+                .foregroundStyle(Color(nsColor: light ? AppearanceSliderCell.day : AppearanceSliderCell.night))
+        }
     }
 
     private var summary: String {

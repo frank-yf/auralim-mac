@@ -161,19 +161,20 @@ struct DebugPreviewTests {
     @Test func realCountdownAndAnimationRejectPreviewUntilCompletion() {
         let f = PreviewFixture(); defer { f.close() }; f.debug.enabled = true
         f.model.countdownEnabled = true
-        f.model.selectAppearanceMode(.dark)
+        f.appearance.current = .dark
+        f.model.selectAppearanceMode(.automatic)
         #expect(!f.model.canPreviewDebug && f.realCountdown.seconds == 10)
         f.model.previewDebug(.sequence, target: .light)
         #expect(f.countdown.seconds == nil && f.debug.phase == .idle)
         f.realCountdown.finish?()
-        #expect(f.appearance.current == .dark && f.model.canPreviewDebug)
+        #expect(f.appearance.current == .light && f.model.canPreviewDebug)
         f.model.countdownEnabled = false; f.model.transitionAnimationEnabled = true
-        f.model.selectAppearanceMode(.light)
-        #expect(!f.model.canPreviewDebug && f.realAnimation.targets == [.light])
+        f.model.selectAppearanceMode(.dark)
+        #expect(!f.model.canPreviewDebug && f.realAnimation.targets == [.dark])
         f.model.previewDebug(.animation, target: .dark)
         #expect(f.animation.targets.isEmpty)
         f.realAnimation.completion?()
-        #expect(f.model.canPreviewDebug && f.appearance.current == .light)
+        #expect(f.model.canPreviewDebug && f.appearance.current == .dark)
     }
 
     @Test func previewDoesNotAlterAutomaticScheduleOrAppearancePreferences() {

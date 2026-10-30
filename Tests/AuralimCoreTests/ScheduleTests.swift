@@ -61,10 +61,18 @@ final class ScheduleTests {
         let set = try #require(day.sunset)
         let left = SolarOffset.minutes(forSliderPosition: -30)
         let right = SolarOffset.minutes(forSliderPosition: 30)
-        #expect(engine.evaluate(now: rise, city: shanghai, sunriseOffset: left, sunsetOffset: 0).appearance == .dark)
-        #expect(engine.evaluate(now: rise, city: shanghai, sunriseOffset: right, sunsetOffset: 0).appearance == .light)
-        #expect(engine.evaluate(now: set, city: shanghai, sunriseOffset: 0, sunsetOffset: left).appearance == .light)
-        #expect(engine.evaluate(now: set, city: shanghai, sunriseOffset: 0, sunsetOffset: right).appearance == .dark)
+        #expect(left == -30)
+        #expect(right == 30)
+        for (offset, minutes) in [(left, -30), (right, 30)] {
+            let state = engine.evaluate(now: rise, city: shanghai, sunriseOffset: offset, sunsetOffset: offset)
+            #expect(state.todayLightTime == rise.addingTimeInterval(Double(minutes) * 60))
+            #expect(state.todayDarkTime == set.addingTimeInterval(Double(minutes) * 60))
+        }
+        // Sunrise's light side is right/later; sunset's light side is left/earlier.
+        #expect(engine.evaluate(now: rise, city: shanghai, sunriseOffset: left, sunsetOffset: 0).appearance == .light)
+        #expect(engine.evaluate(now: rise, city: shanghai, sunriseOffset: right, sunsetOffset: 0).appearance == .dark)
+        #expect(engine.evaluate(now: set, city: shanghai, sunriseOffset: 0, sunsetOffset: left).appearance == .dark)
+        #expect(engine.evaluate(now: set, city: shanghai, sunriseOffset: 0, sunsetOffset: right).appearance == .light)
     }
 
     @Test

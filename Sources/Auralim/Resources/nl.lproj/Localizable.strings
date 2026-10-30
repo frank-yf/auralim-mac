@@ -22,10 +22,10 @@
 "city.timeZone" = "Tijdzone van de stad: %@";
 "sunrise" = "Zonsopkomst";
 "sunset" = "Zonsondergang";
-"sunrise.left" = "Donkerder · later";
-"sunrise.right" = "Lichter · eerder";
-"sunset.left" = "Lichter · later";
-"sunset.right" = "Donkerder · eerder";
+"sunrise.left" = "Eerder";
+"sunrise.right" = "Later";
+"sunset.left" = "Eerder";
+"sunset.right" = "Later";
 "today.city" = "Vandaag · %@";
 "sunrise.switch" = "Naar licht wisselen";
 "sunset.switch" = "Naar donker wisselen";
@@ -60,7 +60,7 @@
 "help.start.title" = "Aan de slag";
 "help.start.body" = "Kies in macOS Systeeminstellingen → Weergave voor Licht of Donker om het automatische systeemschema uit te schakelen. Kies een stad en tijdsverschuivingen en schakel automatisch wisselen in. Geef Auralim bij het eerste gebruik toestemming om System Events te bedienen.";
 "help.offset.title" = "Zonnetijden verschuiven";
-"help.offset.body" = "Verschuif zonsopkomst en zonsondergang afzonderlijk met maximaal 120 minuten in beide richtingen, in stappen van één minuut. Het midden is de geplande tijd. Links stelt de wisseling naar Licht of Donker uit; rechts vervroegt deze. Bij getallen betekent negatief eerder en positief later. Geldige invoer wordt direct getoond en toegepast wanneer je loslaat, Return indrukt of het veld verlaat. Herstellen zet de verschuiving op nul.";
+"help.offset.body" = "Verschuif zonsopkomst en zonsondergang afzonderlijk met maximaal 120 minuten in beide richtingen, in stappen van één minuut. Het midden is de geplande tijd. Links vervroegt de wisseling; rechts stelt deze uit. De lichtere kant stelt zonsopkomst uit en vervroegt zonsondergang. Bij getallen betekent negatief eerder en positief later. Geldige invoer wordt direct getoond en toegepast wanneer je loslaat, Return indrukt of het veld verlaat. Herstellen zet de verschuiving op nul.";
 "help.city.title" = "Steden, tijdzones en offline gebruik";
 "help.city.body" = "Tijden volgen de tijdzone en datum van de actieve locatie, inclusief zomertijd. Zonnetijden en tijdzones worden op deze Mac bepaald. De handmatige modus werkt offline zonder locatietoestemming. Automatisch vraagt macOS elke 3 uur eenmaal om de locatie. Bij fouten blijft de cache bewaard; de opgeslagen handmatige stad wordt alleen zonder geldige cache gebruikt. Locatiegegevens blijven op deze Mac en worden nooit geüpload.";
 "help.sleep.title" = "Wisselen en ontwaken";

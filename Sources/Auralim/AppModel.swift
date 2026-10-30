@@ -462,7 +462,8 @@ final class AppModel: ObservableObject {
         if enabled { arm(at: state.nextCheck) }
         if cancelledCountdownTarget != target { cancelledCountdownTarget = nil }
         if cancelledCountdownTarget == target && !wakeTransition.requiresImmediateCorrection { return }
-        let canCountdown = !applyingDebugPreview && allowCountdown && countdownEnabled && failures == 0
+        // Manual choices already express intent: animate and apply without a countdown.
+        let canCountdown = enabled && !applyingDebugPreview && allowCountdown && countdownEnabled && failures == 0
             && !wakeTransition.requiresImmediateCorrection && desktopReady() && target != currentSystemAppearance
         if let pendingCountdown {
             if pendingCountdown.target == target && canCountdown { return }

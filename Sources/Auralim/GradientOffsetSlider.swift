@@ -4,7 +4,7 @@ import SwiftUI
 /// Keeps native mouse tracking, keyboard focus and accessibility while drawing
 /// an appearance gradient instead of the system accent-color progress bar.
 struct GradientOffsetSlider: NSViewRepresentable {
-    @Binding var value: Double // -120...120; physical right is earlier.
+    @Binding var value: Double // -120...120; physical right is later.
     let sunrise: Bool
     let label: String
     let summary: String

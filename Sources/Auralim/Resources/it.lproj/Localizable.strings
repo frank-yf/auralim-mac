@@ -22,10 +22,10 @@
 "city.timeZone" = "Fuso orario della città: %@";
 "sunrise" = "Alba";
 "sunset" = "Tramonto";
-"sunrise.left" = "Più scuro · più tardi";
-"sunrise.right" = "Più chiaro · prima";
-"sunset.left" = "Più chiaro · più tardi";
-"sunset.right" = "Più scuro · prima";
+"sunrise.left" = "Prima";
+"sunrise.right" = "Più tardi";
+"sunset.left" = "Prima";
+"sunset.right" = "Più tardi";
 "today.city" = "Oggi · %@";
 "sunrise.switch" = "Passa a chiaro";
 "sunset.switch" = "Passa a scuro";
@@ -60,7 +60,7 @@
 "help.start.title" = "Primi passi";
 "help.start.body" = "In Impostazioni di Sistema → Aspetto, scegli Chiaro o Scuro per disattivare la programmazione automatica di macOS. Scegli città e scostamenti, poi attiva il cambio automatico. Al primo utilizzo, consenti ad Auralim di controllare System Events.";
 "help.offset.title" = "Scostamenti di alba e tramonto";
-"help.offset.body" = "Regola alba e tramonto separatamente fino a 120 minuti in entrambe le direzioni, a intervalli di un minuto. Il centro indica l’orario previsto. A sinistra ritardi il passaggio a Chiaro o Scuro, a destra lo anticipi. Nei campi numerici, i valori negativi anticipano e quelli positivi ritardano. L’anteprima è immediata; il valore si applica rilasciando il cursore, premendo Invio o uscendo dal campo. Ripristina riporta lo scostamento a zero.";
+"help.offset.body" = "Regola alba e tramonto separatamente fino a 120 minuti in entrambe le direzioni, a intervalli di un minuto. Il centro indica l’orario previsto. A sinistra anticipi il cambio, a destra lo ritardi. Il lato chiaro ritarda l’alba e anticipa il tramonto. Nei campi numerici, i valori negativi anticipano e quelli positivi ritardano. L’anteprima è immediata; il valore si applica rilasciando il cursore, premendo Invio o uscendo dal campo. Ripristina riporta lo scostamento a zero.";
 "help.city.title" = "Città, fusi orari e uso offline";
 "help.city.body" = "Gli orari usano fuso e data del luogo attivo, inclusa l’ora legale. Calcoli solari e ricerca del fuso avvengono su questo Mac. La modalità manuale funziona offline senza permessi di posizione. Quella automatica richiede una posizione a macOS ogni 3 ore. In caso di errore conserva la cache; usa la città manuale salvata solo senza una cache valida. I dati restano su questo Mac e non vengono mai caricati.";
 "help.sleep.title" = "Cambio e riattivazione";

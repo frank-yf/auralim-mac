@@ -22,10 +22,10 @@
 "city.timeZone" = "Zona horaria de la ciudad: %@";
 "sunrise" = "Amanecer";
 "sunset" = "Atardecer";
-"sunrise.left" = "Más oscuro · más tarde";
-"sunrise.right" = "Más claro · más pronto";
-"sunset.left" = "Más claro · más tarde";
-"sunset.right" = "Más oscuro · más pronto";
+"sunrise.left" = "Antes";
+"sunrise.right" = "Después";
+"sunset.left" = "Antes";
+"sunset.right" = "Después";
 "today.city" = "Hoy · %@";
 "sunrise.switch" = "Cambiar a claro";
 "sunset.switch" = "Cambiar a oscuro";
@@ -60,7 +60,7 @@
 "help.start.title" = "Primeros pasos";
 "help.start.body" = "En Ajustes del Sistema → Aspecto, elige Claro u Oscuro para desactivar la programación automática de macOS. Elige una ciudad y los ajustes horarios y activa el cambio automático. La primera vez, permite que Auralim controle System Events.";
 "help.offset.title" = "Ajustes de amanecer y atardecer";
-"help.offset.body" = "Ajusta por separado el amanecer y el atardecer hasta 120 minutos en cada dirección, en pasos de un minuto. El centro indica la hora prevista. A la izquierda se retrasa el cambio a claro u oscuro; a la derecha se adelanta. Un número negativo adelanta y uno positivo retrasa. Los valores válidos se previsualizan al instante y se aplican al soltar el control, pulsar Retorno o salir del campo. Restablecer devuelve el ajuste a cero.";
+"help.offset.body" = "Ajusta por separado el amanecer y el atardecer hasta 120 minutos en cada dirección, en pasos de un minuto. El centro indica la hora prevista. A la izquierda se adelanta el cambio; a la derecha se retrasa. El lado más claro retrasa el amanecer y adelanta el atardecer. Un número negativo adelanta y uno positivo retrasa. Los valores válidos se previsualizan al instante y se aplican al soltar el control, pulsar Retorno o salir del campo. Restablecer devuelve el ajuste a cero.";
 "help.city.title" = "Ciudades, zonas horarias y uso sin conexión";
 "help.city.body" = "Se usan la zona horaria y la fecha del lugar activo, incluidos los cambios de horario de verano. El cálculo solar y la búsqueda de zona horaria son locales. El modo manual funciona sin conexión ni permiso de ubicación. El automático solicita una ubicación a macOS cada 3 horas. Si falla, conserva la caché; solo usa la ciudad manual guardada cuando no hay caché válida. La ubicación permanece en este Mac y nunca se sube.";
 "help.sleep.title" = "Cambios y recuperación al despertar";

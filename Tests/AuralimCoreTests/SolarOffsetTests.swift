@@ -15,12 +15,23 @@ struct SolarOffsetTests {
     }
 
     @Test
+    func testSliderBoundsRoundingAndNonFinitePositions() {
+        #expect(SolarOffset.minutes(forSliderPosition: -999) == -120)
+        #expect(SolarOffset.minutes(forSliderPosition: 999) == 120)
+        #expect(SolarOffset.minutes(forSliderPosition: -1.6) == -2)
+        #expect(SolarOffset.minutes(forSliderPosition: 1.6) == 2)
+        #expect(SolarOffset.minutes(forSliderPosition: .nan) == 0)
+        #expect(SolarOffset.minutes(forSliderPosition: .infinity) == 0)
+    }
+
+    @Test
     func testSliderAndInputRoundTripAtEveryMinute() {
         for minute in -120...120 {
+            #expect(SolarOffset.sliderPosition(for: minute) == Double(minute))
             #expect(SolarOffset.minutes(forSliderPosition: SolarOffset.sliderPosition(for: minute)) == minute)
         }
         #expect(SolarOffset.minutes(forSliderPosition: 0) == 0)
-        #expect(SolarOffset.minutes(forSliderPosition: -120) == 120)
-        #expect(SolarOffset.minutes(forSliderPosition: 120) == -120)
+        #expect(SolarOffset.minutes(forSliderPosition: -120) == -120)
+        #expect(SolarOffset.minutes(forSliderPosition: 120) == 120)
     }
 }

@@ -22,10 +22,10 @@
 "city.timeZone" = "City time zone: %@";
 "sunrise" = "Sunrise";
 "sunset" = "Sunset";
-"sunrise.left" = "Darker · later";
-"sunrise.right" = "Lighter · earlier";
-"sunset.left" = "Lighter · later";
-"sunset.right" = "Darker · earlier";
+"sunrise.left" = "Earlier";
+"sunrise.right" = "Later";
+"sunset.left" = "Earlier";
+"sunset.right" = "Later";
 "today.city" = "Today · %@";
 "sunrise.switch" = "Switch to light";
 "sunset.switch" = "Switch to dark";
@@ -60,7 +60,7 @@
 "help.start.title" = "Getting started";
 "help.start.body" = "In macOS System Settings → Appearance, select Light or Dark to turn off the system’s automatic appearance schedule. Choose a city and offsets, then enable automatic switching. On first use, allow Auralim to control System Events.";
 "help.offset.title" = "Sunrise and sunset offsets";
-"help.offset.body" = "Adjust sunrise and sunset independently by up to 120 minutes in either direction, in 1-minute steps. The slider center means on time. At sunrise, left delays light mode and right brings it forward. At sunset, left delays dark mode and right brings it forward. Negative input means earlier; positive means later. Valid input previews immediately and applies when you release the slider, press Return, or leave the field. Reset restores a zero offset.";
+"help.offset.body" = "Adjust sunrise and sunset independently by up to 120 minutes in either direction, in 1-minute steps. The slider center means on time. Move left for an earlier switch and right for a later switch. At sunrise, the lighter side is later; at sunset, the lighter side is earlier. Negative input means earlier; positive means later. Valid input previews immediately and applies when you release the slider, press Return, or leave the field. Reset restores a zero offset.";
 "help.city.title" = "Cities, time zones, and offline use";
 "help.city.body" = "Times use the active location’s time zone and local date, including daylight saving changes. Sunrise, sunset, and time-zone lookup are calculated on this Mac. Manual mode works offline without location permission. Automatic mode uses macOS Location Services with a one-time refresh every 3 hours. Failed refreshes keep the cached location; the saved manual city is used only when no valid cache exists. Location data stays on this Mac and is never uploaded.";
 "help.sleep.title" = "Switching and wake recovery";

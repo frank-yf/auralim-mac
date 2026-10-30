@@ -22,10 +22,10 @@
 "city.timeZone" = "Zeitzone der Stadt: %@";
 "sunrise" = "Sonnenaufgang";
 "sunset" = "Sonnenuntergang";
-"sunrise.left" = "Dunkler · später";
-"sunrise.right" = "Heller · früher";
-"sunset.left" = "Heller · später";
-"sunset.right" = "Dunkler · früher";
+"sunrise.left" = "Früher";
+"sunrise.right" = "Später";
+"sunset.left" = "Früher";
+"sunset.right" = "Später";
 "today.city" = "Heute · %@";
 "sunrise.switch" = "Zu Hell wechseln";
 "sunset.switch" = "Zu Dunkel wechseln";
@@ -60,7 +60,7 @@
 "help.start.title" = "Erste Schritte";
 "help.start.body" = "Wähle unter macOS „Systemeinstellungen → Erscheinungsbild“ Hell oder Dunkel, um den automatischen Systemzeitplan auszuschalten. Wähle Stadt und Zeitverschiebungen und aktiviere die Automatik. Erlaube Auralim beim ersten Mal, System Events zu steuern.";
 "help.offset.title" = "Sonnenzeiten verschieben";
-"help.offset.body" = "Sonnenaufgang und Sonnenuntergang lassen sich unabhängig in Minutenschritten um bis zu 120 Minuten verschieben. Die Mitte bedeutet pünktlich. Links verzögert den Wechsel zu Hell bzw. Dunkel, rechts zieht ihn vor. Bei Zahleneingaben bedeutet Minus früher und Plus später. Gültige Werte erscheinen sofort als Vorschau und werden beim Loslassen, mit Return oder beim Verlassen des Felds übernommen. Zurücksetzen stellt 0 ein.";
+"help.offset.body" = "Sonnenaufgang und Sonnenuntergang lassen sich unabhängig in Minutenschritten um bis zu 120 Minuten verschieben. Die Mitte bedeutet pünktlich. Links erfolgt der Wechsel früher, rechts später. Beim Sonnenaufgang bedeutet die hellere Seite später, beim Sonnenuntergang früher. Bei Zahleneingaben bedeutet Minus früher und Plus später. Gültige Werte erscheinen sofort als Vorschau und werden beim Loslassen, mit Return oder beim Verlassen des Felds übernommen. Zurücksetzen stellt 0 ein.";
 "help.city.title" = "Städte, Zeitzonen und Offline-Nutzung";
 "help.city.body" = "Es gelten Zeitzone und Datum des aktiven Orts einschließlich Sommerzeit. Sonnenzeiten und Zeitzonen werden lokal ermittelt. Der manuelle Modus funktioniert offline ohne Standortfreigabe. Der automatische Modus ruft über macOS alle 3 Stunden einmal den Standort ab. Bei Fehlern bleibt der Cache erhalten; nur ohne gültigen Cache wird die gespeicherte manuelle Stadt verwendet. Standortdaten bleiben auf diesem Mac und werden nie hochgeladen.";
 "help.sleep.title" = "Wechsel und Aufwachen";

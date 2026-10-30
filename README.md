@@ -60,12 +60,12 @@ When using the app's automatic schedule, turn off automatic appearance in macOS 
 
 #### Sunrise and sunset offsets
 
-Both sliders use the center as zero. Move either way to adjust the switch time:
+Both sliders use the center as zero: left is earlier and right is later. The hints show only Earlier / Later; sun and moon icons use the matching slider endpoint colors:
 
 | Event | Slide left | Slide right |
 | --- | --- | --- |
-| Sunrise | Delay switching to light; stay dark longer | Switch to light earlier |
-| Sunset | Delay switching to dark; stay light longer | Switch to dark earlier |
+| Sunrise | Darker side · earlier light-mode switch | Lighter side · later light-mode switch |
+| Sunset | Lighter side · earlier dark-mode switch | Darker side · later dark-mode switch |
 
 In the input fields, negative numbers mean earlier and positive numbers mean later, from −120 to +120 minutes. Changes apply when you release the slider, press Return, or leave the input field. Reset returns the offset to zero. Settings show the adjusted “Switch to light” and “Switch to dark” times, using the active location's time zone and local date.
 
@@ -77,7 +77,7 @@ Manual city mode works entirely offline. Enabling automatic location for the fir
 
 Closing settings keeps the app running. Choose Quit from the menu bar panel to stop future scheduling while keeping the current system appearance. Launch at login can be enabled in settings. The sun-and-moon animation is off by default and respects the system's Reduce Motion setting when enabled. The native animation matches the website desktop effect: a centered 96% × 84% sky overlay at up to 78% opacity, blurred dome edges, day/night sky interpolation, and enlarged sun/moon on an inner orbit. For manual and scheduled switches, the animation finishes before macOS appearance changes. Disabling animation or using Reduce Motion skips the animation. After wake, Auralim corrects the appearance immediately. If it differs from the appearance before sleep, the animation waits for the desktop to return or unlock and plays once.
 
-Optional pre-switch countdown (off by default; 1–120 seconds, default 10): a native countdown panel with Skip this switch / Got it / Switch now; no system notification or notification permission is needed. Wake recovery still corrects the appearance immediately. Skip this switch skips the current target until the schedule changes target or you select a mode again. Got it dismisses the panel while the countdown continues. Debug previews use the same buttons and honor the optional system-appearance switch.
+Optional countdown for automatic scheduled switches (off by default; 1–120 seconds, default 10): a native countdown panel with Skip this switch / Got it / Switch now; no system notification or notification permission is needed. Manual Light/Dark choices in the menu or settings skip the countdown and play the enabled animation before switching. Wake recovery still corrects the appearance immediately. Skip this switch skips the current target until the schedule changes target or you select a mode again. Got it dismisses the panel while the countdown continues. Debug previews use the same buttons and honor the optional system-appearance switch.
 
 Debug controls are hidden in standard builds. Debug builds expose countdown, sunrise/sunset animation, and full-sequence previews in settings. “Switch system appearance after preview” is off at each launch; enabling it applies the chosen appearance in manual mode after the preview panels are released. Previews use the configured countdown duration. Normal switches, sleep, and lock stop active previews.
 

@@ -22,10 +22,10 @@
 "city.timeZone" = "Fuseau horaire de la ville : %@";
 "sunrise" = "Lever du soleil";
 "sunset" = "Coucher du soleil";
-"sunrise.left" = "Plus sombre · plus tard";
-"sunrise.right" = "Plus clair · plus tôt";
-"sunset.left" = "Plus clair · plus tard";
-"sunset.right" = "Plus sombre · plus tôt";
+"sunrise.left" = "Plus tôt";
+"sunrise.right" = "Plus tard";
+"sunset.left" = "Plus tôt";
+"sunset.right" = "Plus tard";
 "today.city" = "Aujourd’hui · %@";
 "sunrise.switch" = "Passage au mode clair";
 "sunset.switch" = "Passage au mode sombre";
@@ -60,7 +60,7 @@
 "help.start.title" = "Premiers pas";
 "help.start.body" = "Dans Réglages Système → Apparence, choisissez Clair ou Sombre pour désactiver la programmation de macOS. Choisissez une ville et les décalages, puis activez le changement automatique. À la première utilisation, autorisez Auralim à contrôler System Events.";
 "help.offset.title" = "Décalage des heures du soleil";
-"help.offset.body" = "Réglez séparément le lever et le coucher du soleil jusqu’à 120 minutes dans chaque sens, par pas d’une minute. Le centre correspond à l’heure prévue. Vers la gauche, le passage au mode clair ou sombre est retardé ; vers la droite, il est avancé. Une valeur négative avance l’heure, une valeur positive la retarde. L’aperçu est immédiat ; le réglage s’applique au relâchement du curseur, avec Retour ou en quittant le champ. Réinitialiser remet le décalage à zéro.";
+"help.offset.body" = "Réglez séparément le lever et le coucher du soleil jusqu’à 120 minutes dans chaque sens, par pas d’une minute. Le centre correspond à l’heure prévue. Vers la gauche, le changement est avancé ; vers la droite, il est retardé. Le côté clair retarde le lever du soleil et avance le coucher du soleil. Une valeur négative avance l’heure, une valeur positive la retarde. L’aperçu est immédiat ; le réglage s’applique au relâchement du curseur, avec Retour ou en quittant le champ. Réinitialiser remet le décalage à zéro.";
 "help.city.title" = "Villes, fuseaux horaires et utilisation hors ligne";
 "help.city.body" = "Les horaires utilisent le fuseau et la date du lieu actif, avec l’heure d’été. Les calculs solaires et la recherche du fuseau se font sur ce Mac. Le mode manuel fonctionne hors ligne sans autorisation de localisation. Le mode automatique demande une position à macOS toutes les 3 heures. En cas d’échec, le cache est conservé ; la ville manuelle n’est utilisée qu’en l’absence de cache valide. Les positions restent sur ce Mac et ne sont jamais envoyées.";
 "help.sleep.title" = "Changement et sortie de veille";

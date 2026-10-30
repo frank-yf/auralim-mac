@@ -27,6 +27,7 @@ struct NativeInteractionTests {
         let suite = "Auralim.UI.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suite)!
         defaults.set("zh-Hans", forKey: "language")
+        defaults.set(City.all[0].id, forKey: "city")
         defer { defaults.removePersistentDomain(forName: suite) }
         let previousCursor = CGEvent(source: nil)?.location
         defer { if let point = previousCursor { CGWarpMouseCursorPosition(point) } }
@@ -64,6 +65,13 @@ struct NativeInteractionTests {
         #expect(sliders.count == 2)
         #expect(fields.count == 2)
         guard sliders.count == 2, fields.count == 2 else { return }
+        let zeroOffset = ScheduleEngine().evaluate(now: Date(), city: model.city, sunriseOffset: 0, sunsetOffset: 0)
+        let baselineRise = try #require(zeroOffset.todayLightTime)
+        let baselineSet = try #require(zeroOffset.todayDarkTime)
+        func checkAdjustedTimes() {
+            #expect(model.schedule?.todayLightTime == baselineRise.addingTimeInterval(Double(model.sunriseOffset) * 60))
+            #expect(model.schedule?.todayDarkTime == baselineSet.addingTimeInterval(Double(model.offset) * 60))
+        }
         func type(_ text: String, into field: NSTextField, submit: Bool) throws {
             window.makeFirstResponder(field)
             let editor = try #require(field.currentEditor() as? NSTextView)
@@ -77,18 +85,19 @@ struct NativeInteractionTests {
                     characters: "\r", charactersIgnoringModifiers: "\r", isARepeat: false, keyCode: 36))
                 app.sendEvent(enter)
                 settle()
+                checkAdjustedTimes()
             }
         }
         try type("-37", into: fields[0], submit: false)
-        #expect(abs(sliders[0].doubleValue - (37.0 + 120) / 240) < 0.0001)
+        #expect(abs(sliders[0].doubleValue - (-37.0 + 120) / 240) < 0.0001)
         #expect(model.sunriseOffset == 0)
         try type("-37", into: fields[0], submit: true)
         #expect(model.sunriseOffset == -37)
         #expect(fields[0].stringValue == "-37")
-        #expect(abs(sliders[0].doubleValue - (37.0 + 120) / 240) < 0.0001)
+        #expect(abs(sliders[0].doubleValue - (-37.0 + 120) / 240) < 0.0001)
         try type("+42", into: fields[1], submit: true)
         #expect(model.offset == 42)
-        #expect(abs(sliders[1].doubleValue - (-42.0 + 120) / 240) < 0.0001)
+        #expect(abs(sliders[1].doubleValue - (42.0 + 120) / 240) < 0.0001)
         print("Typed values:", model.sunriseOffset, model.offset)
         window.makeFirstResponder(nil)
         settle()
@@ -103,22 +112,22 @@ struct NativeInteractionTests {
             settle()
         }
         try arrow(123)
-        #expect(model.sunriseOffset == 1)
+        #expect(model.sunriseOffset == -1)
         try arrow(124)
         #expect(model.sunriseOffset == 0)
         try arrow(124, modifiers: .option)
-        #expect(model.sunriseOffset == -10)
+        #expect(model.sunriseOffset == 10)
         try type("0", into: fields[0], submit: true)
         print("AX trust:", AXIsProcessTrusted())
         _ = sliders[0].accessibilityPerformDecrement()
         settle()
         print("Sunrise native decrement:", sliders[0].doubleValue, fields[0].stringValue, model.sunriseOffset)
-        #expect(model.sunriseOffset > 0)
+        #expect(model.sunriseOffset < 0)
         #expect(Int(fields[0].stringValue) == model.sunriseOffset)
         _ = sliders[1].accessibilityPerformIncrement()
         settle()
         print("Sunset native increment:", sliders[1].doubleValue, fields[1].stringValue, model.offset)
-        #expect(model.offset < 0)
+        #expect(model.offset > 0)
         #expect(Int(fields[1].stringValue) == model.offset)
         func drag(_ slider: NSSlider, fraction: Double) throws {
             try #require(AXIsProcessTrusted(), "Native mouse tests require Accessibility permission")
@@ -136,24 +145,25 @@ struct NativeInteractionTests {
                 }
             }
             settle()
+            checkAdjustedTimes()
         }
         try drag(sliders[0], fraction: 0.2)
         settle()
         print("Real mouse sunrise:", sliders[0].doubleValue, fields[0].stringValue, model.sunriseOffset)
-        #expect(model.sunriseOffset > 20)
+        #expect(model.sunriseOffset < -20)
         #expect(Int(fields[0].stringValue) == model.sunriseOffset)
         try drag(sliders[1], fraction: 0.8)
         settle()
         print("Real mouse sunset:", sliders[1].doubleValue, fields[1].stringValue, model.offset)
-        #expect(model.offset < -20)
+        #expect(model.offset > 20)
         #expect(Int(fields[1].stringValue) == model.offset)
         try drag(sliders[0], fraction: 0.8)
         settle()
-        #expect(model.sunriseOffset < -20)
+        #expect(model.sunriseOffset > 20)
         #expect(Int(fields[0].stringValue) == model.sunriseOffset)
         try drag(sliders[1], fraction: 0.2)
         settle()
-        #expect(model.offset > 20)
+        #expect(model.offset < -20)
         #expect(Int(fields[1].stringValue) == model.offset)
         print("Opposite directions:", model.sunriseOffset, model.offset)
         try type("+25", into: fields[0], submit: false)
@@ -165,10 +175,10 @@ struct NativeInteractionTests {
         try type("999", into: fields[0], submit: true)
         #expect(model.sunriseOffset == 120)
         #expect(fields[0].stringValue == "+120")
-        #expect(sliders[0].doubleValue == 0)
+        #expect(sliders[0].doubleValue == 1)
         try type("abc", into: fields[0], submit: true)
         #expect(model.sunriseOffset == 120)
-        #expect(sliders[0].doubleValue == 0)
+        #expect(sliders[0].doubleValue == 1)
         try type("-37", into: fields[0], submit: true)
         try type("+42", into: fields[1], submit: true)
         let capture = Process()
@@ -219,7 +229,7 @@ struct NativeInteractionTests {
         if ProcessInfo.processInfo.environment["DUSK_SHIFT_SLIDER_TESTS_ONLY"] == "1" {
             for theme in [NSAppearance.Name.aqua, .darkAqua] {
                 window.appearance = NSAppearance(named: theme)
-                for (name, sunrise, sunset) in [("cool", "+72", "-72"), ("warm", "-72", "+72"), ("small", "+10", "-10"), ("neutral", "0", "0")] {
+                for (name, sunrise, sunset) in [("cool", "-72", "+72"), ("warm", "+72", "-72"), ("small", "+10", "-10"), ("neutral", "0", "0")] {
                     try type(sunrise, into: fields[0], submit: true)
                     try type(sunset, into: fields[1], submit: true)
                     window.makeFirstResponder(nil)
