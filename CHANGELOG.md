@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.5.3 — Unreleased
+## 0.5.3 — 2026-10-30
 
 - Unify menu, settings, countdown and debug layouts, typography and control alignment. Keep branding and version/license information fixed in settings; support minimization and a Dock icon while settings is open.
 - Show actual sunrise/sunset in location settings. Simplify offset controls and submit numeric edits when clicking blank space, with Return and Tab support.
@@ -19,6 +19,3 @@
 - 刷新中或失败后沿用缓存位置，无缓存时回退手动城市；单次获取总时限 5 秒，网络配置变化后有限恢复。
 - `make run` 与 `make run-debug` 自动退出项目内旧实例、重新编译并启动，保留仅构建命令。
 - 同步十二语文案，中文 slogan 使用欧阳修原句。
-
-This version is committed locally and has not been pushed or published.
-此版本仅在本地提交，尚未推送或发布。
