@@ -31,7 +31,7 @@ Requires **macOS 13 or later**. Published universal packages contain Intel and A
 2. Open the menu bar icon, then **Settings**. Choose **Select city** or **Automatic location**. On first launch, a city is matched to the system time zone; Shanghai is the fallback.
 3. Select **Auto** to enable the solar schedule. Light and Dark pause that schedule and use the chosen appearance.
 
-Current public packages are ad-hoc signed and not Apple notarized. If macOS blocks opening, verify the download source and follow [Apple’s guidance](https://support.apple.com/en-us/102445). Checksums are supplied with the release. The first real appearance change requires permission to control System Events; location permission is requested only when automatic location is enabled.
+Current public packages are ad-hoc signed and not Apple notarized. If macOS blocks opening, verify the download source and follow [Apple’s guidance](https://support.apple.com/en-us/102445). Checksums are supplied with the release. Reading or changing system appearance through System Events requires Automation permission; location permission is requested only when automatic location is enabled.
 
 If app Auto is off, each launch reads the current macOS appearance. System Auto leaves all three segments unselected, with an explanation in settings. This avoids treating system Auto as the app’s solar schedule. When using app Auto, disable macOS’s own automatic appearance schedule to avoid competing schedules.
 
