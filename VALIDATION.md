@@ -4,7 +4,8 @@
 - 正式 DMG、正式更新 ZIP、调试 ZIP 解压／只读挂载后版本与标识正确，文件和符号链接与原应用一致；DMG 中 Applications 链接正确。校验所有 SHA-256、更新清单版本／构建／不可变地址／长度及 EdDSA 签名；调试应用进入稳定更新源会被拒绝。
 - Release 附件共六项：正式 DMG、正式 ZIP、签名 appcast.xml、正式 SHA256SUMS.txt、调试 ZIP 与 SHA256SUMS-debug.txt。沿用前次已通过的相关定向检查，不重复全量回归。真实冷启动、授权连续性与实际升级安装仍待实机验证。
 - 日语来源 PDF 本轮再次返回 HTTP 503，保留原有摘句与待视觉核对说明；未把该来源标记为已核验。
-- 同步中英文 README，说明通过 System Events 只读查询也需自动化权限。发布与公开下载结果以忽略目录 `artifacts/release-0.5.4/` 中的实际响应及 SHA-256 记录为准。
+- 已推送并公开发布 [v0.5.4](https://github.com/frank-yf/auralim-mac/releases/tag/v0.5.4)，标签对应 `a530c049df030f2cc811bee8404a4ee187a5b97e`，包含功能提交 `eebbd75`。六个公开附件逐一下载并核对 SHA-256，通过 Latest 下载地址获取的 appcast 与发布文件一致，确认为 0.5.4 / build 33，EdDSA 校验通过。
+- 同步中英文 README，说明通过 System Events 只读查询也需自动化权限。实际响应与公开下载校验记录保留在忽略目录 `artifacts/release-0.5.4/`。
 
 # v0.5.4 本地版本整理（2026-11-02）
 
