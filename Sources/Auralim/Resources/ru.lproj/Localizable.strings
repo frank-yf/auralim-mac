@@ -168,3 +168,12 @@
 "update.manual" = "Проверять и скачивать обновления вручную";
 
 "location.cachedRefreshing" = "Обновление; сохранённое местоположение: %@.";
+
+/* Manual, read-only system appearance diagnostic (debug builds only). */
+"debug.check.title" = "Проверка без изменений";
+"debug.check.run" = "Проверить";
+"debug.check.cancel" = "Отмена";
+"debug.check.idle" = "Только чтение оформления системы, без анимации и изменений.";
+"debug.check.running" = "Проверка оформления системы…";
+"debug.check.success" = "Оформление системы: %@";
+"debug.check.failure" = "Ошибка проверки (%d): %@";

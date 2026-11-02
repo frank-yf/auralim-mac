@@ -99,14 +99,17 @@ final class AppearanceTransitionController: AppearanceTransitionPlaying {
         panel.ignoresMouseEvents = true
         panel.level = .statusBar
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .transient, .ignoresCycle]
+        self.panel = panel
         panel.contentView = NSHostingView(rootView: AppearanceTransitionView(appearance: appearance, duration: duration, onStart: { [weak self, weak panel] in
             guard let self, let panel, self.panel === panel else { return }
             self.startPlaybackTimer(for: panel)
         }))
         panel.setFrame(frame, display: false)
         panel.alphaValue = 1
-        self.panel = panel
         panel.orderFrontRegardless()
+        // Do not make cleanup depend on a SwiftUI .task arriving during login.
+        // The view callback may arrive first; startPlaybackTimer is idempotent.
+        startPlaybackTimer(for: panel)
         accessibilityObserver = NSWorkspace.shared.notificationCenter.addObserver(
             forName: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification, object: nil, queue: .main
         ) { [weak self] _ in

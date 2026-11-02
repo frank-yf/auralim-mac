@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.5.4 — 2026-11-02
+
+- Run appearance scripts in a cancellable process with a deadline, and independently schedule animation cleanup to prevent a stalled startup switch from blocking later controls.
+- In Auto, wait for desktop readiness and probe system appearance with bounded retries before the initial switch. Manual Light/Auto/Dark selections take priority; wake recovery still corrects appearance immediately.
+- Add a debug-only read-only system appearance check with cancellation, retry and localized results/errors. It uses the existing System Events Automation permission and never starts a transition or changes appearance.
+- Replace Japanese and Korean slogans with sourced excerpts from Ouyang Xiu’s text and retain attribution. Visual verification of the Japanese source scan remains pending.
+
+### 中文
+
+- 外观脚本改为可取消、有超时限制的独立进程；动画独立计时收尾，避免启动切换卡住后阻塞手动操作。
+- 自动模式启动时等待桌面就绪并有限重试查询系统外观；手动选择浅色／自动／深色优先，唤醒仍立即校正外观。
+- 调试版增加系统外观只读检查，支持取消、重试及多语言结果／错误提示；沿用既有 System Events 自动化权限，不播放动画或修改外观。
+- 日语、韩语 slogan 更新为带出处的《醉翁亭记》对应摘句，保留来源说明；日语原始扫描页仍待视觉核对。
+
 ## 0.5.3 — 2026-10-30
 
 - Unify menu, settings, countdown and debug layouts, typography and control alignment. Keep branding and version/license information fixed in settings; support minimization and a Dock icon while settings is open.

@@ -174,3 +174,12 @@
 "update.manual" = "Check for updates manually";
 
 "location.cachedRefreshing" = "Refreshing; using cached location: %@.";
+
+/* Manual, read-only system appearance diagnostic (debug builds only). */
+"debug.check.title" = "Read-only check";
+"debug.check.run" = "Check";
+"debug.check.cancel" = "Cancel";
+"debug.check.idle" = "Reads system appearance without animation or changes.";
+"debug.check.running" = "Checking system appearance…";
+"debug.check.success" = "System appearance: %@";
+"debug.check.failure" = "Check failed (%d): %@";

@@ -174,3 +174,12 @@
 "update.manual" = "手动检查并下载更新";
 
 "location.cachedRefreshing" = "正在刷新，沿用缓存位置：%@。";
+
+/* Manual, read-only system appearance diagnostic (debug builds only). */
+"debug.check.title" = "只读检查";
+"debug.check.run" = "检查";
+"debug.check.cancel" = "取消";
+"debug.check.idle" = "仅读取系统外观，不播放动画或切换外观。";
+"debug.check.running" = "正在检查系统外观…";
+"debug.check.success" = "当前系统外观：%@";
+"debug.check.failure" = "检查失败（%d）：%@";

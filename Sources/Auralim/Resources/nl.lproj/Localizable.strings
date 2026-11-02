@@ -168,3 +168,12 @@
 "update.manual" = "Updates handmatig zoeken en downloaden";
 
 "location.cachedRefreshing" = "Vernieuwen; opgeslagen locatie: %@.";
+
+/* Manual, read-only system appearance diagnostic (debug builds only). */
+"debug.check.title" = "Alleen-lezencontrole";
+"debug.check.run" = "Controleren";
+"debug.check.cancel" = "Annuleren";
+"debug.check.idle" = "Leest de systeemweergave zonder animatie of wijzigingen.";
+"debug.check.running" = "Systeemweergave controleren…";
+"debug.check.success" = "Systeemweergave: %@";
+"debug.check.failure" = "Controle mislukt (%d): %@";

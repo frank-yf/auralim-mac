@@ -168,3 +168,12 @@
 "update.manual" = "Updates manuell suchen und laden";
 
 "location.cachedRefreshing" = "Aktualisierung läuft; gespeicherter Standort: %@.";
+
+/* Manual, read-only system appearance diagnostic (debug builds only). */
+"debug.check.title" = "Schreibgeschützte Prüfung";
+"debug.check.run" = "Prüfen";
+"debug.check.cancel" = "Abbrechen";
+"debug.check.idle" = "Liest das Systemerscheinungsbild ohne Animation oder Änderung.";
+"debug.check.running" = "Systemerscheinungsbild wird geprüft…";
+"debug.check.success" = "Systemerscheinungsbild: %@";
+"debug.check.failure" = "Prüfung fehlgeschlagen (%d): %@";

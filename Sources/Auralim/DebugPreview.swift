@@ -80,7 +80,12 @@ final class DebugPreviewController: ObservableObject {
 struct DebugSettingsView: View {
     @ObservedObject var model: AppModel
     @ObservedObject var preview: DebugPreviewController
+    @ObservedObject private var check: DebugAppearanceCheckController
     @State private var target: Appearance = .light
+
+    init(model: AppModel, preview: DebugPreviewController) {
+        self.model = model; self.preview = preview; self.check = model.debugAppearanceCheck
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -112,7 +117,24 @@ struct DebugSettingsView: View {
                     previewButton("debug.sequence", identifier: "debug-sequence") { model.previewDebug(.sequence, target: target) }
                     previewButton("debug.stop", identifier: "debug-stop") { preview.stop() }
                         .disabled(preview.phase == .idle)
-                }.controlSize(.small).disabled(!model.canPreviewDebug)
+                }.controlSize(.small).disabled(!model.canPreviewDebug || check.isChecking)
+                Divider()
+                SettingsPreferenceRow(title: model.t("debug.check.title")) {
+                    HStack(spacing: 8) {
+                        if check.isChecking { ProgressView().controlSize(.small) }
+                        Button(model.t(check.isChecking ? "debug.check.cancel" : "debug.check.run")) {
+                            if check.isChecking { check.cancel() }
+                            else { check.run(enabled: preview.enabled) }
+                        }
+                        .buttonStyle(.bordered).controlSize(.small)
+                        .disabled(!check.isChecking && preview.phase != .idle)
+                        .accessibilityIdentifier("debug-read-appearance")
+                    }
+                }
+                Text(check.status(localizer: model.localizer))
+                    .font(.caption).foregroundStyle(check.failed ? Color.orange : .secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("debug-read-appearance-status")
                 if case .countdown(let target) = preview.phase, let remaining = preview.remaining {
                     Text(model.t("debug.remaining", model.t(target == .light ? "light" : "dark"), remaining))
                         .font(.caption).monospacedDigit().foregroundStyle(.secondary)
@@ -122,6 +144,8 @@ struct DebugSettingsView: View {
                 }
             }
         }.duskCard()
+        .onChange(of: preview.enabled) { enabled in if !enabled { check.cancel(clearResult: true) } }
+        .onDisappear { check.cancel() }
     }
     private func previewButton(_ key: String, identifier: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {

@@ -127,6 +127,7 @@ final class AppModel: ObservableObject {
     var loginItemError: String? { loginItemFailure.map { t("login.error", $0) } }
 
     let debugPreview: DebugPreviewController
+    let debugAppearanceCheck: DebugAppearanceCheckController
     private let defaults: UserDefaults
     private let controller: AppearanceApplying
     private let transitionPlayer: AppearanceTransitionPlaying
@@ -137,6 +138,10 @@ final class AppModel: ObservableObject {
     private var applyingDebugPreview = false
     private var handlingAppearanceSelection = false
     private var pendingTransition: (id: UUID, target: Appearance)?
+    private var activeAppearanceRequest: UUID?
+    private var startupReadiness: StartupAppearanceReadiness?
+    private var startupRecoveryInProgress = false
+    private var startupFailure: (target: Appearance, error: AppearanceFailure)?
     private let desktopReady: @MainActor () -> Bool
     private let loginItemController: LoginItemControlling
     private let locationController: LocationProviding
@@ -168,10 +173,15 @@ final class AppModel: ObservableObject {
          desktopReady: @escaping @MainActor () -> Bool = { WakeAppearanceTransition.desktopIsReady() },
          wakeAnimationDelay: TimeInterval = 0.6,
          countdownPresenter: CountdownPresenting? = nil,
-         debugPreview: DebugPreviewController? = nil) {
+         debugPreview: DebugPreviewController? = nil,
+         debugAppearanceCheck: DebugAppearanceCheckController? = nil,
+         startupReadinessChecker: AppearanceReadinessChecking? = nil,
+         startupReadinessDelays: [TimeInterval] = [1, 2, 5],
+         startupReadinessSchedule: StartupAppearanceReadiness.Scheduler? = nil) {
         self.defaults = defaults; self.controller = controller; self.clock = clock; self.enableTimers = enableTimers
         self.transitionPlayer = transitionPlayer ?? AppearanceTransitionController()
         self.debugPreview = debugPreview ?? DebugPreviewController(defaults: defaults)
+        self.debugAppearanceCheck = debugAppearanceCheck ?? DebugAppearanceCheckController()
         self.desktopReady = desktopReady
         self.countdownPresenter = countdownPresenter ?? CountdownController()
         self.loginItemController = loginItemController ?? LoginItemController()
@@ -203,6 +213,15 @@ final class AppModel: ObservableObject {
             guard let self, self.transitionAnimationEnabled else { return }
             self.playTransition(target)
         }
+        // Test models with timers disabled stay deterministic unless a checker
+        // is explicitly injected. The production controller always supports this.
+        if automatic, let checker = startupReadinessChecker ?? (enableTimers ? controller as? AppearanceReadinessChecking : nil) {
+            startupRecoveryInProgress = true
+            startupReadiness = StartupAppearanceReadiness(checker: checker, desktopReady: desktopReady,
+                delays: startupReadinessDelays, schedule: startupReadinessSchedule) { [weak self] result in
+                    self?.startupReadinessFinished(result)
+                }
+        }
         observeLifecycle(NSWorkspace.willSleepNotification, center: workspaceNotifications)
         observeLifecycle(NSWorkspace.didWakeNotification, center: workspaceNotifications)
         observeLifecycle(NSWorkspace.screensDidSleepNotification, center: workspaceNotifications)
@@ -212,6 +231,7 @@ final class AppModel: ObservableObject {
         // Screen locking does not necessarily deactivate the workspace session.
         observeLifecycle(Notification.Name("com.apple.screenIsLocked"), center: appearanceNotifications)
         observeLifecycle(Notification.Name("com.apple.screenIsUnlocked"), center: appearanceNotifications)
+        observe(NSApplication.didFinishLaunchingNotification, center: systemNotifications)
         observe(.NSSystemClockDidChange, center: systemNotifications)
         observe(Notification.Name("AppleInterfaceThemeChangedNotification"), center: appearanceNotifications)
         observe(.NSSystemTimeZoneDidChange, center: systemNotifications, refreshLocation: true)
@@ -228,6 +248,11 @@ final class AppModel: ObservableObject {
             Task { @MainActor in self?.reconcile(); self?.refreshLoginItemStatus(); self?.refreshLocation(force: false) }
         }
         observers.append((systemNotifications, activationObserver))
+        let terminationObserver = systemNotifications.addObserver(forName: NSApplication.willTerminateNotification,
+                                                                  object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.shutdown() }
+        }
+        observers.append((systemNotifications, terminationObserver))
         refreshLoginItemStatus()
         self.locationController.onEvent = { [weak self] event in self?.receiveLocation(event) }
         reconcile()
@@ -312,8 +337,10 @@ final class AppModel: ObservableObject {
             MainActor.assumeIsolated {
                 guard let self, !self.isShutdown else { return }
                 self.debugPreview.stop()
+                self.debugAppearanceCheck.cancel()
                 switch name {
                 case NSWorkspace.willSleepNotification:
+                    self.startupReadiness?.desktopUnavailable()
                     self.cancelPendingTransition()
                     self.refreshSystemAppearance()
                     self.wakeTransition.willSleep(appearance: self.currentSystemAppearance)
@@ -323,15 +350,18 @@ final class AppModel: ObservableObject {
                      Notification.Name("com.apple.screenIsLocked"):
                     let hadPending = self.cancelPendingTransition()
                     self.wakeTransition.desktopUnavailable()
+                    self.startupReadiness?.desktopUnavailable()
                     self.transitionPlayer.stop()
                     if hadPending { self.reconcile(allowAnimation: false) }
                     return
                 case NSWorkspace.didWakeNotification:
+                    self.cancelStartupRecovery() // Wake correction must remain immediate.
                     self.cancelPendingTransition()
                     self.cancelledCountdownTarget = nil
                     self.wakeTransition.didWake(fallback: self.currentSystemAppearance)
                 default:
                     self.wakeTransition.desktopChanged()
+                    self.startupReadiness?.desktopChanged()
                 }
                 self.reconcile()
                 if name == NSWorkspace.didWakeNotification || name == NSWorkspace.sessionDidBecomeActiveNotification {
@@ -340,6 +370,36 @@ final class AppModel: ObservableObject {
             }
         }
         observers.append((center, token))
+    }
+
+    private func startupReadinessFinished(_ result: Result<Appearance, AppearanceFailure>) {
+        guard !isShutdown, enabled, startupReadiness != nil else { return }
+        startupReadiness = nil
+        switch result {
+        case .success(let observed):
+            // Recompute now, not at launch: city, offsets and the solar boundary
+            // may have changed while the desktop/service was unavailable.
+            reconcile(observedAppearance: observed)
+        case .failure(let error):
+            startupRecoveryInProgress = false
+            let state = ScheduleEngine().evaluate(now: clock(), city: city, sunriseOffset: sunriseOffset, sunsetOffset: offset)
+            startupFailure = (state.appearance, error)
+            reconcile()
+        }
+    }
+
+    private func cancelStartupRecovery() {
+        let ownedRequest = startupRecoveryInProgress
+        startupRecoveryInProgress = false
+        startupReadiness?.cancel(); startupReadiness = nil
+        startupFailure = nil
+        if ownedRequest {
+            cancelPendingTransition()
+            if activeAppearanceRequest != nil {
+                activeAppearanceRequest = nil; isApplying = false
+                controller.cancel()
+            }
+        }
     }
 
     private func playTransition(_ target: Appearance) {
@@ -410,7 +470,9 @@ final class AppModel: ObservableObject {
 
     func selectAppearanceMode(_ selection: AppearanceMode?) {
         guard let mode = selection else { return }
-        guard mode != appearanceMode || cancelledCountdownTarget != nil || (!enabled && manualAppearance == nil) else { return }
+        guard mode != appearanceMode || cancelledCountdownTarget != nil || (!enabled && manualAppearance == nil)
+                || startupRecoveryInProgress || startupFailure != nil else { return }
+        cancelStartupRecovery()
         // Explicit choices, including Auto, express intent to switch now.
         // Scope this to the selection so later scheduled transitions still count down.
         let previousSelection = handlingAppearanceSelection
@@ -429,7 +491,7 @@ final class AppModel: ObservableObject {
     }
 
     var canPreviewDebug: Bool {
-        BuildFeatures.debugToolsEnabled && !isShutdown && !isApplying && pendingCountdown == nil && pendingTransition == nil
+        BuildFeatures.debugToolsEnabled && !isShutdown && startupReadiness == nil && !isApplying && pendingCountdown == nil && pendingTransition == nil
             && !wakeTransition.requiresImmediateCorrection && desktopReady()
     }
 
@@ -452,9 +514,9 @@ final class AppModel: ObservableObject {
         }
     }
 
-    func retry() { cancelledCountdownTarget = nil; configurationChanged() }
+    func retry() { cancelStartupRecovery(); cancelledCountdownTarget = nil; configurationChanged() }
 
-    func reconcile(allowAnimation: Bool = true, allowCountdown: Bool = true) {
+    func reconcile(allowAnimation: Bool = true, allowCountdown: Bool = true, observedAppearance: Appearance? = nil) {
         guard !isShutdown else { return }
         wakeTransition.invalidateVerification()
         timer?.invalidate(); timer = nil; scheduledCheck = nil
@@ -463,6 +525,10 @@ final class AppModel: ObservableObject {
         // The tray always reflects the observed system appearance, including
         // App Auto/manual mode and requests that are still pending or failed.
         refreshSystemAppearance()
+        if let observedAppearance {
+            systemSettings = .init(mode: systemSettings.mode, appearance: observedAppearance)
+        }
+        if !enabled { cancelStartupRecovery() }
         guard let target = enabled ? state.appearance : manualAppearance else {
             statusState = .paused
             cancelPendingTransition()
@@ -470,6 +536,31 @@ final class AppModel: ObservableObject {
             return
         }
         if enabled { arm(at: state.nextCheck) }
+        if let startupReadiness {
+            startupReadiness.startIfReady()
+            return // No countdown, animation or setter before a successful read.
+        }
+        if let blocked = startupFailure {
+            if blocked.target == target {
+                if currentSystemAppearance == target && !blocked.error.permissionDenied {
+                    startupFailure = nil; failure = nil; failures = 0
+                    statusState = .confirmed(target)
+                } else {
+                    failure = blocked.error; permissionBlocked = blocked.error.permissionDenied
+                    statusState = .attention
+                }
+                return // Activation/configuration notifications cannot restart the retry budget.
+            }
+            startupFailure = nil // A later solar target is a new scheduled event.
+            if !blocked.error.permissionDenied { failure = nil; failures = 0; permissionBlocked = false }
+        }
+        if startupRecoveryInProgress && !isApplying && currentSystemAppearance == target {
+            cancelPendingTransition()
+            startupRecoveryInProgress = false
+            failure = nil; failures = 0
+            statusState = .confirmed(target)
+            return // An already-correct system needs neither animation nor a setter.
+        }
         if cancelledCountdownTarget != target { cancelledCountdownTarget = nil }
         if cancelledCountdownTarget == target && !wakeTransition.requiresImmediateCorrection { return }
         // Manual choices already express intent: animate and apply without a countdown.
@@ -497,9 +588,12 @@ final class AppModel: ObservableObject {
         }
         if target != currentSystemAppearance && !applyingDebugPreview { debugPreview.stop() }
         isApplying = true
+        let requestID = UUID()
+        activeAppearanceRequest = requestID
         let requestGeneration = generation
         controller.apply(target) { [weak self] result in
-            guard let self else { return }
+            guard let self, self.activeAppearanceRequest == requestID else { return }
+            self.activeAppearanceRequest = nil
             self.isApplying = false
             guard !self.isShutdown else { return }
             self.refreshSystemAppearance()
@@ -512,6 +606,7 @@ final class AppModel: ObservableObject {
             self.schedule = fresh
             switch result {
             case .success(let application):
+                self.startupRecoveryInProgress = false
                 // Ordinary switches have already animated. Only wake recovery
                 // can schedule a post-correction effect after the desktop returns.
                 _ = self.wakeTransition.verified(target, changed: application.changed)
@@ -523,6 +618,10 @@ final class AppModel: ObservableObject {
                 self.statusState = .attention
                 self.permissionBlocked = error.permissionDenied
                 self.failures += 1
+                if error.permissionDenied || self.failures > 2 {
+                    if self.startupRecoveryInProgress { self.startupFailure = (target, error) }
+                    self.startupRecoveryInProgress = false
+                }
                 if !error.permissionDenied && self.failures <= 2 {
                     let retry = self.clock().addingTimeInterval(Double(self.failures) * 5)
                     self.arm(at: self.enabled ? min(fresh.nextCheck, retry) : retry)
@@ -549,7 +648,12 @@ final class AppModel: ObservableObject {
     }
 
     func shutdown() {
+        guard !isShutdown else { return }
         isShutdown = true
+        cancelStartupRecovery()
+        activeAppearanceRequest = nil; isApplying = false
+        controller.cancel()
+        debugAppearanceCheck.cancel()
         debugPreview.stop()
         cancelPendingTransition()
         wakeTransition.cancelWake()

@@ -8,13 +8,14 @@ Auralim is a native macOS menu bar app that switches system appearance with loca
 
 The Chinese name comes from Ouyang Xiu’s *The Old Drunkard’s Pavilion*: “**晦明**变化者，山间之朝暮也。”
 
-> This README describes **0.5.3**. Downloadable builds are listed on [GitHub Releases](https://github.com/frank-yf/auralim-mac/releases/latest). See [CHANGELOG.md](CHANGELOG.md).
+> This README describes **0.5.4**. Downloadable builds are listed on [GitHub Releases](https://github.com/frank-yf/auralim-mac/releases/latest). See [CHANGELOG.md](CHANGELOG.md).
 
 ## What it does
 
 - **Light / Auto / Dark** in both the menu panel and settings. Auto follows the app’s solar schedule; it is distinct from macOS Auto.
 - **Independent sunrise and sunset offsets**, from −120 to +120 minutes, with synchronized sliders and precise numeric inputs.
 - **Choose a city or use automatic location.** Coordinates stay cached locally; failed refreshes keep the previous fix, with a saved city as fallback.
+- **Startup recovery.** Auto waits for the desktop and checks system appearance with bounded retries; manual selections take priority.
 - **Wake recovery.** Correct the appearance immediately after wake; an enabled animation waits until the desktop is ready or unlocked.
 - **Optional transition animation and countdown.** Both are off by default. Launch at login is also available in settings.
 - **Manual or automatic software updates**, defaulting to manual while respecting an existing saved choice.
@@ -82,7 +83,7 @@ make run-debug    # quit local instances, build/sign and open the debug app
 
 `make build` and `make build-debug` only build. Outputs are `dist/Auralim.app` and `dist/debug/Auralim Debug.app`. Run commands wait for local development instances to quit, stop on failure and leave installed copies in Applications untouched.
 
-Debug controls are compiled in only with `AURALIM_DEBUG_TOOLS`. The debug app has a separate bundle ID, preferences and permissions, and disables stable automatic updates. It offers countdown, animation and full-sequence previews. **Switch system appearance after preview** is off at every launch. When enabled, preview motion end applies the selected appearance in manual mode; a countdown-only preview applies when the countdown finishes.
+Debug controls are compiled in only with `AURALIM_DEBUG_TOOLS`. The debug app has a separate bundle ID, preferences and permissions, and disables stable automatic updates. It offers countdown, animation and full-sequence previews, plus a cancellable read-only system appearance check. The check also requires System Events Automation permission and never changes appearance. **Switch system appearance after preview** is off at every launch. When enabled, preview motion end applies the selected appearance in manual mode; a countdown-only preview applies when the countdown finishes.
 
 ### Build and validate by scope
 

@@ -3,7 +3,14 @@
 "language" = "言語";
 "language.system" = "システムに従う";
 "language.hint" = "言語の変更はすぐに反映され、この Mac に保存されます。";
-"slogan" = "光と闇のあいだに。";
+/* 欧陽脩「酔翁亭記」訓読摘句。
+ * Source: 陳可冉「林羅山における文章の作法―『古文真宝後集』との関わりに触れて」
+ * 国際日本文学研究集会会議録 33 (2010), p.178.
+ * https://kokubunken.repo.nii.ac.jp/record/2891/files/I3312.pdf#page=10
+ * Checked against the indexed text; normalize obvious OCR errors 嬰化 / 山聞
+ * to 変化 / 山間. The PDF host was unavailable; scan-page visual review is pending.
+ */
+"slogan" = "晦明変化する者は、山間の朝暮なり。";
 "auto" = "自動";
 "paused" = "一時停止中";
 "auto.switch" = "自動切り替え";
@@ -168,3 +175,12 @@
 "update.manual" = "手動で更新を確認してダウンロード";
 
 "location.cachedRefreshing" = "更新中。保存済みの位置を使用：%@。";
+
+/* Manual, read-only system appearance diagnostic (debug builds only). */
+"debug.check.title" = "読み取り専用チェック";
+"debug.check.run" = "確認";
+"debug.check.cancel" = "キャンセル";
+"debug.check.idle" = "外観を読み取るだけで、アニメーションや外観の変更は行いません。";
+"debug.check.running" = "システムの外観を確認中…";
+"debug.check.success" = "現在のシステム外観：%@";
+"debug.check.failure" = "確認に失敗しました（%d）：%@";

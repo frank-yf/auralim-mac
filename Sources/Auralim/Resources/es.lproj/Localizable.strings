@@ -168,3 +168,12 @@
 "update.manual" = "Buscar y descargar actualizaciones manualmente";
 
 "location.cachedRefreshing" = "Actualizando; ubicación guardada: %@.";
+
+/* Manual, read-only system appearance diagnostic (debug builds only). */
+"debug.check.title" = "Comprobación de solo lectura";
+"debug.check.run" = "Comprobar";
+"debug.check.cancel" = "Cancelar";
+"debug.check.idle" = "Consulta la apariencia del sistema sin animaciones ni cambios.";
+"debug.check.running" = "Comprobando la apariencia del sistema…";
+"debug.check.success" = "Apariencia del sistema: %@";
+"debug.check.failure" = "Error al comprobar (%d): %@";

@@ -3,7 +3,13 @@
 "language" = "언어";
 "language.system" = "시스템 언어 사용";
 "language.hint" = "언어 변경은 즉시 적용되며 이 Mac에 저장됩니다.";
-"slogan" = "빛과 어둠 사이.";
+/* 구양수「취옹정기」: excerpt from the published line-by-line Korean annotation.
+ * Source: 耕仁學堂, 벽암거사, 「16-2.취옹정기-구양수」 (2026-01-14).
+ * https://kyunginhakdang.tistory.com/167
+ * Quoted without rewriting. Cross-checked against 唐宋八大家文抄 歐陽脩(3), 04.醉翁亭記:
+ * https://db.cyberseodang.or.kr/front/sabuList/BookMain.do?bnCode=jti_4c0223&titleId=C56
+ */
+"slogan" = "어둠과 밝음이 변하는 것이 바로 산속의 아침과 저녁이다.";
 "auto" = "자동";
 "paused" = "일시 정지됨";
 "auto.switch" = "자동 전환";
@@ -168,3 +174,12 @@
 "update.manual" = "업데이트를 수동으로 확인 및 다운로드";
 
 "location.cachedRefreshing" = "새로 고치는 중. 저장된 위치 사용: %@.";
+
+/* Manual, read-only system appearance diagnostic (debug builds only). */
+"debug.check.title" = "읽기 전용 확인";
+"debug.check.run" = "확인";
+"debug.check.cancel" = "취소";
+"debug.check.idle" = "시스템 모양만 읽으며 애니메이션을 재생하거나 모양을 변경하지 않습니다.";
+"debug.check.running" = "시스템 모양 확인 중…";
+"debug.check.success" = "현재 시스템 모양: %@";
+"debug.check.failure" = "확인 실패 (%d): %@";

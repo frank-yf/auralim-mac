@@ -340,7 +340,7 @@ struct DebugPreviewTests {
                 let r = rhs.convert(NSPoint(x: rhs.bounds.midX, y: rhs.bounds.midY), to: nil)
                 return abs(l.y - r.y) > 2 ? l.y > r.y : l.x < r.x
             }
-            try #require(buttons.count == 4)
+            try #require(buttons.count >= 4)
             let index = try #require(["debug.countdown", "debug.animation", "debug.sequence", "debug.stop"].firstIndex(of: key))
             let button = buttons[index]
             let point = button.convert(NSPoint(x: button.bounds.midX, y: button.bounds.midY), to: nil)

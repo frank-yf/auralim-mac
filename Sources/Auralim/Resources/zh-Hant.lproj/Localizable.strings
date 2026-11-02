@@ -174,3 +174,12 @@
 "update.manual" = "手動檢查並下載更新";
 
 "location.cachedRefreshing" = "正在更新，沿用快取位置：%@。";
+
+/* Manual, read-only system appearance diagnostic (debug builds only). */
+"debug.check.title" = "唯讀檢查";
+"debug.check.run" = "檢查";
+"debug.check.cancel" = "取消";
+"debug.check.idle" = "僅讀取系統外觀，不播放動畫或切換外觀。";
+"debug.check.running" = "正在檢查系統外觀…";
+"debug.check.success" = "目前系統外觀：%@";
+"debug.check.failure" = "檢查失敗（%d）：%@";
